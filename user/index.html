@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beranda — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/user.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="side">
+    <a class="logo" href="../auth/index.html">
+      <img src="../assets/img/SortikLogo.jpeg" alt="" width="34">
+      <b>SORTIK</b>
+    </a>
+
+    <nav>
+      <a class="on" href="./">🏠 Beranda</a>
+      <a href="#">🔍 Cari Produk &amp; Rak</a>
+      <a href="#">📋 Pesan &amp; Booking</a>
+      <a href="#">🕘 Riwayat</a>
+    </nav>
+
+    <!-- info user (pojok kiri bawah) — diisi user.js, nanti dari database -->
+    <div class="me" id="me"></div>
+  </aside>
+
+  <main>
+    <header class="head">
+      <h1>Dashboard</h1>
+      <p>Ringkasan aktivitas Anda</p>
+    </header>
+
+    <section class="hello">
+      <div>
+        <p>Selamat datang kembali 👋</p>
+        <h2 id="nama"></h2>
+      </div>
+      <div class="acts">
+        <a href="#">Cari Produk</a>
+        <a href="#">Pesanan Saya</a>
+      </div>
+    </section>
+
+    <section class="stats" id="stats"></section>
+
+    <section class="card">
+      <h2>Pesanan Terbaru <a href="#">Lihat Semua</a></h2>
+      <div id="pesanan"></div>
+    </section>
+
+    <section class="card">
+      <h2>Kategori Produk</h2>
+      <div class="cats" id="kategori"></div>
+    </section>
+  </main>
+
+</div>
+<script src="../assets/js/user.js"></script>
+</body>
+</html>
