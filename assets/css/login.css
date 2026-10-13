@@ -44,7 +44,7 @@ body {
 
 .form > * { max-width: 515px; width: 100%; margin-inline: auto; }
 .form h2 { font-size: 34px; }
-.form > p { color: #6b7280; margin: 8px 0 34px; }
+.form > p { color: #6b7280; margin: 8px auto 20px; }
 
 /* kartu role (radio + label, murni CSS) */
 .roles {
@@ -65,6 +65,9 @@ body {
   border: 1px solid #d7dce3;
   border-radius: 14px;
   cursor: pointer;
+}
+.roles label:hover {
+  background: #f3f6fd; border-color: #7388b7;
 }
 .roles label span { font-size: 15px; font-weight: 600; color: #374151; }
 .roles input:checked + label { background: #dbe6fd; border-color: #2563eb; }
