@@ -1,0 +1,97 @@
+/* SORTIK — beranda pembeli */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: system-ui, "Segoe UI", Arial, sans-serif;
+  font-size: 15px;
+  color: #111827;
+  background: #f4f6fa;
+}
+
+/* sidebar diam, hanya sisi kanan (main) yang di-scroll */
+.app { display: flex; height: 100vh; }
+
+/* ---------- sidebar ---------- */
+.side {
+  flex: 0 0 236px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  padding: 22px 18px;
+  background: #fff;
+  border-right: 1px solid #e5e8ef;
+}
+
+.logo { display: flex; align-items: center; gap: 10px; font-size: 24px; letter-spacing: 2px; color: #1e3a8a; text-decoration: none; }
+.logo img { display: block; width: 34px; height: auto; filter: brightness(.2); /* logo aslinya putih → digelapkan agar terlihat di sidebar putih */ }
+
+.side nav { display: flex; flex-direction: column; gap: 4px; }
+.side nav a { padding: 11px 12px; font-size: 14px; color: #4b5563; text-decoration: none; border-radius: 10px; }
+.side nav a:hover { background: #f0f3f9; }
+.side nav a.on { color: #fff; background: #2563eb; font-weight: 600; }
+
+.me { display: flex; align-items: center; gap: 10px; margin-top: auto; padding-top: 16px; border-top: 1px solid #e5e8ef; }
+.me .avatar { display: grid; place-items: center; width: 36px; height: 36px; font-size: 13px; font-weight: 700; color: #fff; background: #2563eb; border-radius: 50%; }
+.me b { display: block; font-size: 14px; }
+.me span { font-size: 12px; color: #6b7280; }
+
+/* ---------- konten ---------- */
+main { flex: 1; overflow-y: auto; padding: 26px 30px 40px; }
+
+.head h1 { font-size: 26px; }
+.head p { margin-top: 2px; font-size: 14px; color: #6b7280; }
+
+.hello {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 22px 0 18px;
+  padding: 20px 22px;
+  color: #fff;
+  background: linear-gradient(100deg, #2563eb, #1d4ed8);
+  border-radius: 14px;
+}
+.hello p { font-size: 14px; opacity: .9; }
+.hello h2 { font-size: 24px; }
+
+.acts { display: flex; gap: 10px; }
+.acts a { padding: 11px 18px; font-size: 14px; font-weight: 600; color: #1d4ed8; background: #fff; border-radius: 10px; text-decoration: none; }
+.acts a:last-child { color: #fff; background: rgba(255, 255, 255, .16); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6); }
+
+.stats, .card { background: #fff; border: 1px solid #e5e8ef; border-radius: 14px; }
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); overflow: hidden; }
+.stats div { padding: 22px 10px; text-align: center; }
+.stats div + div { border-left: 1px solid #e5e8ef; }
+.stats b { display: block; font-size: 30px; }
+.stats span { font-size: 13px; color: #4b5563; }
+
+.card { margin-top: 18px; padding: 18px 20px 8px; }
+.card h2 { display: flex; align-items: baseline; justify-content: space-between; font-size: 17px; }
+.card h2 a { font-size: 13px; font-weight: 500; color: #2563eb; text-decoration: none; }
+
+/* baris pesanan */
+.row { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 14px; padding: 14px 0; border-top: 1px solid #f0f2f7; }
+.thumb { display: grid; place-items: center; width: 44px; height: 44px; font-size: 22px; background: #f4f6fa; border: 1px solid #e5e8ef; border-radius: 10px; }
+.row b { font-size: 15px; }
+.row span { display: block; margin-top: 2px; font-size: 12.5px; color: #6b7280; }
+.row em { padding: 5px 12px; font-size: 12px; font-style: normal; border-radius: 999px; }
+.wait { color: #92400e; background: #fef3c7; }
+.proc { color: #1e40af; background: #dbeafe; }
+.ok { color: #166534; background: #dcfce7; }
+
+/* kategori */
+.cats { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 12px; padding: 16px 0 12px; }
+.cats div { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 8px; font-size: 22px; background: #eef4ff; border: 1px solid #dbe6fd; border-radius: 12px; }
+.cats span { font-size: 13px; font-weight: 600; color: #374151; }
+
+/* ---------- responsif ---------- */
+@media (max-width: 860px) {
+  .app { flex-direction: column; height: auto; }
+  .side { flex: none; gap: 16px; }
+  .side nav { flex-direction: row; overflow-x: auto; }
+  .me { margin-top: 0; }
+  main { overflow: visible; padding: 20px 18px 30px; }
+}
