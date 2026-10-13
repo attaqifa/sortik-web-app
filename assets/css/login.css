@@ -1,0 +1,95 @@
+/* SORTIK — login */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: system-ui, "Segoe UI", Arial, sans-serif;
+  color: #111827;
+  background: #eef1f6;
+}
+
+.wrap { display: flex; min-height: 100vh; }
+
+/* ---------- panel kiri ---------- */
+.promo {
+  flex: 0 0 37%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 40px 44px;
+  color: #fff;
+  text-align: center;
+  background: #16378f url("../img/LoginBackground.jpeg") center/cover;
+}
+
+.brand { display: flex; align-items: center; gap: 14px; text-align: left; }
+.brand img { display: block; }
+.brand h1 { font-size: 40px; letter-spacing: 3px; line-height: 1; }
+.brand p  { font-size: 13px; }
+
+.hero h2 { font-size: clamp(30px, 3vw, 42px); margin-bottom: 18px; text-shadow: 0 2px 12px rgba(0,0,0,.35); }
+.hero h2 span { color: #6ea8fe; }
+.hero p  { max-width: 320px; margin: 0 auto; font-weight: 700; line-height: 1.55; text-shadow: 0 1px 10px rgba(0,0,0,.35); }
+
+.promo footer { font-size: 15px; line-height: 1.4; }
+
+/* ---------- panel kanan ---------- */
+.form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 32px;
+}
+
+.form > * { max-width: 515px; width: 100%; margin-inline: auto; }
+.form h2 { font-size: 34px; }
+.form > p { color: #6b7280; margin: 8px 0 34px; }
+
+/* kartu role (radio + label, murni CSS) */
+.roles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 30px;
+}
+.roles input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.roles label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 15px 8px;
+  font-size: 24px;
+  background: #fff;
+  border: 1px solid #d7dce3;
+  border-radius: 14px;
+  cursor: pointer;
+}
+.roles label span { font-size: 15px; font-weight: 600; color: #374151; }
+.roles input:checked + label { background: #dbe6fd; border-color: #2563eb; }
+.roles input:checked + label span { color: #1d4ed8; }
+
+/* field + tombol */
+.form form > label { display: block; margin: 0 0 8px; color: #4b5563; }
+.form form > input { width: 100%; margin-bottom: 22px; padding: 15px 18px; font: inherit; border: 1px solid #d7dce3; border-radius: 14px; }
+.form form > input:focus { outline: 2px solid #2563eb; }
+.form button {
+  width: 100%;
+  padding: 16px;
+  font: inherit;
+  font-weight: 700;
+  color: #fff;
+  background: #2563eb;
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+}
+.form button:hover { background: #1d4ed8; }
+
+/* ---------- responsif ---------- */
+@media (max-width: 900px) {
+  .wrap { flex-direction: column; }
+  .promo { flex: none; padding: 32px 24px; }
+  .form { padding: 40px 22px; }
+}

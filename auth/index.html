@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masuk — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/login.css">
+</head>
+<body>
+<main class="wrap">
+
+  <aside class="promo">
+    <div class="brand">
+      <img src="../assets/img/SortikLogo.jpeg" alt="SORTIK" width="58">
+      <div>
+        <h1>SORTIK</h1>
+        <p>Sistem Sortir &amp; Katalog Elektronik</p>
+      </div>
+    </div>
+
+    <div class="hero">
+      <h2>Iki lo <span>barang</span> e!</h2>
+      <p>Temukan produk lebih cepat, kelola rak lebih rapi, dan pantau operasional toko dalam satu sistem terpadu.</p>
+    </div>
+
+    <footer><b>Tim Rak</b><br>Development</footer>
+  </aside>
+
+  <section class="form">
+    <h2>Masuk ke akun</h2>
+    <p>Pilih role lalu masukkan kredensial Anda.</p>
+
+    <form method="post" action="#">
+      <div class="roles">
+        <input type="radio" name="role" id="pembeli" value="pembeli">
+        <label for="pembeli">🧑<span>Pembeli</span></label>
+
+        <input type="radio" name="role" id="staff" value="staff">
+        <label for="staff">🧢<span>Staff Toko</span></label>
+
+        <input type="radio" name="role" id="admin" value="admin" checked>
+        <label for="admin">🧑‍💼<span>Admin Toko</span></label>
+      </div>
+
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required>
+
+      <label for="password">Kata Sandi</label>
+      <input type="password" id="password" name="password" required>
+
+      <button type="submit">Masuk</button>
+    </form>
+  </section>
+
+</main>
+</body>
+</html>
