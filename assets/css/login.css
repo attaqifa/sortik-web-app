@@ -90,6 +90,11 @@ body {
 }
 .form button:hover { background: #1d4ed8; }
 
+/* link pindah halaman (masuk <-> daftar) */
+.form .switch { margin-top: 18px; text-align: center; font-size: 15px; }
+.switch a { color: #2563eb; font-weight: 600; text-decoration: none; }
+.switch a:hover { text-decoration: underline; }
+
 /* ---------- responsif ---------- */
 @media (max-width: 900px) {
   .wrap { flex-direction: column; }
