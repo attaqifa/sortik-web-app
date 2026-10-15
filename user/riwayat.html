@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riwayat — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/user.css">
+</head>
+<!-- halaman yang sama dengan pesan.html, hanya disaring ke status "Selesai" -->
+<body data-status="Selesai">
+<div class="app">
+
+  <aside class="side">
+    <a class="logo" href="../auth/login.html">
+      <img src="../assets/img/SortikLogo.jpeg" alt="" width="34">
+      <b>SORTIK</b>
+    </a>
+
+    <nav>
+      <a href="index.html">🏠 Beranda</a>
+      <a href="cari.html">🔍 Cari Produk &amp; Rak</a>
+      <a href="pesan.html">📋 Pesan &amp; Booking</a>
+      <a class="on" href="riwayat.html">🕘 Riwayat</a>
+    </nav>
+
+    <!-- info user (pojok kiri bawah) — diisi app.js, nanti dari database -->
+    <div class="me" id="me"></div>
+  </aside>
+
+  <main>
+    <header class="head">
+      <h1>Riwayat</h1>
+      <p>Pesanan yang sudah selesai</p>
+    </header>
+
+    <!-- daftar pesanan selesai, diisi pesan.js -->
+    <section class="card" id="daftar">
+      <div id="list"></div>
+    </section>
+
+    <!-- detail satu pesanan, dibuka dari baris di atas -->
+    <section class="card" id="detail" hidden></section>
+  </main>
+
+</div>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/pesan.js"></script>
+</body>
+</html>

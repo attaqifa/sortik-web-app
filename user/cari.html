@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cari Produk &amp; Rak — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/user.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="side">
+    <a class="logo" href="../auth/login.html">
+      <img src="../assets/img/SortikLogo.jpeg" alt="" width="34">
+      <b>SORTIK</b>
+    </a>
+
+    <nav>
+      <a href="index.html">🏠 Beranda</a>
+      <a class="on" href="cari.html">🔍 Cari Produk &amp; Rak</a>
+      <a href="pesan.html">📋 Pesan &amp; Booking</a>
+      <a href="riwayat.html">🕘 Riwayat</a>
+    </nav>
+
+    <!-- info user (pojok kiri bawah) — diisi app.js, nanti dari database -->
+    <div class="me" id="me"></div>
+  </aside>
+
+  <main>
+    <header class="head">
+      <h1>Cari Produk &amp; Rak</h1>
+      <p>Temukan produk dan lokasi raknya</p>
+    </header>
+
+    <section class="card cari">
+      <input type="search" id="q" placeholder="Cari produk..." autocomplete="off">
+      <div class="chips" id="chips"></div>
+
+      <details open>
+        <summary>Denah Rak Toko</summary>
+        <div class="rak" id="denah"></div>
+      </details>
+    </section>
+
+    <p class="hasil" id="hasil"></p>
+    <div class="grid" id="produk"></div>
+  </main>
+
+</div>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/cari.js"></script>
+</body>
+</html>
