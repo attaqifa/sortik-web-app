@@ -81,15 +81,12 @@ main { flex: 1; overflow-y: auto; padding: 26px 30px 40px; }
 .wait { color: #92400e; background: #fef3c7; }
 .proc { color: #1e40af; background: #dbeafe; }
 .ok { color: #166534; background: #dcfce7; }
+.done { color: #374151; background: #eef0f4; }
 
 /* kategori */
 .cats { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 12px; padding: 16px 0 12px; }
 .cats div { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 8px; font-size: 22px; background: #eef4ff; border: 1px solid #dbe6fd; border-radius: 12px; }
 .cats span { font-size: 13px; font-weight: 600; color: #374151; }
-
-.cats :hover {
-  background-color: #dee8fa;
-}
 
 /* ---------- responsif ---------- */
 @media (max-width: 860px) {
