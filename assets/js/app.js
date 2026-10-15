@@ -5,7 +5,8 @@
      kategori -> id, nama, ikon
      produk   -> id, nama, kategori, harga, stok, rak, ikon   (ikon nanti: gambar)
      pesanan  -> id, produk (id produk), jumlah, status, tanggal
-   Render di user.js / cari.js / pesan.js tidak perlu diubah. */
+   Render di user.js / cari.js / pesan.js tidak perlu diubah.
+   halololo */
 
 const db = {
   user: { nama: "Rina Kartika", role: "Pembeli", inisial: "RK" },
