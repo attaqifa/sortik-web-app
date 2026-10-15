@@ -10,16 +10,16 @@
 <div class="app">
 
   <aside class="side">
-    <a class="logo" href="../auth/index.html">
+    <a class="logo" href="../auth/login.html">
       <img src="../assets/img/SortikLogo.jpeg" alt="" width="34">
       <b>SORTIK</b>
     </a>
 
     <nav>
       <a class="on" href="index.html">🏠 Beranda</a>
-      <a href="#">🔍 Cari Produk &amp; Rak</a>
-      <a href="#">📋 Pesan &amp; Booking</a>
-      <a href="#">🕘 Riwayat</a>
+      <a href="cari.html">🔍 Cari Produk &amp; Rak</a>
+      <a href="pesan.html">📋 Pesan &amp; Booking</a>
+      <a href="riwayat.html">🕘 Riwayat</a>
     </nav>
 
     <!-- info user (pojok kiri bawah) — diisi user.js, nanti dari database -->
@@ -38,15 +38,15 @@
         <h2 id="nama"></h2>
       </div>
       <div class="acts">
-        <a href="#">Cari Produk</a>
-        <a href="#">Pesanan Saya</a>
+        <a href="cari.html">Cari Produk</a>
+        <a href="pesan.html">Pesanan Saya</a>
       </div>
     </section>
 
     <section class="stats" id="stats"></section>
 
     <section class="card">
-      <h2>Pesanan Terbaru <a href="#">Lihat Semua</a></h2>
+      <h2>Pesanan Terbaru <a href="pesan.html">Lihat Semua</a></h2>
       <div id="pesanan"></div>
     </section>
 
@@ -57,6 +57,7 @@
   </main>
 
 </div>
+<script src="../assets/js/app.js"></script>
 <script src="../assets/js/user.js"></script>
 </body>
 </html>
