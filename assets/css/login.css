@@ -92,8 +92,25 @@ body {
   border: 0;
   border-radius: 14px;
   cursor: pointer;
+  margin-top: 15px;
 }
 .form button:hover { background: #1d4ed8; }
+
+.akun {
+  text-align: center;
+  margin-top: 18px;
+}
+
+.akun a{
+  color: #1d4ed8;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.akun a:hover{
+  color: #0b2670;
+  text-decoration: underline;
+}
 
 /* link pindah halaman (masuk <-> daftar) */
 .form .switch { margin-top: 18px; text-align: center; font-size: 15px; }
@@ -103,6 +120,12 @@ body {
 /* ---------- responsif ---------- */
 @media (max-width: 900px) {
   .wrap { flex-direction: column; }
-  .promo { flex: none; padding: 32px 24px; }
-  .form { padding: 40px 22px; }
+  .promo { 
+    position: static; 
+    top: auto; 
+    height: auto; 
+    align-self: auto; 
+    flex: none; 
+    padding: 32px 24px; }
+  .form { padding: 40px 22px; height: auto; }
 }
