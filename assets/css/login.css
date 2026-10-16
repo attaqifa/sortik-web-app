@@ -31,7 +31,12 @@ body {
 .hero h2 span { color: #6ea8fe; }
 .hero p  { max-width: 320px; margin: 0 auto; font-weight: 700; line-height: 1.55; text-shadow: 0 1px 10px rgba(0,0,0,.35); }
 
-.promo footer { font-size: 15px; line-height: 1.4; }
+.promo {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  align-self: flex-start;
+}
 
 /* ---------- panel kanan ---------- */
 .form {
