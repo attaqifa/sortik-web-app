@@ -1,7 +1,5 @@
 /* SORTIK — cari produk & rak (filter di atas `db` di app.js) */
 
-const namaKat = Object.fromEntries(db.kategori.map((k) => [k.id, k.nama])); /* id -> nama */
-const kat = (p) => namaKat[p.kategori] || p.kategori;
 const state = { q: "", kat: "", rak: "" };
 
 /* chip kategori, "" = tanpa filter */
@@ -16,16 +14,7 @@ isi("denah", db.rak.baris.split("").map((b) =>
   Array.from({ length: db.rak.kolom }, (_, i) => `<button type="button" class="rcell" data-rak="${b}${i + 1}">${b}${i + 1}</button>`).join("")
 ).join(""));
 
-/* satu kartu produk */
-const kartu = (p) => `<article class="pcard">
-  <div class="pimg">${p.ikon || "📦"}</div>
-  <div>
-    <h3>${p.nama}</h3>
-    <span class="pcat">${kat(p)}</span>
-    <b>${rp(p.harga)}</b>
-    <span class="pstok">Stok: ${p.stok} unit · Rak ${p.rak}</span>
-  </div>
-</article>`;
+/* kartu produk (klik = deskripsi produk) ada di app.js — dipakai juga oleh produk.js */
 
 function render() {
   const kata = state.q.trim().toLowerCase();

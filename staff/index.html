@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beranda Staff — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/user.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- sidebar (logo, menu, user) diisi app.js -->
+  <aside class="side" id="side"></aside>
+
+  <main>
+    <header class="head">
+      <h1>Beranda Staff</h1>
+      <p>Operasional toko hari ini</p>
+    </header>
+
+    <section class="hello">
+      <div>
+        <p>Selamat bertugas 👋</p>
+        <h2 id="nama"></h2>
+      </div>
+      <div class="acts">
+        <a href="rak.html">Tata Rak</a>
+        <a href="pesanan.html">Kelola Pesanan</a>
+      </div>
+    </section>
+
+    <section class="stats" id="stats"></section>
+
+    <section class="card">
+      <h2>Pesanan Perlu Ditindak <a href="pesanan.html">Kelola Pesanan</a></h2>
+      <div id="tindak"></div>
+    </section>
+
+    <section class="card">
+      <h2>Stok Menipis <a href="produk.html">Kelola Barang</a></h2>
+      <div id="tipis"></div>
+    </section>
+
+    <!-- kondisi rak: satu sel per rak, angkanya jumlah barang (diisi beranda.js) -->
+    <section class="card">
+      <h2>Kondisi Rak <a href="rak.html">Tata Rak</a></h2>
+      <p class="note" id="rakInfo"></p>
+      <div class="rak" id="denah"></div>
+    </section>
+  </main>
+
+</div>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/staff/beranda.js"></script>
+</body>
+</html>

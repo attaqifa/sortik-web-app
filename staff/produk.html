@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kelola Barang — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/user.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- sidebar (logo, menu, user) diisi app.js -->
+  <aside class="side" id="side"></aside>
+
+  <main>
+    <header class="head">
+      <h1>Kelola Barang</h1>
+      <p>Tambah, ubah, atau hapus barang beserta rak, stok, dan harganya</p>
+    </header>
+
+    <!-- satu form untuk tambah & ubah; tersembunyi sampai dipakai (kelola/barang.js) -->
+    <section class="card" id="form" hidden>
+      <h2 id="formJudul"></h2>
+      <div class="form">
+        <div><label class="lbl" for="nama">Nama barang</label><input type="text" id="nama" placeholder="Contoh: Samsung Galaxy A26"></div>
+        <div><label class="lbl" for="kategori">Kategori</label><select id="kategori"></select></div>
+        <div><label class="lbl" for="harga">Harga (Rp)</label><input type="number" id="harga" min="0" step="1000"></div>
+        <div><label class="lbl" for="stok">Stok</label><input type="number" id="stok" min="0"></div>
+        <div><label class="lbl" for="rak">Rak</label><select id="rak"></select></div>
+        <div><label class="lbl" for="ikon">Ikon (emoji)</label><input type="text" id="ikon" maxlength="2" placeholder="📦"></div>
+        <div class="full"><label class="lbl" for="deskripsi">Deskripsi</label><textarea id="deskripsi" rows="3" placeholder="Keterangan singkat barang..."></textarea></div>
+        <div class="btns full">
+          <button class="primary" id="simpan" type="button">Simpan</button>
+          <button class="btn" id="batal" type="button">Batal</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="toolbar">
+        <input type="search" id="q" class="grow" placeholder="Cari nama, kategori, atau rak..." autocomplete="off">
+        <button class="btn" id="tambah" type="button">+ Tambah Barang</button>
+      </div>
+      <p class="hasil" id="hasil"></p>
+      <div id="list"></div>
+    </section>
+  </main>
+
+</div>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/staff/barang.js"></script>
+</body>
+</html>

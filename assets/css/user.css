@@ -26,7 +26,10 @@ body {
 .logo img { display: block; width: 34px; height: auto; filter: brightness(.2); /* logo aslinya putih → digelapkan agar terlihat di sidebar putih */ }
 
 .side nav { display: flex; flex-direction: column; gap: 4px; }
-.side nav a { padding: 11px 12px; font-size: 14px; color: #4b5563; text-decoration: none; border-radius: 10px; }
+.side nav a { display: flex; align-items: center; gap: 8px; padding: 11px 12px; font-size: 14px; color: #4b5563; text-decoration: none; border-radius: 10px; }
+.side nav a .badge { margin-left: auto; min-width: 20px; padding: 1px 6px; font-size: 11px; text-align: center; color: #fff; background: #2563eb; border-radius: 999px; }
+.side nav a .badge:empty { display: none; }
+.side nav a.on .badge { color: #2563eb; background: #fff; }
 .side nav a:hover { background: #f0f3f9; }
 .side nav a.on { color: #fff; background: #2563eb; font-weight: 600; }
 
@@ -62,7 +65,7 @@ main { flex: 1; overflow-y: auto; padding: 26px 30px 40px; }
 
 .stats, .card { background: #fff; border: 1px solid #e5e8ef; border-radius: 14px; }
 
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); overflow: hidden; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); overflow: hidden; }
 .stats div { padding: 22px 10px; text-align: center; }
 .stats div + div { border-left: 1px solid #e5e8ef; }
 .stats b { display: block; font-size: 30px; }
@@ -140,6 +143,99 @@ button.row:hover, button.row:focus-visible { background: #fafbfe; }
 .primary { width: 100%; margin-top: 16px; padding: 14px; font: inherit; font-weight: 600; color: #fff; background: #2563eb; border: 0; border-radius: 12px; cursor: pointer; }
 .primary:hover { background: #1d4ed8; }
 
+/* ---------- deskripsi produk ---------- */
+.detail { display: grid; grid-template-columns: 190px 1fr; gap: 22px; padding-bottom: 18px; }
+.pimg.big { width: 190px; height: 190px; font-size: 80px; }
+.detail h2 { margin-top: 4px; font-size: 20px; line-height: 1.35; }
+.detail .harga { display: block; margin-top: 8px; font-size: 24px; color: #1d4ed8; }
+.detail .desc { margin-top: 12px; font-size: 14px; line-height: 1.6; color: #4b5563; }
+
+.spec { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; margin-top: 14px; list-style: none; }
+.spec li { display: flex; justify-content: space-between; gap: 10px; padding: 9px 12px; font-size: 13px; background: #f7f8fb; border-radius: 10px; }
+.spec span { color: #6b7280; }
+
+.beli { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
+.beli .qty { padding: 0 8px; border: 1px solid #d7dce3; border-radius: 12px; }
+.beli .qty button { background: #f4f6fa; border: 0; }
+.beli .primary { flex: 1; width: auto; min-width: 170px; margin-top: 0; }
+.primary.garis { color: #1d4ed8; background: #fff; box-shadow: inset 0 0 0 1px #bfd3fb; }
+.primary.garis:hover { background: #f3f6fd; }
+.primary:disabled { opacity: .5; cursor: not-allowed; }
+
+a.pcard { color: inherit; text-decoration: none; }
+a.pcard:hover { border-color: #bfd3fb; }
+a.pcard:focus-visible { outline: 2px solid #2563eb; }
+
+/* ---------- keranjang & checkout ---------- */
+.qty { display: flex; align-items: center; gap: 6px; }
+.qty button { width: 28px; height: 28px; font: inherit; font-size: 15px; line-height: 1; background: #fff; border: 1px solid #d7dce3; border-radius: 8px; cursor: pointer; }
+.qty button:hover { background: #f0f3f9; }
+.qty b { min-width: 20px; font-size: 14px; text-align: center; }
+.qty .x { color: #9aa3b2; border-color: transparent; }
+.qty .x:hover { color: #b91c1c; background: #fee2e2; }
+
+.opt { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.opt label { display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-size: 20px; background: #fff; border: 1px solid #d7dce3; border-radius: 12px; cursor: pointer; }
+.opt label:has(input:checked) { background: #eef4ff; border-color: #2563eb; }
+.opt span { font-size: 14px; font-weight: 600; color: #1f2937; }
+.opt em { display: block; margin-top: 2px; font-size: 12px; font-style: normal; font-weight: 400; color: #6b7280; }
+
+.lbl { display: block; margin: 16px 0 6px; font-size: 13.5px; font-weight: 600; color: #374151; }
+textarea { width: 100%; padding: 12px 14px; font: inherit; font-size: 14px; background: #fff; border: 1px solid #d7dce3; border-radius: 12px; resize: vertical; }
+textarea:focus { outline: 2px solid #2563eb; }
+
+.note { margin-top: 14px; font-size: 13px; line-height: 1.6; color: #4b5563; }
+.note a { color: #2563eb; font-weight: 600; }
+
+.rek { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 12px; list-style: none; }
+.rek li { padding: 12px 14px; background: #f7f8fb; border: 1px solid #e5e8ef; border-radius: 12px; }
+.rek b { display: block; font-size: 14px; color: #1d4ed8; }
+.rek span { display: block; margin-top: 2px; font-size: 14px; letter-spacing: 1px; }
+.rek span + span { font-size: 12.5px; letter-spacing: 0; color: #6b7280; }
+
+/* ---------- halaman staff (beranda, tata rak, kelola barang, kelola pesanan) ---------- */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-top: 12px; }
+.toolbar .grow { flex: 1 1 220px; }
+.toolbar .lbl { margin: 0; }
+
+/* input & select distyle hanya di toolbar/form, supaya pencarian di halaman cari tetap utuh */
+.toolbar input, .form input, .form select { width: 100%; padding: 11px 13px; font: inherit; font-size: 14px; background: #fff; border: 1px solid #d7dce3; border-radius: 12px; }
+.toolbar input[type="number"] { width: 88px; }
+.toolbar input:focus, .form input:focus, .form select:focus, .row select:focus { outline: 2px solid #2563eb; }
+.row select { width: auto; padding: 9px 11px; font: inherit; font-size: 13px; background: #fff; border: 1px solid #d7dce3; border-radius: 10px; }
+
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); gap: 4px 14px; padding-bottom: 10px; }
+.form .full { grid-column: 1 / -1; }
+.form .lbl { margin-top: 12px; }
+.form .btns { justify-content: flex-start; margin-top: 18px; }
+.form .btns .primary { width: auto; margin: 0; padding: 12px 22px; }
+
+/* tombol aksi kecil per baris (ubah, hapus, tandai dibayar, majukan status) */
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn { padding: 8px 12px; font: inherit; font-size: 12.5px; font-weight: 600; color: #1d4ed8; background: #eef4ff; border: 1px solid #dbe6fd; border-radius: 9px; cursor: pointer; }
+.btn:hover { background: #e2ecff; }
+.btn.danger { color: #b91c1c; background: #fee2e2; border-color: #fecaca; }
+.btn.danger:hover { background: #fdd6d6; }
+
+/* tag status bayar: Lunas / Belum dibayar */
+.tag { display: inline-block; margin-top: 5px; padding: 3px 10px; font-size: 11.5px; font-weight: 600; border-radius: 999px; }
+.tag.lunas { color: #166534; background: #dcfce7; }
+.tag.belum { color: #92400e; background: #fef3c7; }
+
+/* baris yang bisa diklik (pesanan di beranda staff) */
+a.row { color: inherit; text-decoration: none; }
+a.row:hover { background: #fafbfe; }
+
+/* denah rak: angka jumlah barang di dalam sel + denah baca-saja di beranda staff */
+.rcell i { margin-left: 3px; font-size: 10px; font-style: normal; opacity: .8; }
+span.rcell { cursor: default; }
+
+/* baris ringkasan (checkout & detail pesanan) */
+.sum + .sum { margin-top: 8px; padding-top: 0; border-top: 0; }
+.sum b { text-align: right; }
+.sum.tot { margin-top: 14px; padding-top: 14px; font-weight: 700; border-top: 1px solid #f0f2f7; }
+.sum.tot b { color: #1d4ed8; }
+
 /* ---------- responsif ---------- */
 @media (max-width: 860px) {
   .app { flex-direction: column; height: auto; }
@@ -147,4 +243,12 @@ button.row:hover, button.row:focus-visible { background: #fafbfe; }
   .side nav { flex-direction: row; overflow-x: auto; }
   .me { margin-top: 0; }
   main { overflow: visible; padding: 20px 18px 30px; }
+  .detail { grid-template-columns: 1fr; }
+  .pimg.big { width: 100%; height: 160px; font-size: 64px; }
+  .opt label { flex: 1; }
+
+  /* aksi & status pindah ke bawah teks agar tidak berdesakan di layar sempit */
+  .row { grid-template-columns: 44px 1fr; }
+  .row .btns, .row em, .row select { grid-column: 2; }
+  .btns { justify-content: flex-start; }
 }

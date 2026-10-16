@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deskripsi Produk — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/user.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- sidebar (logo, menu, user) diisi app.js -->
+  <aside class="side" id="side"></aside>
+
+  <main>
+    <header class="head">
+      <h1 id="judul">Deskripsi Produk</h1>
+      <p>Informasi lengkap, stok, dan lokasi rak</p>
+    </header>
+
+    <a class="back" href="cari.html">← Kembali ke pencarian</a>
+
+    <!-- deskripsi produk, diisi produk.js dari db.produk -->
+    <section class="card detail" id="detail"></section>
+
+    <section class="card" id="serupaWrap">
+      <h2>Produk Serupa <a href="cari.html">Lihat Semua</a></h2>
+      <div class="grid" id="serupa"></div>
+    </section>
+  </main>
+
+</div>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/produk.js"></script>
+</body>
+</html>

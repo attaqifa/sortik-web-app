@@ -1,10 +1,8 @@
 /* SORTIK — pesan & booking, dipakai pesan.html DAN riwayat.html
-   riwayat.html hanyalah halaman ini dengan filter "Selesai" (data-status di <body>).
-   Semua render dari db.pesanan (app.js) — saat data pindah ke database, logika di
-   bawah tidak perlu diubah. Kode pesanan dibentuk dari id (BK-2026-001 dst.). */
+  */
 
 const alur = ["Menunggu", "Diproses", "Siap", "Selesai"]; /* urutan alur pesanan */
-const aksi = { Menunggu: "Konfirmasi Pembayaran", Siap: "Konfirmasi Pengambilan" };
+const ambil = { ambil: "Ambil di Tempat", antar: "Antar ke Alamat" }; /* cara pengambilan dari checkout */
 
 /* riwayat.html = mode "Selesai"; pesan.html = yang masih berjalan */
 const mode = document.body.dataset.status || "";
@@ -13,21 +11,18 @@ const tampil = (o) => (mode === "Selesai" ? o.status === "Selesai" : o.status !=
 
 /* terbaru dulu — saat pakai database, urutan ini bisa jadi ORDER BY tanggal DESC */
 const pesanan = () => [...db.pesanan].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
-const kode = (o) => `BK-2026-${String(o.id).padStart(3, "0")}`;
-const bln = "Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des".split(" ");
-const tgl = (s) => { const [y, m, d] = s.split("-"); return `${d} ${bln[m - 1]} ${y}`; };
 
 /* satu baris pesanan — kelas .row sama dengan beranda */
 const baris = (o) => {
   const p = produkById(o.produk);
   return `<button class="row" data-id="${o.id}">
     <div class="thumb">${p.ikon || "📦"}</div>
-    <div><b>${p.nama || "-"}</b><span>${kode(o)} · ${tgl(o.tanggal)} · ${o.jumlah} item · ${rp((p.harga || 0) * o.jumlah)}</span></div>
+    <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${o.jumlah} item · ${rp((p.harga || 0) * o.jumlah)}${o.lunas ? "" : " · belum dibayar"}</span></div>
     <em class="${warna[o.status] || ""}">${o.status}</em>
   </button>`;
 };
 
-/* detail satu pesanan: alur status, produk, subtotal, dan aksinya */
+/* detail satu pesanan: alur status, produk, dan rincian pembayaran */
 const rincian = (o) => {
   const p = produkById(o.produk);
   const n = alur.indexOf(o.status);
@@ -35,11 +30,15 @@ const rincian = (o) => {
   <ol class="steps">${alur.map((s, i) => `<li data-n="${i + 1}"${i <= n ? ' class="on"' : ""}>${s}</li>`).join("")}</ol>
   <div class="row">
     <div class="thumb">${p.ikon || "📦"}</div>
-    <div><b>${p.nama || "-"}</b><span>${kode(o)} · ${o.jumlah} unit · Rak ${p.rak || "-"}</span></div>
+    <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${o.jumlah} unit · Rak ${p.rak || "-"}</span></div>
     <em class="${warna[o.status] || ""}">${o.status}</em>
   </div>
   <div class="sum"><span>Subtotal</span><b>${rp((p.harga || 0) * o.jumlah)}</b></div>
-  ${aksi[o.status] ? `<button class="primary" id="aksi" type="button">${aksi[o.status]}</button>` : ""}`;
+  <div class="sum"><span>Pengambilan</span><b>${ambil[o.cara] || ambil.ambil}${o.alamat ? " — " + o.alamat : ""}</b></div>
+  <div class="sum"><span>Pembayaran</span><b>${o.bayar || "Transfer ke admin"}</b></div>
+  <div class="sum"><span>Status bayar</span><b>${tagBayar(o)}</b></div>
+  <p class="note">Pembayaran dan status pesanan dikonfirmasi oleh staff ${db.toko.nama}. Hubungi
+    <a href="https://wa.me/${db.toko.wa}" target="_blank" rel="noopener">+${db.toko.wa}</a> bila ada pertanyaan.</p>`;
 };
 
 function daftar() {
@@ -54,9 +53,6 @@ function buka(id) {
   el("detail").hidden = false;
   isi("detail", rincian(o));
   el("detail").scrollIntoView(); /* detail langsung terlihat, tanpa scroll manual */
-  /* tombol aksi memajukan status — sementara di client, nanti panggil API */
-  const maju = alur[alur.indexOf(o.status) + 1];
-  if (el("aksi")) el("aksi").onclick = () => { o.status = maju; daftar(); buka(id); };
 }
 
 /* chip status — hanya halaman pesan.html yang punya; isinya diambil dari data */

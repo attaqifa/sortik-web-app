@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keranjang &amp; Checkout — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/user.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- sidebar (logo, menu, user) diisi app.js -->
+  <aside class="side" id="side"></aside>
+
+  <main>
+    <header class="head">
+      <h1>Keranjang &amp; Checkout</h1>
+      <p>Periksa barang, pilih cara pengambilan, lalu selesaikan pesanan</p>
+    </header>
+
+    <a class="back" href="cari.html">← Lanjut belanja</a>
+
+    <!-- daftar barang di keranjang (diisi checkout.js) -->
+    <section class="card">
+      <h2>Keranjang <a href="cari.html">Tambah Produk</a></h2>
+      <div id="items"></div>
+    </section>
+
+    <!-- cara pengambilan + pembayaran -->
+    <section class="card">
+      <h2>Pengambilan &amp; Pembayaran</h2>
+
+      <label class="lbl">Cara Pengambilan</label>
+      <div class="opt">
+        <label><input type="radio" name="cara" value="ambil" checked> 🏬 <span>Ambil di Tempat<em>Gratis · <b id="jam"></b></em></span></label>
+        <label><input type="radio" name="cara" value="antar"> 🚚 <span>Antar ke Alamat<em id="infoOngkir"></em></span></label>
+      </div>
+
+      <div id="antar" hidden>
+        <label class="lbl" for="alamat">Alamat Pengiriman</label>
+        <textarea id="alamat" rows="3" placeholder="Nama penerima, alamat lengkap, patokan..."></textarea>
+      </div>
+
+      <label class="lbl">Metode Pembayaran</label>
+      <div class="opt">
+        <label><input type="radio" name="bayar" value="Transfer ke admin" checked> 💳 <span>Transfer ke Admin<em>Kirim bukti transfer via WhatsApp</em></span></label>
+        <label><input type="radio" name="bayar" value="Bayar di kasir"> 🏬 <span>Bayar di Kasir<em>Bayar langsung di toko</em></span></label>
+      </div>
+
+      <!-- hanya satu yang tampil, sesuai metode pembayaran (checkout.js) -->
+      <div id="transfer">
+        <p class="note">Transfer ke rekening admin, lalu kirim bukti transfer ke WhatsApp
+          <a id="wa" target="_blank" rel="noopener"></a>.</p>
+        <ul class="rek" id="rek"></ul>
+      </div>
+      <div id="kasir" hidden>
+        <p class="note">Bayar langsung di kasir — sebutkan kode pesanan Anda saat membayar.</p>
+        <ul class="rek" id="kasirToko"></ul>
+      </div>
+
+      <p class="note" id="toko"></p>
+    </section>
+
+    <!-- ringkasan dan tombol pesan -->
+    <section class="card">
+      <h2>Ringkasan</h2>
+      <div class="sum"><span>Subtotal</span><b id="sub"></b></div>
+      <div class="sum"><span>Ongkir</span><b id="ong"></b></div>
+      <div class="sum tot"><span>Total</span><b id="tot"></b></div>
+      <button class="primary" id="buat" type="button">Buat Pesanan</button>
+    </section>
+  </main>
+
+</div>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/checkout.js"></script>
+</body>
+</html>
