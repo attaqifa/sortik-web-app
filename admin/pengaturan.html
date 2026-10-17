@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pengaturan Toko — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/user.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- sidebar (logo, menu, user) diisi app.js -->
+  <aside class="side" id="side"></aside>
+
+  <main>
+    <header class="head">
+      <h1>Pengaturan Toko</h1>
+      <p>Data toko, rekening pembayaran, dan kategori produk</p>
+    </header>
+
+    <!-- profil toko: dipakai halaman checkout & deskripsi produk pembeli -->
+    <section class="card">
+      <h2>Profil &amp; Pembayaran</h2>
+      <div class="form">
+        <div><label class="lbl" for="t-nama">Nama toko</label><input type="text" id="t-nama"></div>
+        <div><label class="lbl" for="t-jam">Jam operasional</label><input type="text" id="t-jam"></div>
+        <div><label class="lbl" for="t-wa">WhatsApp</label><input type="text" id="t-wa" placeholder="6281200001122"></div>
+        <div><label class="lbl" for="t-ongkir">Ongkir dalam kota (Rp)</label><input type="number" id="t-ongkir" min="0" step="1000"></div>
+        <div class="full"><label class="lbl" for="t-alamat">Alamat</label><input type="text" id="t-alamat"></div>
+        <div class="full">
+          <label class="lbl" for="t-rek">Rekening pembayaran</label>
+          <textarea id="t-rek" rows="3"></textarea>
+          <span class="petunjuk">Satu rekening per baris — format: Bank | Nomor | Atas Nama</span>
+        </div>
+        <div class="btns full">
+          <button class="primary" id="t-simpan" type="button">Simpan Pengaturan</button>
+          <span class="petunjuk" id="t-info"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- kategori: daftar + form dikelola mesin kelola (app.js) -->
+    <section class="card">
+      <h2>Kategori Produk</h2>
+      <div id="kategori"></div>
+    </section>
+  </main>
+
+</div>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/admin/pengaturan.js"></script>
+</body>
+</html>

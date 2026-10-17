@@ -2,7 +2,7 @@
    Semua angka dihitung dari db (produk, rak, pesanan). Saat data pindah ke
    database tidak ada yang perlu diubah di sini — cukup isi `db` dari API. */
 
-isi("nama", db.staff.nama);
+isi("nama", db.akun.nama);
 
 const jalan = db.pesanan.filter((o) => o.status !== "Selesai");
 const belumBayar = jalan.filter((o) => !o.lunas);

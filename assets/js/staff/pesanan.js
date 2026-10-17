@@ -15,7 +15,7 @@ const baris = (o) => {
     <div class="thumb">${p.ikon || "📦"}</div>
     <div>
       <b>${p.nama || "-"}</b>
-      <span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${o.pembeli || "-"} · ${o.jumlah} unit · ${rp((p.harga || 0) * o.jumlah)}</span>
+      <span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${o.pembeli || "-"} · ${o.jumlah} unit · ${rp(nilaiPesanan(o))}</span>
       <span>${o.bayar} · ${o.cara === "antar" ? "antar ke " + o.alamat : "ambil di tempat"}</span>
       <em class="${warna[o.status] || ""}">${o.status}</em> ${tagBayar(o)}
     </div>
@@ -50,7 +50,7 @@ el("list").addEventListener("click", (e) => {
   const o = db.pesanan.find((x) => x.id === +(b.dataset.lunas || b.dataset.maju));
   if (b.dataset.lunas) {
     o.lunas = true;
-    o.staff = db.staff.nama;              /* siapa yang mengonfirmasi pembayaran */
+    o.staff = db.akun.nama;               /* siapa yang mengonfirmasi pembayaran */
     if (o.status === "Menunggu") o.status = "Diproses"; /* pembayaran OK -> langsung diproses */
   } else {
     o.status = berikut[o.status];

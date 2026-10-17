@@ -71,14 +71,14 @@ el("buat").onclick = () => {
   const baru = keranjang.map((i, n) => ({
     id: mulai + n,
     produk: i.produk,
-    pembeli: db.user.nama,
+    pembeli: db.akun.nama,
     jumlah: i.jumlah,
     status: "Menunggu",
     tanggal: new Date().toISOString().slice(0, 10),
     cara: state.cara,
     bayar: state.bayar,
     alamat: state.cara === "antar" ? el("alamat").value.trim() : "",
-    lunas: false,   /* ditandai staff saat pembayaran diterima */
+    lunas: false,   /* ditandai staff/admin saat pembayaran diterima */
     staff: ""
   }));
   db.pesanan.push(...baru);

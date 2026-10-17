@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beranda Admin — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/user.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- sidebar (logo, menu, user) diisi app.js -->
+  <aside class="side" id="side"></aside>
+
+  <main>
+    <header class="head">
+      <h1>Beranda Admin</h1>
+      <p>Ringkasan penjualan dan pengawasan data toko</p>
+    </header>
+
+    <section class="hello">
+      <div>
+        <p>Selamat bertugas 👋</p>
+        <h2 id="nama"></h2>
+      </div>
+      <div class="acts">
+        <a href="pengguna.html">Kelola Pengguna</a>
+        <a href="pengaturan.html">Pengaturan Toko</a>
+      </div>
+    </section>
+
+    <section class="stats" id="stats"></section>
+
+    <!-- laporan: diisi assets/js/admin/beranda.js -->
+    <section class="card">
+      <h2>Penjualan per Bulan <a href="../staff/pesanan.html">Kelola Pesanan</a></h2>
+      <p class="hasil" id="total"></p>
+      <div id="lapor"></div>
+    </section>
+
+    <section class="card">
+      <h2>Produk Terlaris <a href="../staff/produk.html">Kelola Barang</a></h2>
+      <div id="laris"></div>
+    </section>
+
+    <section class="card">
+      <h2>Pesanan Belum Dibayar <a href="../staff/pesanan.html">Tandai Dibayar</a></h2>
+      <div id="belum"></div>
+    </section>
+  </main>
+
+</div>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/admin/beranda.js"></script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 /* SORTIK — pesan & booking, dipakai pesan.html DAN riwayat.html
-  */
+   Hanya menampilkan pesanan milik pembeli yang sedang masuk (pesananku()). */
 
 const alur = ["Menunggu", "Diproses", "Siap", "Selesai"]; /* urutan alur pesanan */
 const ambil = { ambil: "Ambil di Tempat", antar: "Antar ke Alamat" }; /* cara pengambilan dari checkout */
@@ -10,14 +10,14 @@ const state = { status: "" };
 const tampil = (o) => (mode === "Selesai" ? o.status === "Selesai" : o.status !== "Selesai");
 
 /* terbaru dulu — saat pakai database, urutan ini bisa jadi ORDER BY tanggal DESC */
-const pesanan = () => [...db.pesanan].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+const pesanan = () => [...pesananku()].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
 
 /* satu baris pesanan — kelas .row sama dengan beranda */
 const baris = (o) => {
   const p = produkById(o.produk);
   return `<button class="row" data-id="${o.id}">
     <div class="thumb">${p.ikon || "📦"}</div>
-    <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${o.jumlah} item · ${rp((p.harga || 0) * o.jumlah)}${o.lunas ? "" : " · belum dibayar"}</span></div>
+    <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${o.jumlah} item · ${rp(nilaiPesanan(o))}${o.lunas ? "" : " · belum dibayar"}</span></div>
     <em class="${warna[o.status] || ""}">${o.status}</em>
   </button>`;
 };
@@ -33,7 +33,7 @@ const rincian = (o) => {
     <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${o.jumlah} unit · Rak ${p.rak || "-"}</span></div>
     <em class="${warna[o.status] || ""}">${o.status}</em>
   </div>
-  <div class="sum"><span>Subtotal</span><b>${rp((p.harga || 0) * o.jumlah)}</b></div>
+  <div class="sum"><span>Subtotal</span><b>${rp(nilaiPesanan(o))}</b></div>
   <div class="sum"><span>Pengambilan</span><b>${ambil[o.cara] || ambil.ambil}${o.alamat ? " — " + o.alamat : ""}</b></div>
   <div class="sum"><span>Pembayaran</span><b>${o.bayar || "Transfer ke admin"}</b></div>
   <div class="sum"><span>Status bayar</span><b>${tagBayar(o)}</b></div>
@@ -57,7 +57,7 @@ function buka(id) {
 
 /* chip status — hanya halaman pesan.html yang punya; isinya diambil dari data */
 if (el("chips")) {
-  const ada = [...new Set(db.pesanan.filter(tampil).map((o) => o.status))].sort((a, b) => alur.indexOf(a) - alur.indexOf(b));
+  const ada = [...new Set(pesananku().filter(tampil).map((o) => o.status))].sort((a, b) => alur.indexOf(a) - alur.indexOf(b));
   isi("chips", ["", ...ada].map((s) => `<button type="button" data-status="${s}">${s || "Semua"}</button>`).join(""));
   el("chips").addEventListener("click", (e) => {
     const b = e.target.closest("button");

@@ -230,6 +230,27 @@ a.row:hover { background: #fafbfe; }
 .rcell i { margin-left: 3px; font-size: 10px; font-style: normal; opacity: .8; }
 span.rcell { cursor: default; }
 
+/* ---------- halaman admin (beranda, kelola pengguna, pengaturan) ---------- */
+/* form yang dibuat mesin kelola (app.js): blok abu di atas daftar */
+.formblok { margin: 12px 0 14px; padding: 2px 16px 16px; background: #f8fafd; border: 1px solid #e5e8ef; border-radius: 12px; }
+.formblok h2 { padding-top: 14px; font-size: 16px; }
+.formblok .form .btns { margin-top: 14px; }
+
+/* laporan penjualan per bulan (beranda admin) */
+.lapor { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 13px 0; border-top: 1px solid #f0f2f7; }
+.lapor b { font-size: 14px; }
+.lapor span { display: block; margin-top: 2px; font-size: 12.5px; color: #6b7280; }
+.lapor em { font-size: 14px; font-style: normal; font-weight: 700; color: #1d4ed8; }
+.bar { height: 6px; margin-top: 7px; overflow: hidden; background: #eef0f4; border-radius: 999px; }
+.bar i { display: block; height: 100%; background: #2563eb; border-radius: 999px; }
+
+/* teks bantuan kecil (form pengaturan) */
+.petunjuk { font-size: 12px; color: #6b7280; }
+.form .petunjuk { display: block; margin-top: 6px; }
+
+/* angka panjang di kartu statistik (mis. Rp 12.345.000) */
+.stats b.kecil { font-size: 17px; }
+
 /* baris ringkasan (checkout & detail pesanan) */
 .sum + .sum { margin-top: 8px; padding-top: 0; border-top: 0; }
 .sum b { text-align: right; }
