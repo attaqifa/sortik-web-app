@@ -1,28 +1,18 @@
-/* SORTIK — staff: tata rak
-   Denah dibangun dari db.rak (app.js), isi tiap rak dari db.produk. Semua
-   perubahan disimpan lewat tulis("produk"/"rak"). Saat database siap:
-     PATCH /api/produk/<id> { rak }   -> memindahkan barang
-     PUT   /api/rak      { baris, kolom } */
+/* Tata rak — pindahkan barang antar rak dan atur susunan rak. */
 
-let sel = ""; /* rak yang sedang dibuka, "" = tidak ada */
+let sel = "";
 
-/* barang per rak: { A1: [produk, ...], ... } */
-const isiRak = () => db.produk.reduce((m, p) => ((m[p.rak] = [...(m[p.rak] || []), p]), m), {});
+const petaRak = () => db.produk.reduce((m, p) => {
+  (m[p.rak] = m[p.rak] || []).push(p);
+  return m;
+}, {});
 
 function gambar() {
-  const peta = isiRak(); /* { rak: [produk, ...] } */
-  el("denah").style.gridTemplateColumns = `auto repeat(${db.rak.kolom}, minmax(0, 1fr))`;
-  isi("denah", db.rak.baris.split("").map((b) =>
-    `<span class="rlbl">Rak ${b}</span>` +
-    Array.from({ length: db.rak.kolom }, (_, i) => {
-      const kode = `${b}${i + 1}`, n = (peta[kode] || []).length;
-      return `<button type="button" class="rcell${n ? " ada" : ""}${kode === sel ? " on" : ""}" data-rak="${kode}">${kode}<i>${n || ""}</i></button>`;
-    }).join("")
-  ).join(""));
+  const peta = petaRak();
+  const jumlah = Object.fromEntries(Object.entries(peta).map(([kode, daftar]) => [kode, daftar.length]));
+  denahRak("denah", jumlah, { aktif: sel });
+  isi("info", `${db.produk.length} barang di ${Object.keys(peta).length} dari ${semuaRak().length} rak. Klik rak untuk melihat dan memindahkan isinya.`);
 
-  isi("info", `${db.produk.length} barang tersebar di ${Object.keys(peta).length} dari ${semuaRak().length} rak. Klik rak untuk melihat dan memindahkan isinya.`);
-
-  /* panel isi rak terpilih: tiap barang punya pilihan rak tujuan */
   el("panel").hidden = !sel;
   if (!sel) return;
   const daftar = peta[sel] || [];
@@ -34,36 +24,35 @@ function gambar() {
   </div>`).join("") : `<p class="kosong">Rak ini kosong. Pilih rak lain di denah, lalu pindahkan barangnya ke ${sel}.</p>`);
 }
 
-/* klik sel rak = buka/tutup isinya */
 el("denah").addEventListener("click", (e) => {
   const c = e.target.closest(".rcell");
   if (c) { sel = sel === c.dataset.rak ? "" : c.dataset.rak; gambar(); }
 });
 
-/* pindahkan barang: nilai select = rak tujuan */
 el("panel").addEventListener("change", (e) => {
   const s = e.target.closest("[data-pindah]");
   if (!s) return;
-  produkById(+s.dataset.pindah).rak = s.value;
-  tulis("produk", db.produk); /* DB: PATCH /api/produk/<id> { rak } */
+  const p = produkById(+s.dataset.pindah);
+  p.rak = s.value;
+  simpan("produk");
+  notif(`${p.nama} → rak ${s.value}`);
   gambar();
 });
 
-/* susunan rak: jumlah kolom + tambah/hapus baris (baris kosong saja yang boleh dihapus) */
 el("kolom").value = db.rak.kolom;
 el("kolom").onchange = () => {
   db.rak.kolom = Math.max(1, Math.min(12, +el("kolom").value || 1));
   el("kolom").value = db.rak.kolom;
-  tulis("rak", db.rak); /* DB: PUT /api/rak */
+  simpan("rak");
   sel = "";
   gambar();
 };
 
 el("tambahBaris").onclick = () => {
-  const berikut = String.fromCharCode(db.rak.baris.charCodeAt(db.rak.baris.length - 1) + 1);
-  if (berikut > "Z") return alert("Baris rak sudah mencapai huruf Z.");
-  db.rak.baris += berikut;
-  tulis("rak", db.rak);
+  const akhir = db.rak.baris.slice(-1);
+  if (akhir >= "Z") return alert("Baris rak sudah mencapai huruf Z.");
+  db.rak.baris += String.fromCharCode(akhir.charCodeAt(0) + 1);
+  simpan("rak");
   gambar();
 };
 
@@ -73,7 +62,7 @@ el("hapusBaris").onclick = () => {
   if (db.produk.some((p) => p.rak.startsWith(akhir))) return alert(`Rak ${akhir} masih berisi barang — pindahkan dulu isinya.`);
   db.rak.baris = db.rak.baris.slice(0, -1);
   sel = "";
-  tulis("rak", db.rak);
+  simpan("rak");
   gambar();
 };
 

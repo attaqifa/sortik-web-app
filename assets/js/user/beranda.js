@@ -1,11 +1,9 @@
-/* SORTIK — beranda pembeli (render dari `db` di app.js) */
+/* Beranda pembeli — ringkasan pesanan milik akun yang sedang masuk. */
 
 el("nama").textContent = db.akun.nama;
 
-/* statistik & daftar dihitung dari pesanan pembeli yang sedang masuk —
-   bukan angka tetap, jadi tidak pernah basi. Di server: WHERE pembeli = sesi */
 const punyaku = pesananku();
-const jalan = punyaku.filter((o) => o.status !== "Selesai");
+const jalan = punyaku.filter((o) => o.status !== "Selesai").sort((a, b) => b.tanggal.localeCompare(a.tanggal));
 
 isi("stats", [
   ["Pesanan aktif", jalan.length],
@@ -13,13 +11,13 @@ isi("stats", [
   ["Siap diambil", punyaku.filter((o) => o.status === "Siap").length]
 ].map(([label, nilai]) => `<div><b>${nilai}</b><span>${label}</span></div>`).join(""));
 
-/* yang sudah selesai tidak ditampilkan di beranda — ada di halaman Riwayat */
+/* pesanan selesai tidak ditampilkan di sini — ada di halaman Riwayat */
 isi("pesanan", jalan.map((o) => {
   const p = produkById(o.produk);
   return `<div class="row">
     <div class="thumb">${p.ikon || "📦"}</div>
     <div><b>${p.nama || "-"}</b><span>${o.jumlah} item · ${rp(nilaiPesanan(o))}</span>${tagBayar(o)}</div>
-    <em class="${warna[o.status] || ""}">${o.status}</em>
+    <em class="${STATUS[o.status] || ""}">${o.status}</em>
   </div>`;
 }).join("") || `<p class="kosong">Belum ada pesanan berjalan. <a href="cari.html">Mulai belanja</a>.</p>`);
 

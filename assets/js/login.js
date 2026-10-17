@@ -1,12 +1,8 @@
-/* SORTIK — masuk & daftar. Peran menentukan area yang dibuka; identitas, menu,
-   dan seluruh data diisi app.js di halaman tujuannya.
-   DB: POST /api/sesi { email, password } -> { nama, role }, lalu buka RUTE[role]
-   (RUTE di bawah sama dengan RUTE di assets/js/app.js). */
+/* Masuk & daftar — sementara tanpa backend, peran menentukan halaman tujuan. */
 
-const RUTE = { pembeli: "user", staff: "staff", admin: "admin" };
+const TUJUAN = { pembeli: "../user/index.html", staff: "../staff/index.html", admin: "../admin/index.html" };
 
 document.querySelector("form").onsubmit = (e) => {
   e.preventDefault();
-  const role = document.querySelector('input[name="role"]:checked')?.value || "pembeli";
-  location.href = `../${RUTE[role]}/index.html`;
+  location.href = TUJUAN[e.target.elements.role.value] || TUJUAN.pembeli;
 };

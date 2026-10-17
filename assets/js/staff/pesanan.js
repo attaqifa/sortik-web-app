@@ -1,13 +1,8 @@
-/* SORTIK — staff: kelola pesanan
-   Dua tugas: menandai pesanan yang sudah dibayar pembeli (lunas + siapa staff
-   yang mengonfirmasi) dan memajukan statusnya. Semua perubahan disimpan lewat
-   tulis("pesanan"). Saat database siap:
-     GET   /api/pesanan            -> isi db.pesanan
-     PATCH /api/pesanan/<id>       -> { status, lunas, staff }                   */
+/* Kelola pesanan — tandai pembayaran diterima dan majukan status. */
 
 const alur = ["Menunggu", "Diproses", "Siap", "Selesai"];
-const berikut = { Menunggu: "Diproses", Diproses: "Siap", Siap: "Selesai" }; /* status lanjutan */
-const state = { status: "" };
+const berikut = { Menunggu: "Diproses", Diproses: "Siap", Siap: "Selesai" };
+let status = "";
 
 const baris = (o) => {
   const p = produkById(o.produk);
@@ -17,7 +12,7 @@ const baris = (o) => {
       <b>${p.nama || "-"}</b>
       <span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${o.pembeli || "-"} · ${o.jumlah} unit · ${rp(nilaiPesanan(o))}</span>
       <span>${o.bayar} · ${o.cara === "antar" ? "antar ke " + o.alamat : "ambil di tempat"}</span>
-      <em class="${warna[o.status] || ""}">${o.status}</em> ${tagBayar(o)}
+      <em class="${STATUS[o.status] || ""}">${o.status}</em> ${tagBayar(o)}
     </div>
     <div class="btns">
       ${o.lunas ? "" : `<button class="btn" type="button" data-lunas="${o.id}">${o.bayar === "Bayar di kasir" ? "Tandai Dibayar" : "Konfirmasi Transfer"}</button>`}
@@ -27,35 +22,30 @@ const baris = (o) => {
 };
 
 function daftar() {
-  const hasil = [...db.pesanan]
-    .filter((o) => !state.status || o.status === state.status)
+  const hasil = db.pesanan
+    .filter((o) => !status || o.status === status)
     .sort((a, b) => b.tanggal.localeCompare(a.tanggal));
   const belum = hasil.filter((o) => !o.lunas).length;
   isi("hasil", `${hasil.length} pesanan${belum ? ` · ${belum} belum dibayar` : " · semua sudah dibayar"}`);
   isi("list", hasil.length ? hasil.map(baris).join("") : `<p class="kosong">Belum ada pesanan dengan status ini.</p>`);
-  document.querySelectorAll("#chips button").forEach((b) => b.classList.toggle("on", b.dataset.status === state.status));
 }
 
-/* filter status: chip dibuat dari data supaya ikut menyesuaikan */
-isi("chips", ["", ...alur].map((s) => `<button type="button" data-status="${s}">${s || "Semua"}</button>`).join(""));
-el("chips").addEventListener("click", (e) => {
-  const b = e.target.closest("button");
-  if (b) { state.status = state.status === b.dataset.status ? "" : b.dataset.status; daftar(); }
-});
+chipSaring("chips", [["", "Semua"], ...alur.map((s) => [s, s])], (v) => { status = v; daftar(); });
 
-/* tandai lunas / majukan status */
 el("list").addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
   const o = db.pesanan.find((x) => x.id === +(b.dataset.lunas || b.dataset.maju));
+  if (!o) return;
   if (b.dataset.lunas) {
     o.lunas = true;
-    o.staff = db.akun.nama;               /* siapa yang mengonfirmasi pembayaran */
-    if (o.status === "Menunggu") o.status = "Diproses"; /* pembayaran OK -> langsung diproses */
+    o.staff = db.akun.nama;
+    if (o.status === "Menunggu") o.status = "Diproses";
   } else {
     o.status = berikut[o.status];
   }
-  tulis("pesanan", db.pesanan); /* DB: PATCH /api/pesanan/<id> */
+  simpan("pesanan");
+  notif(b.dataset.lunas ? "Pembayaran dikonfirmasi" : `Status → ${o.status}`);
   daftar();
 });
 

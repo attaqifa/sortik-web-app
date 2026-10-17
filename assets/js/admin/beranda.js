@@ -1,6 +1,4 @@
-/* SORTIK — beranda admin: ringkasan penjualan + pengawasan data toko
-   Semua angka dihitung dari db. Saat pindah ke database, hitungan di bawah
-   sebaiknya diganti query agregat di server (SUM nilai, GROUP BY bulan, dsb). */
+/* Beranda admin — ringkasan penjualan dan pengawasan data toko. */
 
 isi("nama", db.akun.nama);
 
@@ -9,7 +7,6 @@ const belum = db.pesanan.filter((o) => !o.lunas);
 const nilaiSemua = db.pesanan.reduce((n, o) => n + nilaiPesanan(o), 0);
 const pendapatan = lunas.reduce((n, o) => n + nilaiPesanan(o), 0);
 
-/* kartu statistik; kolom ke-3 menandai angka panjang supaya fontnya dikecilkan */
 isi("stats", [
   ["Pendapatan", rp(pendapatan), true],
   ["Belum dibayar", belum.length],
@@ -18,8 +15,17 @@ isi("stats", [
 ].map(([label, nilai, kecil]) =>
   `<div><b${kecil ? ' class="kecil"' : ""}>${nilai}</b><span>${label}</span></div>`).join(""));
 
-/* ---------- penjualan per bulan ---------- */
-const bulan = {};  /* { "2026-09": { nilai, unit, pesanan } } */
+/* rak tersibuk pada satu bulan — info beban gudang */
+function rakSibuk(b) {
+  const hitung = {};
+  db.pesanan.filter((o) => o.tanggal.startsWith(b)).forEach((o) => {
+    const r = produkById(o.produk).rak;
+    if (r) hitung[r] = (hitung[r] || 0) + o.jumlah;
+  });
+  return Object.entries(hitung).sort((a, b) => b[1] - a[1])[0]?.[0] || "-";
+}
+
+const bulan = {};
 db.pesanan.forEach((o) => {
   const b = o.tanggal.slice(0, 7);
   bulan[b] = bulan[b] || { nilai: 0, unit: 0, pesanan: 0 };
@@ -30,7 +36,7 @@ db.pesanan.forEach((o) => {
 
 const nmBulan = "Januari Februari Maret April Mei Juni Juli Agustus September Oktober November Desember".split(" ");
 const rekap = Object.entries(bulan).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 6);
-const puncak = Math.max(1, ...rekap.map(([, v]) => v.nilai));  /* nilai tertinggi = batang penuh */
+const puncak = Math.max(1, ...rekap.map(([, v]) => v.nilai));
 
 isi("total", `${db.pesanan.length} pesanan · ${rp(pendapatan)} sudah dibayar · ${rp(nilaiSemua - pendapatan)} belum`);
 isi("lapor", rekap.length ? rekap.map(([b, v]) => `<div class="lapor">
@@ -42,19 +48,7 @@ isi("lapor", rekap.length ? rekap.map(([b, v]) => `<div class="lapor">
   <em>${rp(v.nilai)}</em>
 </div>`).join("") : `<p class="kosong">Belum ada pesanan.</p>`);
 
-/* rak yang paling sering muncul pada pesanan bulan itu (info gudang) */
-function rakSibuk(b) {
-  const hitung = {};
-  db.pesanan.filter((o) => o.tanggal.startsWith(b)).forEach((o) => {
-    const r = produkById(o.produk).rak;
-    if (r) hitung[r] = (hitung[r] || 0) + o.jumlah;
-  });
-  const urut = Object.entries(hitung).sort((a, b) => b[1] - a[1]);
-  return urut.length ? urut[0][0] : "-";
-}
-
-/* ---------- produk terlaris ---------- */
-const terjual = {};  /* id produk -> unit terjual */
+const terjual = {};
 db.pesanan.forEach((o) => (terjual[o.produk] = (terjual[o.produk] || 0) + o.jumlah));
 
 isi("laris", Object.entries(terjual).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, unit]) => {
@@ -66,7 +60,6 @@ isi("laris", Object.entries(terjual).sort((a, b) => b[1] - a[1]).slice(0, 5).map
   </div>`;
 }).join("") || `<p class="kosong">Belum ada penjualan.</p>`);
 
-/* ---------- pesanan yang belum dibayar (tindak lanjut oleh staff) ---------- */
 isi("belum", belum.length ? [...belum].sort((a, b) => b.tanggal.localeCompare(a.tanggal)).map((o) => {
   const p = produkById(o.produk);
   return `<a class="row" href="../staff/pesanan.html">

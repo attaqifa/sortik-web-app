@@ -1,10 +1,9 @@
-/* SORTIK — halaman deskripsi produk (produk.html?id=<id produk>)
-   */
+/* Deskripsi produk — produk.html?id=<id produk>. */
 
 const p = produkById(+new URLSearchParams(location.search).get("id"));
 
-/* isi halaman dari satu produk */
 function gambar(p) {
+  const habis = p.stok < 1;
   isi("detail", `<div class="pimg big">${p.ikon || "📦"}</div>
   <div>
     <span class="pcat">${kat(p)}</span>
@@ -25,12 +24,11 @@ function gambar(p) {
       <div class="qty">
         <button type="button" id="kurang">−</button><b id="jumlah">1</b><button type="button" id="tambah">＋</button>
       </div>
-      <button class="primary" id="keranjang" type="button">Tambah ke Keranjang</button>
-      <button class="primary garis" id="beli" type="button">Beli Sekarang</button>
+      <button class="primary" id="keranjang" type="button"${habis ? " disabled" : ""}>${habis ? "Stok Habis" : "Tambah ke Keranjang"}</button>
+      <button class="primary garis" id="beli" type="button"${habis ? " disabled" : ""}>Beli Sekarang</button>
     </div>
   </div>`);
 
-  /* jumlah tidak boleh melebihi stok */
   let n = 1;
   const batas = (v) => Math.max(1, Math.min(p.stok, v));
   const tampil = () => (el("jumlah").textContent = n);
@@ -46,14 +44,15 @@ function gambar(p) {
   el("keranjang").onclick = () => { masuk(); el("keranjang").textContent = "✓ Masuk keranjang"; };
   el("beli").onclick = () => { masuk(); location.href = "checkout.html"; };
 
-  /* produk serupa: kategori sama, maksimal 3, memakai kartu yang sama dengan cari.html */
   const serupa = db.produk.filter((x) => x.kategori === p.kategori && x.id !== p.id).slice(0, 3);
   isi("serupa", serupa.length ? serupa.map(kartu).join("") : `<p class="kosong">Belum ada produk lain di kategori ini.</p>`);
   el("serupaWrap").hidden = !serupa.length;
 }
 
-if (p.id) { el("judul").textContent = p.nama; gambar(p); }
-else {
+if (p.id) {
+  el("judul").textContent = p.nama;
+  gambar(p);
+} else {
   el("serupaWrap").hidden = true;
   isi("detail", `<p class="kosong">Produk tidak ditemukan. <a href="cari.html">Kembali ke pencarian</a>.</p>`);
 }
