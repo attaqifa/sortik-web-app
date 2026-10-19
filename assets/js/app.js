@@ -179,6 +179,11 @@ const MENU = {
   ],
   admin: [
     ["🏠", "Beranda", "index.html", "", "Beranda"],
+    /* admin mewarisi seluruh menu operasional staff — halamannya sendiri,
+       tetapi memakai skrip yang sama di assets/js/toko/ */
+    ["🧱", "Tata Rak", "rak.html", "", "Rak"],
+    ["📦", "Kelola Barang", "produk.html", "", "Barang"],
+    ["📋", "Kelola Pesanan", "pesanan.html", "", "Pesanan"],
     ["👥", "Kelola Pengguna", "pengguna.html", "", "Pengguna"],
     ["⚙️", "Pengaturan Toko", "pengaturan.html", "", "Toko"]
   ]
@@ -196,7 +201,7 @@ const MENU = {
 }
 
 /* ---------- mesin kelola: daftar + form tambah/ubah + hapus ----------
-   Dipakai Kelola Barang (staff), Kelola Pengguna & Kategori (admin).
+   Dipakai Kelola Barang (staff & admin), Kelola Pengguna & Kategori (admin).
    `kolom` = [[field, label, jenis, opsi]]; jenis: text | angka | email | pilih | area.
    `baru(data)` boleh mengembalikan null untuk menolak; `cek(item)` mengembalikan
    pesan alasan barang tidak boleh dihapus. */

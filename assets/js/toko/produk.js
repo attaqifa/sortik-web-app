@@ -1,4 +1,5 @@
-/* Kelola barang — kolom form didaftarkan di sini, logikanya di mesin kelola. */
+/* Kelola barang — kolom form didaftarkan di sini, logikanya di mesin kelola.
+   Skrip bersama: dipakai staff/produk.html dan admin/produk.html. */
 
 kelola({
   wadah: "kelola",

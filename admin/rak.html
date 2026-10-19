@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tata Rak — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="side" id="side"></aside>
+
+  <main>
+    <header class="head">
+      <h1>Tata Rak</h1>
+      <p>Pindahkan barang antar rak dan atur susunan rak toko</p>
+    </header>
+
+    <section class="card">
+      <div class="toolbar">
+        <label class="lbl" for="kolom">Jumlah kolom</label>
+        <input type="number" id="kolom" min="1" max="12">
+        <button class="btn" id="tambahBaris" type="button">+ Baris rak</button>
+        <button class="btn danger" id="hapusBaris" type="button">− Baris terakhir</button>
+      </div>
+
+      <!-- denah rak: klik sel untuk melihat & memindahkan barang di rak itu -->
+      <div class="rak" id="denah"></div>
+      <p class="hasil" id="info"></p>
+    </section>
+
+    <section class="card" id="panel" hidden>
+      <h2 id="panelJudul"></h2>
+      <div id="panelIsi"></div>
+    </section>
+  </main>
+
+</div>
+<!-- halaman ini memakai skrip yang sama dengan staff/rak.html -->
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/toko/rak.js"></script>
+</body>
+</html>

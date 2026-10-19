@@ -1,4 +1,5 @@
-/* Kelola pesanan — tandai pembayaran diterima dan majukan status. */
+/* Kelola pesanan — tandai pembayaran diterima dan majukan status.
+   Skrip bersama: dipakai staff/pesanan.html dan admin/pesanan.html. */
 
 const alur = ["Menunggu", "Diproses", "Siap", "Selesai"];
 const berikut = { Menunggu: "Diproses", Diproses: "Siap", Siap: "Selesai" };

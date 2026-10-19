@@ -22,12 +22,18 @@ admin/                halaman admin
 assets/css/app.css    gaya semua halaman peran
 assets/css/login.css  gaya halaman masuk/daftar
 assets/js/app.js      inti: data, util, sesi, sidebar, mesin kelola
-assets/js/<peran>/    satu skrip per halaman; nama file mengikuti halamannya
+assets/js/toko/       skrip operasional bersama staff & admin (rak, produk, pesanan)
+assets/js/<peran>/    skrip khusus peran: beranda, pengguna, pengaturan, halaman pembeli
 tools/                server statis untuk pengembangan
 ```
 
 Aturan penamaan: `assets/js/user/cari.js` dipakai `user/cari.html`, dst. Setiap halaman memuat
 `assets/js/app.js` lebih dulu, lalu satu skrip halaman.
+
+Halaman staff dan admin berpasangan: `staff/rak.html` dan `admin/rak.html` sama-sama memuat
+`assets/js/toko/rak.js`, jadi fitur staff otomatis dimiliki admin tanpa salinan logika. Menambah
+aksi operasional cukup di `assets/js/toko/`; halaman admin hanya perlu ada bila tautannya berbeda
+(menu sidebar diatur di `MENU` pada `assets/js/app.js`).
 
 ## Halaman
 
@@ -35,7 +41,7 @@ Aturan penamaan: `assets/js/user/cari.js` dipakai `user/cari.html`, dst. Setiap 
 |---|---|
 | Pembeli | beranda, cari produk & rak, deskripsi produk, keranjang & checkout, pesan, riwayat |
 | Staff | beranda, tata rak, kelola barang, kelola pesanan |
-| Admin | beranda & laporan penjualan, kelola pengguna, pengaturan toko & kategori |
+| Admin | beranda & laporan penjualan, tata rak, kelola barang, kelola pesanan, kelola pengguna, pengaturan toko & kategori |
 
 ## Data
 
@@ -73,6 +79,8 @@ Status pesanan: `Menunggu → Diproses → Siap → Selesai`. `cara`: `ambil | a
 - `Esc` menutup form kelola atau detail pesanan yang sedang terbuka.
 - Jumlah di keranjang dibatasi stok; barang terhapus/habis dibuang saat checkout.
 - Pembeli hanya melihat pesanannya sendiri; pembayaran dan status dimajukan staff.
+- Admin boleh melakukan semua aksi staff (tata rak, kelola barang, kelola pesanan); perbedaan peran
+  hanya pada menu, bukan pada logika skrip `assets/js/toko/`.
 
 ## Batasan
 

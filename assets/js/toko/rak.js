@@ -1,4 +1,6 @@
-/* Tata rak — pindahkan barang antar rak dan atur susunan rak. */
+/* Tata rak — pindahkan barang antar rak dan atur susunan rak.
+   Skrip bersama: dipakai staff/rak.html dan admin/rak.html. Jangan menaruh
+   logika khusus peran di sini; peran hanya memengaruhi menu di app.js. */
 
 let sel = "";
 

@@ -62,7 +62,7 @@ isi("laris", Object.entries(terjual).sort((a, b) => b[1] - a[1]).slice(0, 5).map
 
 isi("belum", belum.length ? [...belum].sort((a, b) => b.tanggal.localeCompare(a.tanggal)).map((o) => {
   const p = produkById(o.produk);
-  return `<a class="row" href="../staff/pesanan.html">
+  return `<a class="row" href="pesanan.html">
     <div class="thumb">${p.ikon || "📦"}</div>
     <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${o.pembeli || "-"} · ${o.bayar}</span></div>
     <em class="wait">${rp(nilaiPesanan(o))}</em>
