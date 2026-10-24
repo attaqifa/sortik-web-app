@@ -32,7 +32,7 @@ kelola({
   kunci: "kategori",
   nama: "Kategori",
   petunjuk: "Cari nama kategori...",
-  kolom: [["nama", "Nama kategori", "text"], ["ikon", "Ikon (emoji)", "text"]],
+  kolom: [["nama", "Nama kategori", "text"], ["lucide", "Ikon kategori", "pilih", () => IKON_KATEGORI]],
   cari: (k) => k.nama,
   urut: (a, b) => a.nama.localeCompare(b.nama),
 
@@ -42,13 +42,13 @@ kelola({
       alert(`Kategori "${d.nama}" sudah ada.`);
       return null;
     }
-    return { id, ...d, ikon: d.ikon || "📦" };
+    return { id, ...d, lucide: d.lucide || "tag" };
   },
 
   cek: (k) => (db.produk.some((p) => p.kategori === k.id)
     ? `Kategori "${k.nama}" masih dipakai barang — pindahkan dulu barangnya di Kelola Barang.`
     : ""),
 
-  baris: (k) => `<div class="thumb">${k.ikon || "📦"}</div>
+  baris: (k) => `<div class="thumb">${ikonKategori(k)}</div>
   <div><b>${k.nama}</b><span>kode: ${k.id} · dipakai ${db.produk.filter((p) => p.kategori === k.id).length} barang</span></div>`
 });

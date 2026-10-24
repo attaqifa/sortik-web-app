@@ -17,7 +17,7 @@ isi("stats", [
 const kartuPesanan = (o) => {
   const p = produkById(o.produk);
   return `<a class="row" href="pesanan.html">
-    <div class="thumb">${p.ikon || "📦"}</div>
+    <div class="thumb">${fotoHTML(p)}</div>
     <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${o.pembeli || "-"} · ${o.bayar}</span>${tagBayar(o)}</div>
     <em class="${STATUS[o.status] || ""}">${o.status}</em>
   </a>`;
@@ -25,7 +25,7 @@ const kartuPesanan = (o) => {
 isi("tindak", jalan.length ? terbaru(jalan).map(kartuPesanan).join("") : `<p class="kosong">Tidak ada pesanan yang menunggu ditindak.</p>`);
 
 isi("tipis", tipis.length ? tipis.map((p) => `<a class="row" href="produk.html?id=${p.id}">
-  <div class="thumb">${p.ikon || "📦"}</div>
+  <div class="thumb">${fotoHTML(p)}</div>
   <div><b>${p.nama}</b><span>${kat(p)} · Rak ${p.rak} · ${rp(p.harga)}</span></div>
   <em class="${p.stok ? "wait" : "done"}">stok ${p.stok}</em>
 </a>`).join("") : `<p class="kosong">Semua stok di atas 5 unit.</p>`);

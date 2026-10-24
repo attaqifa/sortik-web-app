@@ -42,13 +42,14 @@
 
       <label class="lbl">Metode Pembayaran</label>
       <div class="opt">
-        <label><input type="radio" name="bayar" value="Transfer ke admin" checked> 💳 <span>Transfer ke Admin<em>Kirim bukti transfer via WhatsApp</em></span></label>
+        <label><input type="radio" name="bayar" value="Transfer ke admin" checked> 💳 <span>Transfer ke Admin<em>Unggah bukti transfer setelah pesanan dibuat</em></span></label>
         <label><input type="radio" name="bayar" value="Bayar di kasir"> 🏬 <span>Bayar di Kasir<em>Bayar langsung di toko</em></span></label>
       </div>
 
       <!-- hanya satu yang tampil, sesuai metode pembayaran (checkout.js) -->
       <div id="transfer">
-        <p class="note">Transfer ke rekening admin, lalu kirim bukti transfer ke WhatsApp
+        <p class="note">Transfer ke rekening admin, lalu buka halaman <b>Pesan &amp; Booking</b> untuk mengunggah foto
+          bukti transfer agar pesanan dikonfirmasi. Butuh bantuan?
           <a id="wa" target="_blank" rel="noopener"></a>.</p>
         <ul class="rek" id="rek"></ul>
       </div>
@@ -71,7 +72,10 @@
   </main>
 
 </div>
-<script src="../assets/js/app.js"></script>
+<script src="../assets/js/core/data.js"></script>
+<script src="../assets/js/core/ui.js"></script>
+<script src="../assets/js/core/store.js"></script>
+<script src="../assets/js/core/kelola.js"></script>
 <script src="../assets/js/user/checkout.js"></script>
 </body>
 </html>

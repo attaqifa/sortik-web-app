@@ -19,8 +19,11 @@
 
     <a class="back" href="cari.html">← Kembali ke pencarian</a>
 
-    <!-- deskripsi produk, diisi produk.js dari db.produk -->
-    <section class="card detail" id="detail"></section>
+    <!-- galeri di kiri (foto utama + thumbnail), info di kanan; diisi produk.js -->
+    <section class="card detail" id="detail">
+      <div class="galeri" id="galeri"></div>
+      <div class="produk-info" id="info"></div>
+    </section>
 
     <section class="card" id="serupaWrap">
       <h2>Produk Serupa <a href="cari.html">Lihat Semua</a></h2>
@@ -29,7 +32,10 @@
   </main>
 
 </div>
-<script src="../assets/js/app.js"></script>
+<script src="../assets/js/core/data.js"></script>
+<script src="../assets/js/core/ui.js"></script>
+<script src="../assets/js/core/store.js"></script>
+<script src="../assets/js/core/kelola.js"></script>
 <script src="../assets/js/user/produk.js"></script>
 </body>
 </html>

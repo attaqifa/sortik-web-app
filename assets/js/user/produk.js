@@ -4,29 +4,50 @@ const p = produkById(+new URLSearchParams(location.search).get("id"));
 
 function gambar(p) {
   const habis = p.stok < 1;
-  isi("detail", `<div class="pimg big">${p.ikon || "📦"}</div>
-  <div>
-    <span class="pcat">${kat(p)}</span>
-    <h2>${p.nama}</h2>
-    <b class="harga">${rp(p.harga)}</b>
-    <p class="desc">${p.deskripsi || "Belum ada deskripsi produk."}</p>
+  /* ikon cadangan tampil otomatis bila foto gagal dimuat (onerror) */
+  const foto = (src) => `${ikonCadangan(p)}<img src="${src}" alt="${p.nama}" onerror="this.remove()">`;
 
-    <ul class="spec">
-      <li><span>Kode produk</span><b>PRD-${String(p.id).padStart(3, "0")}</b></li>
-      <li><span>Kategori</span><b>${kat(p)}</b></li>
-      <li><span>Lokasi rak</span><b>${p.rak} · ${db.toko.nama}</b></li>
-      <li><span>Stok tersedia</span><b>${p.stok} unit</b></li>
-      <li><span>Pengambilan</span><b>Ambil di tempat / antar</b></li>
-      <li><span>Pembayaran</span><b>Transfer ke admin / bayar di kasir</b></li>
-    </ul>
+  /* galeri: foto utama di tengah, foto detail jadi thumbnail yang bisa diklik */
+  const semua = galeriProduk(p);
+  if (semua.length) {
+    isi("galeri", `<div class="galeri-utama" id="galeriGambar" title="Klik untuk memperbesar">${foto(semua[0])}</div>` +
+      (semua.length > 1 ? `<div class="galeri-thumb" id="galeriThumb">${semua.map((s, i) =>
+        `<button type="button" data-src="${s}" class="${i ? "" : "on"}" title="Foto ${i + 1}">${foto(s)}</button>`).join("")}</div>` : ""));
+    const utama = el("galeriGambar");
+    utama.onclick = () => lihatGambar(semua[0], p.nama);
 
-    <div class="beli">
-      <div class="qty">
-        <button type="button" id="kurang">−</button><b id="jumlah">1</b><button type="button" id="tambah">＋</button>
-      </div>
-      <button class="primary" id="keranjang" type="button"${habis ? " disabled" : ""}>${habis ? "Stok Habis" : "Tambah ke Keranjang"}</button>
-      <button class="primary garis" id="beli" type="button"${habis ? " disabled" : ""}>Beli Sekarang</button>
+    const thumb = el("galeriThumb");
+    if (thumb) thumb.onclick = (e) => {
+      const b = e.target.closest("button[data-src]");
+      if (!b) return;
+      isi("galeriGambar", foto(b.dataset.src));
+      utama.onclick = () => lihatGambar(b.dataset.src, p.nama);
+      thumb.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+    };
+  } else {
+    isi("galeri", `<div class="galeri-utama">${ikonCadangan(p)}</div>`);
+  }
+
+  isi("info", `<span class="pcat">${kat(p)}</span>
+  <h2>${p.nama}</h2>
+  <b class="harga">${rp(p.harga)}</b>
+  <p class="desc">${p.deskripsi || "Belum ada deskripsi produk."}</p>
+
+  <ul class="spec">
+    <li><span>Kode produk</span><b>PRD-${String(p.id).padStart(3, "0")}</b></li>
+    <li><span>Kategori</span><b>${kat(p)}</b></li>
+    <li><span>Lokasi rak</span><b>${p.rak} · ${db.toko.nama}</b></li>
+    <li><span>Stok tersedia</span><b>${p.stok} unit</b></li>
+    <li><span>Pengambilan</span><b>Ambil di tempat / antar</b></li>
+    <li><span>Pembayaran</span><b>Transfer ke admin / bayar di kasir</b></li>
+  </ul>
+
+  <div class="beli">
+    <div class="qty">
+      <button type="button" id="kurang">−</button><b id="jumlah">1</b><button type="button" id="tambah">＋</button>
     </div>
+    <button class="primary" id="keranjang" type="button"${habis ? " disabled" : ""}>${habis ? "Stok Habis" : "Tambah ke Keranjang"}</button>
+    <button class="primary garis" id="beli" type="button"${habis ? " disabled" : ""}>Beli Sekarang</button>
   </div>`);
 
   let n = 1;

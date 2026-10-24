@@ -16,7 +16,7 @@ simpanKeranjang();
 const item = (i) => {
   const p = produkById(i.produk);
   return `<div class="row">
-    <div class="thumb">${p.ikon || "📦"}</div>
+    <div class="thumb">${fotoHTML(p)}</div>
     <div><b>${p.nama}</b><span>${rp(p.harga)} · Rak ${p.rak}</span></div>
     <div class="qty">
       <button type="button" data-kurang="${p.id}">−</button><b>${i.jumlah}</b><button type="button" data-tambah="${p.id}">＋</button>
@@ -50,6 +50,9 @@ el("wa").textContent = "+" + db.toko.wa;
 isi("toko", `${db.toko.nama} — ${db.toko.alamat}`);
 isi("rek", db.toko.rekening.map((r) => `<li><b>${r.bank}</b><span>${r.nomor}</span><span>a.n. ${r.atasNama}</span></li>`).join(""));
 isi("kasirToko", `<li><b>Kasir ${db.toko.nama}</b><span>${db.toko.alamat}</span><span>${db.toko.jam}</span></li>`);
+
+/* alamat pengiriman terisi dari profil akun, bisa diubah saat checkout */
+el("alamat").value = db.akun.alamat || "";
 
 el("items").addEventListener("click", (e) => {
   const b = e.target.closest("button");

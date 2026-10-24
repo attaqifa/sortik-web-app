@@ -1,6 +1,6 @@
 /* Tata rak — pindahkan barang antar rak dan atur susunan rak.
    Skrip bersama: dipakai staff/rak.html dan admin/rak.html. Jangan menaruh
-   logika khusus peran di sini; peran hanya memengaruhi menu di app.js. */
+   logika khusus peran di sini; peran hanya memengaruhi menu di core/store.js. */
 
 let sel = "";
 
@@ -20,7 +20,7 @@ function gambar() {
   const daftar = peta[sel] || [];
   isi("panelJudul", `Rak ${sel} — ${daftar.length} barang`);
   isi("panelIsi", daftar.length ? daftar.map((p) => `<div class="row">
-    <div class="thumb">${p.ikon || "📦"}</div>
+    <div class="thumb">${fotoHTML(p)}</div>
     <div><b>${p.nama}</b><span>${kat(p)} · ${rp(p.harga)} · stok ${p.stok}</span></div>
     <select data-pindah="${p.id}" title="Pindahkan ke rak">${semuaRak().map((r) => `<option${r === p.rak ? " selected" : ""}>${r}</option>`).join("")}</select>
   </div>`).join("") : `<p class="kosong">Rak ini kosong. Pilih rak lain di denah, lalu pindahkan barangnya ke ${sel}.</p>`);

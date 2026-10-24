@@ -1,6 +1,10 @@
 /* Cari produk & rak — filter kata kunci, kategori, dan denah rak. */
 
-const state = { q: "", kat: "", rak: "" };
+const state = {
+  q: "",
+  kat: new URLSearchParams(location.search).get("kat") || "",
+  rak: ""
+};
 
 function render() {
   const kata = state.q.trim().toLowerCase();
@@ -20,10 +24,10 @@ function render() {
 
 el("q").addEventListener("input", (e) => { state.q = e.target.value; render(); });
 
-chipSaring("chips", [["", "🔎 Semua"], ...db.kategori.map((k) => [k.id, `${k.ikon} ${k.nama}`])], (v) => {
+chipSaring("chips", [["", `<span class="ikon" data-lucide="layout-grid"></span> Semua`], ...db.kategori.map((k) => [k.id, `${ikonKategori(k)} ${k.nama}`])], (v) => {
   state.kat = v;
   render();
-});
+}, state.kat);
 
 el("denah").addEventListener("click", (e) => {
   const c = e.target.closest(".rcell");

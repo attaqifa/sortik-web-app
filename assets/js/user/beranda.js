@@ -15,10 +15,10 @@ isi("stats", [
 isi("pesanan", jalan.map((o) => {
   const p = produkById(o.produk);
   return `<div class="row">
-    <div class="thumb">${p.ikon || "📦"}</div>
+    <div class="thumb">${fotoHTML(p)}</div>
     <div><b>${p.nama || "-"}</b><span>${o.jumlah} item · ${rp(nilaiPesanan(o))}</span>${tagBayar(o)}</div>
     <em class="${STATUS[o.status] || ""}">${o.status}</em>
   </div>`;
 }).join("") || `<p class="kosong">Belum ada pesanan berjalan. <a href="cari.html">Mulai belanja</a>.</p>`);
 
-isi("kategori", db.kategori.map((k) => `<div>${k.ikon}<span>${k.nama}</span></div>`).join(""));
+isi("kategori", db.kategori.map((k) => `<a class="cat" href="cari.html?kat=${k.id}">${ikonKategori(k)}<span>${k.nama}</span></a>`).join(""));

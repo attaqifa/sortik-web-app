@@ -30,6 +30,22 @@
 
     <section class="stats" id="stats"></section>
 
+    <!-- grafik penghasilan: diisi assets/js/admin/beranda.js -->
+    <section class="card">
+      <h2>Grafik Penghasilan
+        <select id="rentang" class="chartsaring" aria-label="Rentang grafik">
+          <option value="6">6 bulan terakhir</option>
+          <option value="12">12 bulan terakhir</option>
+        </select>
+      </h2>
+      <div class="chart" id="grafik"></div>
+      <p class="hasil" id="grafikInfo"></p>
+      <div class="legend">
+        <span><i class="dibayar"></i> Sudah dibayar</span>
+        <span><i class="belumdibayar"></i> Belum dibayar</span>
+      </div>
+    </section>
+
     <!-- laporan: diisi assets/js/admin/beranda.js -->
     <section class="card">
       <h2>Penjualan per Bulan <a href="pesanan.html">Kelola Pesanan</a></h2>
@@ -49,7 +65,10 @@
   </main>
 
 </div>
-<script src="../assets/js/app.js"></script>
+<script src="../assets/js/core/data.js"></script>
+<script src="../assets/js/core/ui.js"></script>
+<script src="../assets/js/core/store.js"></script>
+<script src="../assets/js/core/kelola.js"></script>
 <script src="../assets/js/admin/beranda.js"></script>
 </body>
 </html>
