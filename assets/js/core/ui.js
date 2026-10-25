@@ -1,11 +1,8 @@
-/* SORTIK — util & komponen tampilan bersama.
-   Semua fungsi murni/tampilan ada di sini: format, kartu produk, notifikasi,
-   pratinjau gambar, denah rak, dan chip filter. Tidak menyentuh penyimpanan. */
+/* SORTIK — util & komponen tampilan bersama. */
 
 /* ---------- util singkat ---------- */
 const el = (id) => document.getElementById(id);
-/* isi() = satu-satunya cara menaruh HTML ke halaman; sekalian menggambar ikon
-   Lucide yang baru masuk, jadi halaman tidak perlu memanggil gambarIkon(). */
+/* isi(): isi HTML + gambar ikon yang baru */
 const isi = (id, html) => {
   const x = el(id);
   if (!x) return;
@@ -14,18 +11,16 @@ const isi = (id, html) => {
 };
 const rp = (n) => "Rp " + (+n || 0).toLocaleString("id-ID");
 const kat = (p) => (db.kategori.find((k) => k.id === p.kategori) || {}).nama || p.kategori || "-";
-/* ikon kategori: ikon garis Lucide; emoji `ikon` tetap jadi cadangan bila belum ada */
+/* ikon kategori Lucide; emoji jadi cadangan */
 const ikonKategori = (k) => (k && k.lucide)
   ? `<span class="ikon" data-lucide="${k.lucide}"></span>`
   : `<span class="emoji">${(k && k.ikon) || "📦"}</span>`;
 
-/* Gambar setiap <span data-lucide="…"> menjadi ikon garis Lucide.
-   Skripnya dimuat sekali oleh store.js; selama belum siap fungsi ini aman
-   dipanggil (tidak melakukan apa-apa), dan isi() memanggilnya otomatis. */
+/* ubah <span data-lucide> jadi ikon; aman dipanggil kapan pun */
 function gambarIkon() {
   if (!window.lucide) return;
   window.lucide.createIcons();
-  /* svg hasil Lucide masih membawa data-lucide — lepaskan agar tidak diproses ulang */
+  /* hapus penanda agar tidak diproses ulang */
   document.querySelectorAll("svg[data-lucide]").forEach((s) => s.removeAttribute("data-lucide"));
 }
 const produkById = (id) => db.produk.find((p) => p.id === id) || {};
@@ -38,26 +33,27 @@ const kodePesanan = (o) => `BK-${o.tanggal.slice(0, 4)}-${String(o.id).padStart(
 
 /* kelas warna status pesanan: Menunggu → wait, dst. */
 const STATUS = { Menunggu: "wait", Diproses: "proc", Siap: "ok", Selesai: "done" };
-/* urutan status pesanan — dipakai halaman pembeli & staff/admin */
+/* urutan status pesanan */
 const ALUR = ["Menunggu", "Diproses", "Siap", "Selesai"];
 const tagBayar = (o) => (o.lunas
   ? `<span class="tag lunas">Lunas${o.staff ? " · " + o.staff : ""}</span>`
   : `<span class="tag belum">Belum dibayar</span>`);
 
+/* papan kosong; tombol = [href, label] */
+const pesanKosong = (ikon, teks, tombol) =>
+  `<p class="kosong"><span class="ikon" data-lucide="${ikon}"></span>${teks}${tombol ? `<a class="btn" href="${tombol[0]}">${tombol[1]}</a>` : ""}</p>`;
+
 /* ---------- foto produk ---------- */
-/* Semua foto produk: foto utama dulu, lalu foto detail. Foto bisa berupa
-   tautan internet ataupun hasil unggahan (data URL). */
+/* foto produk: utama dulu, lalu detail; bisa tautan atau unggahan */
 const galeriProduk = (p) => [p && p.foto, ...((p && p.galeri) || [])].filter(Boolean);
 
-/* Ikon cadangan saat foto tidak ada/gagal dimuat — ikon garis kategori,
-   bukan emoji, supaya tampilan tetap konsisten. */
+/* ikon cadangan saat foto kosong/gagal */
 const ikonCadangan = (p) => {
   const k = db.kategori.find((x) => x.id === (p && p.kategori));
   return `<span class="ikon foto-cadangan" data-lucide="${(k && k.lucide) || "package"}"></span>`;
 };
 
-/* Foto produk: ikon cadangan ditaruh di belakang gambar, jadi begitu gambar
-   gagal dimuat (onerror) ikonnya otomatis terlihat. */
+/* ikon cadangan di belakang gambar — tampil bila onerror */
 const fotoHTML = (p) => {
   const utama = galeriProduk(p)[0];
   const alt = String((p && p.nama) || "Foto produk").replace(/"/g, "&quot;");
@@ -75,13 +71,15 @@ const kartu = (p) => `<a class="pcard" href="produk.html?id=${p.id}">
   </div>
 </a>`;
 
-/* ---------- notifikasi singkat ---------- */
-/* satu elemen dipakai ulang supaya tidak menumpuk */
+/* ---------- notifikasi ---------- */
+/* satu elemen dipakai ulang */
 function notif(teks) {
   let t = el("notif");
   if (!t) {
     t = document.createElement("div");
     t.id = "notif";
+    /* bisa ditutup dengan klik */
+    t.onclick = () => { clearTimeout(notif.waktu); t.classList.remove("tampil"); };
     document.body.appendChild(t);
   }
   t.textContent = teks;
@@ -90,9 +88,33 @@ function notif(teks) {
   notif.waktu = setTimeout(() => t.classList.remove("tampil"), 2200);
 }
 
+/* ---------- dialog konfirmasi (pengganti confirm) ---------- */
+/* dipakai: if (!await konfirmasi(...)) return; */
+function konfirmasi(judul, teks, labelYa = "Ya, Hapus") {
+  return new Promise((jawab) => {
+    const kotak = document.createElement("div");
+    kotak.className = "konfirmasi";
+    kotak.innerHTML = `<div class="kotak" role="dialog" aria-modal="true">
+    <h3>${judul}</h3><p>${teks}</p>
+    <div class="btns">
+      <button class="primary garis" type="button" data-tidak>Batal</button>
+      <button class="primary bahaya" type="button" data-ya>${labelYa}</button>
+    </div></div>`;
+    const tutup = (ok) => { kotak.remove(); document.removeEventListener("keydown", esc); jawab(ok); };
+    const esc = (e) => { if (e.key === "Escape") tutup(false); };
+    kotak.addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (b) tutup(b.dataset.ya != null);
+      else if (e.target === kotak) tutup(false);
+    });
+    document.addEventListener("keydown", esc);
+    document.body.append(kotak);
+    kotak.querySelector("[data-ya]").focus();
+  });
+}
+
 /* ---------- baca & lihat gambar ---------- */
-/* Baca berkas gambar → data URL yang sudah diperkecil.
-   Disimpan di localStorage, jadi ukurannya harus ringan. */
+/* berkas gambar → data URL yang diperkecil (untuk localStorage) */
 function bacaGambar(berkas, maks = 800) {
   return new Promise((selesai, gagal) => {
     if (!berkas || !berkas.type.startsWith("image/")) return gagal(new Error("Bukan gambar"));
@@ -118,7 +140,7 @@ function bacaGambar(berkas, maks = 800) {
   });
 }
 
-/* pratinjau gambar layar penuh (bukti transfer, foto produk, dsb.) */
+/* pratinjau gambar layar penuh */
 function lihatGambar(sumber, judul = "Bukti transfer") {
   let kotak = el("lightbox");
   if (!kotak) {
@@ -143,7 +165,7 @@ function lihatGambar(sumber, judul = "Bukti transfer") {
 }
 
 /* ---------- widget daftar ---------- */
-/* denah rak A1… — `jumlah` = { kode: banyak barang }; sel jadi tombol bila `klik` */
+/* denah rak — jumlah = { kode: n }; sel jadi tombol bila klik */
 function denahRak(wadah, jumlah = {}, { klik = true, aktif = "" } = {}) {
   const sel = klik ? "button" : "span";
   el(wadah).style.gridTemplateColumns = `auto repeat(${db.rak.kolom}, minmax(0, 1fr))`;
@@ -158,8 +180,7 @@ function denahRak(wadah, jumlah = {}, { klik = true, aktif = "" } = {}) {
   ).join(""));
 }
 
-/* chip filter — `opsi` = [[nilai, label]], nilai "" berarti Semua.
-   `awal` = nilai yang langsung dipilih saat halaman dibuka. */
+/* chip filter — opsi = [[nilai, label]]; awal = nilai terpilih */
 function chipSaring(wadah, opsi, terapkan, awal = "") {
   let pilih = awal;
   isi(wadah, opsi.map(([nilai, label]) => `<button type="button" data-nilai="${nilai}">${label}</button>`).join(""));

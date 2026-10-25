@@ -1,4 +1,4 @@
-/* Kelola pengguna — kolom form didaftarkan di sini, logikanya di mesin kelola. */
+/* Kelola pengguna — form di sini, logika di mesin kelola. */
 
 kelola({
   wadah: "kelola",

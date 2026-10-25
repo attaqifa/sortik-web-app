@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
   <title>Akun Saya — SORTIK</title>
   <link rel="stylesheet" href="../assets/css/app.css">
 </head>
@@ -52,8 +53,22 @@
     <section class="card">
       <h2>Kata Sandi</h2>
       <div class="form">
-        <div><label class="lbl" for="a-sandi">Kata sandi baru</label><input type="password" id="a-sandi" autocomplete="new-password"></div>
-        <div><label class="lbl" for="a-sandi2">Ulangi kata sandi</label><input type="password" id="a-sandi2" autocomplete="new-password"></div>
+        <div><label class="lbl" for="a-sandi">Kata sandi baru</label>
+          <div class="sandi">
+            <input type="password" id="a-sandi" autocomplete="new-password">
+            <button class="lihat" type="button" aria-label="Tampilkan kata sandi">
+              <span class="ikon terbuka" data-lucide="eye"></span><span class="ikon tertutup" data-lucide="eye-off"></span>
+            </button>
+          </div>
+        </div>
+        <div><label class="lbl" for="a-sandi2">Ulangi kata sandi</label>
+          <div class="sandi">
+            <input type="password" id="a-sandi2" autocomplete="new-password">
+            <button class="lihat" type="button" aria-label="Tampilkan kata sandi">
+              <span class="ikon terbuka" data-lucide="eye"></span><span class="ikon tertutup" data-lucide="eye-off"></span>
+            </button>
+          </div>
+        </div>
         <div class="btns full"><button class="primary garis" id="a-sandisimpan" type="button">Ganti Kata Sandi</button></div>
       </div>
       <p class="note">Kata sandi disimpan di browser ini saja (mode demo tanpa backend).</p>

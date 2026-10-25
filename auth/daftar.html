@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
   <title>Daftar — SORTIK</title>
   <link rel="stylesheet" href="../assets/css/login.css">
 </head>
@@ -11,11 +12,8 @@
 
   <aside class="promo">
     <div class="brand">
-      <img src="../assets/img/SortikLogo.jpeg" alt="SORTIK" width="58">
-      <div>
-        <h1>SORTIK</h1>
-        <p>Sistem Sortir &amp; Katalog Elektronik</p>
-      </div>
+      <h1>SORTIK</h1>
+      <p>Sistem Sortir &amp; Katalog Elektronik</p>
     </div>
 
     <div class="hero">
@@ -40,10 +38,13 @@
       <input type="email" id="email" name="email" required placeholder="Masukkan email...">
 
       <label for="password">Kata Sandi</label>
-      <input type="password" id="password" name="password" minlength="8" required placeholder="Masukkan kata sandi...">
+      <div class="sandi">
+        <input type="password" id="password" name="password" minlength="8" required placeholder="Masukkan kata sandi...">
+        <button type="button" class="lihat" aria-label="Lihat kata sandi"><span class="ikon terbuka" data-lucide="eye"></span><span class="ikon tertutup" data-lucide="eye-off"></span></button>
+      </div>
 
       <label for="konfirmasi">Ulangi Kata Sandi</label>
-      <input type="password" id="konfirmasi" name="konfirmasi" minlength="8" required placeholder="Masukkan ulang kata sandi...">
+      <input type="password" id="konfirmasi" name="konfirmasi" minlength="8" required placeholder="Masukkan ulang kata sandi..." autocomplete="new-password">
 
       <button type="submit">Daftar</button>
     </form>
@@ -52,6 +53,7 @@
   </section>
 
 </main>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script src="../assets/js/login.js"></script>
 </body>
 </html>

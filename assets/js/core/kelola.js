@@ -1,8 +1,6 @@
 /* SORTIK — mesin kelola: daftar + form tambah/ubah + hapus.
-   Dipakai Kelola Barang (staff & admin), Kelola Pengguna & Kategori (admin).
-   `kolom` = [[field, label, jenis, opsi]]; jenis: text | angka | email | pilih | area | foto | galeri.
-   `baru(data)` boleh mengembalikan null untuk menolak; `cek(item)` mengembalikan
-   pesan alasan item tidak boleh dihapus. */
+   kolom = [[field, label, jenis, opsi]]; jenis: text|angka|email|pilih|area|foto|galeri.
+   baru(data) boleh null untuk menolak; cek(item) mengembalikan pesan penolakan. */
 
 function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari...", cari, urut, baru, cek }) {
   el(wadah).innerHTML = `<div class="formblok" id="${wadah}-blok" hidden>
@@ -126,11 +124,15 @@ function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari.
     gambar();
   }
 
-  function hapus(i) {
+  async function hapus(i) {
     const x = tampil[i];
     const salah = cek && cek(x);
-    if (salah) return alert(salah);
-    if (!confirm(`Hapus "${x[kolom[0][0]]}" dari daftar ${nama.toLowerCase()}?`)) return;
+    if (salah) return notif(salah);
+    const yakin = await konfirmasi(
+      `Hapus ${nama.toLowerCase()} ini?`,
+      `"${x[kolom[0][0]]}" akan dihapus permanen dari daftar ${nama.toLowerCase()}. Tindakan ini tidak bisa dibatalkan.`
+    );
+    if (!yakin) return;
     if (x === ubah) el(`${wadah}-blok`).hidden = true;
     db[kunci].splice(db[kunci].indexOf(x), 1);
     simpan(kunci);
@@ -148,7 +150,7 @@ function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari.
     <button class="btn" type="button" data-ubah="${i}">Ubah</button>
     <button class="btn danger" type="button" data-hapus="${i}">Hapus</button>
   </div>
-</div>`).join("") : `<p class="kosong">Belum ada ${nama.toLowerCase()} yang cocok — ubah kata kunci atau tambah baru.</p>`);
+</div>`).join("") : pesanKosong("search-x", `Belum ada ${nama.toLowerCase()} yang cocok — ubah kata kunci atau tambah baru.`));
   }
 
   el(wadah).addEventListener("click", (e) => {
@@ -228,7 +230,7 @@ function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari.
   if (awal) { const x = tampil.find((y) => y.id === awal); if (x) buka(x); }
 }
 
-/* Esc menutup form kelola, detail pesanan, atau pratinjau gambar yang terbuka */
+/* Esc menutup form/detail/lightbox yang terbuka */
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
   const kotak = el("lightbox");

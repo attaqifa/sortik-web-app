@@ -1,4 +1,4 @@
-/* Pesan & booking — dipakai pesan.html dan riwayat.html (body[data-status]). */
+/* Pesan & riwayat pesanan — dipakai pesan.html dan riwayat.html (body[data-status]). */
 
 const AMBIL = { ambil: "Ambil di Tempat", antar: "Antar ke Alamat" };
 const mode = document.body.dataset.status || "";
@@ -48,13 +48,20 @@ const rincian = (o) => {
       <button class="primary garis" id="kirimBukti" type="button">${o.bukti ? "Ganti Bukti Transfer" : "Unggah Bukti Transfer"}</button>
     </div>`}
   </div>` : ""}
+  <div class="aksipesan">
+    ${(p.stok || 0) > 0
+      ? `<button class="primary garis" id="beliLagi" type="button">Beli Lagi</button>`
+      : `<button class="primary" id="beliLagi" type="button" disabled>Beli Lagi — stok habis</button>`}
+    ${o.status === "Menunggu" && o.lunas !== true ? `<button class="btn danger" id="batalkan" type="button">Batalkan Pesanan</button>` : ""}
+    <a class="btn" href="https://wa.me/${db.toko.wa}?text=${encodeURIComponent(`Halo, saya mau tanya pesanan ${kodePesanan(o)} — ${p.nama || "-"}`)}" target="_blank" rel="noopener">Tanya via WhatsApp</a>
+  </div>
   <p class="note">Pembayaran dan status pesanan dikonfirmasi oleh staff ${db.toko.nama}. Hubungi
     <a href="https://wa.me/${db.toko.wa}" target="_blank" rel="noopener">+${db.toko.wa}</a> bila ada pertanyaan.</p>`;
 };
 
 function daftar() {
   const hasil = pesanan().filter((o) => tampil(o) && (!status || o.status === status));
-  isi("list", hasil.length ? hasil.map(baris).join("") : `<p class="kosong">Belum ada pesanan di sini.</p>`);
+  isi("list", hasil.length ? hasil.map(baris).join("") : pesanKosong("receipt", "Belum ada pesanan di sini."));
 }
 
 function buka(id) {
@@ -83,6 +90,35 @@ function buka(id) {
       notif("Gagal membaca gambar. Coba file JPG atau PNG.");
       kirim.disabled = false;
     }
+  };
+
+  /* Beli Lagi — item kembali ke keranjang, dibatasi stok */
+  const lagi = el("beliLagi");
+  if (lagi) lagi.onclick = () => {
+    const pr = produkById(o.produk);
+    if ((pr.stok || 0) < 1) return notif("Stok produk ini habis.");
+    const n = Math.min(pr.stok, o.jumlah);
+    const item = keranjang.find((i) => i.produk === o.produk);
+    if (item) item.jumlah = Math.min(pr.stok, item.jumlah + n);
+    else keranjang.push({ produk: o.produk, jumlah: n });
+    simpanKeranjang();
+    notif("Ditambahkan ke keranjang");
+    location.href = "checkout.html";
+  };
+
+  /* Batalkan — hanya pesanan Menunggu yang belum dibayar */
+  const bantal = el("batalkan");
+  if (bantal) bantal.onclick = async () => {
+    const pr = produkById(o.produk);
+    const yakin = await konfirmasi("Batalkan pesanan ini?",
+      `${kodePesanan(o)} — ${pr.nama || "-"} (${rp(nilaiPesanan(o))}) akan dihapus dari daftar pesanan Anda.`);
+    if (!yakin) return;
+    db.pesanan.splice(db.pesanan.indexOf(o), 1);
+    simpan("pesanan");
+    notif("Pesanan dibatalkan");
+    el("detail").hidden = true;
+    el("daftar").hidden = false;
+    daftar();
   };
 }
 
@@ -118,3 +154,14 @@ el("detail").addEventListener("click", (e) => {
 });
 
 daftar();
+
+/* ?id= langsung buka detail; ?baru=1 → notif sukses */
+const saring = new URLSearchParams(location.search);
+const masuk = +saring.get("id");
+if (masuk) {
+  const o = pesananku().find((x) => x.id === masuk);
+  if (o) {
+    buka(masuk);
+    if (saring.get("baru")) notif(`Pesanan ${kodePesanan(o)} dibuat — unggah bukti bila transfer`);
+  }
+}

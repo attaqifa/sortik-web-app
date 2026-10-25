@@ -8,11 +8,23 @@ const tipis = db.produk.filter((p) => p.stok <= 5);
 const terbaru = (daftar) => [...daftar].sort((a, b) => b.tanggal.localeCompare(a.tanggal)).slice(0, 5);
 
 isi("stats", [
-  ["Barang terdaftar", db.produk.length],
-  ["Stok menipis", tipis.length],
-  ["Pesanan berjalan", jalan.length],
-  ["Belum dibayar", belumBayar.length]
-].map(([label, nilai]) => `<div><b>${nilai}</b><span>${label}</span></div>`).join(""));
+  ["package", "Barang terdaftar", db.produk.length],
+  ["triangle-alert", "Stok menipis", tipis.length],
+  ["receipt", "Pesanan berjalan", jalan.length],
+  ["clock", "Belum dibayar", belumBayar.length]
+].map(([ikon, label, nilai]) => `<div><span class="ikon" data-lucide="${ikon}"></span><b>${nilai}</b><span>${label}</span></div>`).join(""));
+
+/* Perlu Tindakan: pintasan sesuai jumlah */
+const itemTindakan = [
+  ["clipboard-check", "Pesanan menunggu dikonfirmasi", jalan.filter((o) => o.status === "Menunggu").length, "pesanan.html?status=Menunggu"],
+  ["credit-card", "Pesanan belum dibayar", belumBayar.length, "pesanan.html?status=belum"],
+  ["triangle-alert", "Stok habis — lengkapi di Kelola Barang", db.produk.filter((p) => p.stok < 1).length, "produk.html"]
+];
+const darurat = itemTindakan.filter(([, , n]) => n > 0);
+isi("tindakan", darurat.length
+  ? darurat.map(([ikon, label, n, href]) =>
+    `<a class="tindakanitem" href="${href}"><span class="ikon" data-lucide="${ikon}"></span><b>${n}</b><span>${label}</span><i>›</i></a>`).join("")
+  : `<p class="kosong"><span class="ikon" data-lucide="clipboard-check"></span>Semua beres — tidak ada yang perlu ditindak.</p>`);
 
 const kartuPesanan = (o) => {
   const p = produkById(o.produk);
@@ -22,13 +34,13 @@ const kartuPesanan = (o) => {
     <em class="${STATUS[o.status] || ""}">${o.status}</em>
   </a>`;
 };
-isi("tindak", jalan.length ? terbaru(jalan).map(kartuPesanan).join("") : `<p class="kosong">Tidak ada pesanan yang menunggu ditindak.</p>`);
+isi("tindak", jalan.length ? terbaru(jalan).map(kartuPesanan).join("") : pesanKosong("receipt", "Tidak ada pesanan yang menunggu ditindak."));
 
 isi("tipis", tipis.length ? tipis.map((p) => `<a class="row" href="produk.html?id=${p.id}">
   <div class="thumb">${fotoHTML(p)}</div>
   <div><b>${p.nama}</b><span>${kat(p)} · Rak ${p.rak} · ${rp(p.harga)}</span></div>
   <em class="${p.stok ? "wait" : "done"}">stok ${p.stok}</em>
-</a>`).join("") : `<p class="kosong">Semua stok di atas 5 unit.</p>`);
+</a>`).join("") : pesanKosong("package", "Semua stok di atas 5 unit."));
 
 const hitung = {};
 db.produk.forEach((p) => (hitung[p.rak] = (hitung[p.rak] || 0) + 1));

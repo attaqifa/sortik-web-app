@@ -8,14 +8,26 @@ const nilaiSemua = db.pesanan.reduce((n, o) => n + nilaiPesanan(o), 0);
 const pendapatan = lunas.reduce((n, o) => n + nilaiPesanan(o), 0);
 
 isi("stats", [
-  ["Pendapatan", rp(pendapatan), true],
-  ["Belum dibayar", belum.length],
-  ["Pengguna aktif", db.pengguna.filter((u) => u.status === "aktif").length],
-  ["Barang terdaftar", db.produk.length]
-].map(([label, nilai, kecil]) =>
-  `<div><b${kecil ? ' class="kecil"' : ""}>${nilai}</b><span>${label}</span></div>`).join(""));
+  ["wallet", "Pendapatan", rp(pendapatan), true],
+  ["clock", "Belum dibayar", belum.length],
+  ["user-round", "Pengguna aktif", db.pengguna.filter((u) => u.status === "aktif").length],
+  ["package", "Barang terdaftar", db.produk.length]
+].map(([ikon, label, nilai, kecil]) =>
+  `<div><span class="ikon" data-lucide="${ikon}"></span><b${kecil ? ' class="kecil"' : ""}>${nilai}</b><span>${label}</span></div>`).join(""));
 
-/* rak tersibuk pada satu bulan — info beban gudang */
+/* Perlu Tindakan: pintasan sesuai jumlah */
+const itemTindakan = [
+  ["clipboard-check", "Pesanan menunggu dikonfirmasi", db.pesanan.filter((o) => o.status === "Menunggu").length, "pesanan.html?status=Menunggu"],
+  ["credit-card", "Pesanan belum dibayar", belum.length, "pesanan.html?status=belum"],
+  ["triangle-alert", "Stok habis — lengkapi di Kelola Barang", db.produk.filter((p) => p.stok < 1).length, "produk.html"]
+];
+const darurat = itemTindakan.filter(([, , n]) => n > 0);
+isi("tindakan", darurat.length
+  ? darurat.map(([ikon, label, n, href]) =>
+    `<a class="tindakanitem" href="${href}"><span class="ikon" data-lucide="${ikon}"></span><b>${n}</b><span>${label}</span><i>›</i></a>`).join("")
+  : `<p class="kosong"><span class="ikon" data-lucide="clipboard-check"></span>Semua beres — tidak ada yang perlu ditindak.</p>`);
+
+/* rak tersibuk satu bulan */
 function rakSibuk(b) {
   const hitung = {};
   db.pesanan.filter((o) => o.tanggal.startsWith(b)).forEach((o) => {
@@ -40,9 +52,8 @@ const nmBulan = "Januari Februari Maret April Mei Juni Juli Agustus September Ok
 const rekap = Object.entries(bulan).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 6);
 const puncak = Math.max(1, ...rekap.map(([, v]) => v.nilai));
 
-/* ---------- grafik penghasilan ----------
-   Batang bertumpuk per bulan: bagian gelap = sudah dibayar,
-   bagian kuning = belum dibayar. Dibuat murni dengan SVG. */
+/* ---------- grafik penghasilan (SVG) ----------
+   batang bertumpuk per bulan: biru = dibayar, kuning = belum */
 const rpRingkas = (n) => {
   n = +n || 0;
   if (n >= 1e9) return "Rp " + (n / 1e9).toLocaleString("id-ID", { maximumFractionDigits: 1 }) + " M";
@@ -111,7 +122,7 @@ isi("lapor", rekap.length ? rekap.map(([b, v]) => `<div class="lapor">
     <div class="bar"><i style="width:${Math.round((v.nilai / puncak) * 100)}%"></i></div>
   </div>
   <em>${rp(v.nilai)}</em>
-</div>`).join("") : `<p class="kosong">Belum ada pesanan.</p>`);
+</div>`).join("") : pesanKosong("receipt", "Belum ada pesanan."));
 
 const terjual = {};
 db.pesanan.forEach((o) => (terjual[o.produk] = (terjual[o.produk] || 0) + o.jumlah));
@@ -123,7 +134,7 @@ isi("laris", Object.entries(terjual).sort((a, b) => b[1] - a[1]).slice(0, 5).map
     <div><b>${p.nama || "-"}</b><span>${kat(p)} · rak ${p.rak || "-"} · ${rp((p.harga || 0) * unit)}</span></div>
     <em class="proc">${unit} unit</em>
   </div>`;
-}).join("") || `<p class="kosong">Belum ada penjualan.</p>`);
+}).join("") || pesanKosong("wallet", "Belum ada penjualan."));
 
 isi("belum", belum.length ? [...belum].sort((a, b) => b.tanggal.localeCompare(a.tanggal)).map((o) => {
   const p = produkById(o.produk);
@@ -132,4 +143,4 @@ isi("belum", belum.length ? [...belum].sort((a, b) => b.tanggal.localeCompare(a.
     <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${o.pembeli || "-"} · ${o.bayar}</span></div>
     <em class="wait">${rp(nilaiPesanan(o))}</em>
   </a>`;
-}).join("") : `<p class="kosong">Semua pesanan sudah dibayar.</p>`);
+}).join("") : pesanKosong("clock", "Semua pesanan sudah dibayar."));

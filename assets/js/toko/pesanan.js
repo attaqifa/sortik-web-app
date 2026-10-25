@@ -1,8 +1,10 @@
-/* Kelola pesanan — tandai pembayaran diterima, lihat bukti transfer, dan
-   ubah status lewat daftar pilihan.
-   Skrip bersama: dipakai staff/pesanan.html dan admin/pesanan.html. */
+/* Kelola pesanan — konfirmasi bayar, lihat bukti transfer, ubah status.
+   Bersama: dipakai staff/pesanan.html dan admin/pesanan.html. */
 
-let status = "";
+/* ?status= preset filter (dipakai kartu Perlu Tindakan) */
+let status = new URLSearchParams(location.search).get("status") || "";
+
+const jmlStatus = (s) => db.pesanan.filter((o) => (s === "belum" ? !o.lunas : o.status === s)).length;
 
 const baris = (o) => {
   const p = produkById(o.produk);
@@ -31,14 +33,27 @@ const baris = (o) => {
 
 function daftar() {
   const hasil = db.pesanan
-    .filter((o) => !status || o.status === status)
+    .filter((o) => !status || (status === "belum" ? !o.lunas : o.status === status))
     .sort((a, b) => b.tanggal.localeCompare(a.tanggal));
   const belum = hasil.filter((o) => !o.lunas).length;
   isi("hasil", `${hasil.length} pesanan${belum ? ` · ${belum} belum dibayar` : " · semua sudah dibayar"}`);
-  isi("list", hasil.length ? hasil.map(baris).join("") : `<p class="kosong">Belum ada pesanan dengan status ini.</p>`);
+  isi("list", hasil.length ? hasil.map(baris).join("")
+    : pesanKosong(status === "belum" ? "credit-card" : "receipt",
+      status === "belum" ? "Semua pesanan sudah dibayar." : "Belum ada pesanan dengan status ini."));
+  segarChip();
 }
 
-chipSaring("chips", [["", "Semua"], ...ALUR.map((s) => [s, s])], (v) => { status = v; daftar(); });
+/* label chip menyertakan hitungan */
+function segarChip() {
+  const label = ["Semua", ...ALUR, "Belum dibayar"];
+  el("chips").querySelectorAll("button").forEach((b, i) => {
+    const s = i === 0 ? "" : i === label.length - 1 ? "belum" : label[i];
+    b.textContent = `${label[i]} (${i ? jmlStatus(s) : db.pesanan.length})`;
+  });
+}
+
+chipSaring("chips", [["", "Semua"], ...ALUR.map((s) => [s, s]), ["belum", "Belum dibayar"]],
+  (v) => { status = v; daftar(); }, status);
 
 el("list").addEventListener("click", (e) => {
   const b = e.target.closest("button");
@@ -67,7 +82,7 @@ el("list").addEventListener("click", (e) => {
   daftar();
 });
 
-/* status pesanan diubah lewat daftar pilihan, bukan tombol maju satu langkah */
+/* status diubah lewat pilihan */
 el("list").addEventListener("change", (e) => {
   const pilih = e.target.closest("select[data-status]");
   if (!pilih) return;

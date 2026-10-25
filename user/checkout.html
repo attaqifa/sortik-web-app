@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
   <title>Keranjang &amp; Checkout — SORTIK</title>
   <link rel="stylesheet" href="../assets/css/app.css">
 </head>
@@ -19,56 +20,64 @@
 
     <a class="back" href="cari.html">← Lanjut belanja</a>
 
-    <!-- daftar barang di keranjang (diisi checkout.js) -->
-    <section class="card">
-      <h2>Keranjang <a href="cari.html">Tambah Produk</a></h2>
-      <div id="items"></div>
-    </section>
+    <!-- kiri barang & pengambilan; kanan ringkasan melekat -->
+    <div class="checkout">
+      <div class="checkout-kiri">
 
-    <!-- cara pengambilan + pembayaran -->
-    <section class="card">
-      <h2>Pengambilan &amp; Pembayaran</h2>
+        <!-- diisi checkout.js -->
+        <section class="card checkout-atas">
+          <h2>Keranjang <a href="cari.html">Tambah Produk</a></h2>
+          <div id="items"></div>
+        </section>
 
-      <label class="lbl">Cara Pengambilan</label>
-      <div class="opt">
-        <label><input type="radio" name="cara" value="ambil" checked> 🏬 <span>Ambil di Tempat<em>Gratis · <b id="jam"></b></em></span></label>
-        <label><input type="radio" name="cara" value="antar"> 🚚 <span>Antar ke Alamat<em id="infoOngkir"></em></span></label>
+        <!-- cara pengambilan + pembayaran -->
+        <section class="card checkout-atas">
+          <h2>Pengambilan &amp; Pembayaran</h2>
+
+          <label class="lbl">Cara Pengambilan</label>
+          <div class="opt">
+            <label><input type="radio" name="cara" value="ambil" checked> <span class="ikon" data-lucide="store"></span> <span>Ambil di Tempat<em>Gratis · <b id="jam"></b></em></span></label>
+            <label><input type="radio" name="cara" value="antar"> <span class="ikon" data-lucide="truck"></span> <span>Antar ke Alamat<em id="infoOngkir"></em></span></label>
+          </div>
+
+          <div id="antar" hidden>
+            <label class="lbl" for="alamat">Alamat Pengiriman</label>
+            <textarea id="alamat" rows="3" placeholder="Nama penerima, alamat lengkap, patokan..."></textarea>
+            <p class="pesan-salah" id="pesan-alamat" hidden>Alamat pengiriman wajib diisi.</p>
+          </div>
+
+          <label class="lbl">Metode Pembayaran</label>
+          <div class="opt">
+            <label><input type="radio" name="bayar" value="Transfer ke admin" checked> <span class="ikon" data-lucide="credit-card"></span> <span>Transfer ke Admin<em>Unggah bukti transfer setelah pesanan dibuat</em></span></label>
+            <label><input type="radio" name="bayar" value="Bayar di kasir"> <span class="ikon" data-lucide="store"></span> <span>Bayar di Kasir<em>Bayar langsung di toko</em></span></label>
+          </div>
+
+          <!-- satu yang tampil, sesuai metode (checkout.js) -->
+          <div id="transfer">
+            <p class="note">Transfer ke rekening admin, lalu buka halaman <b>Pesan &amp; Booking</b> untuk mengunggah foto
+              bukti transfer agar pesanan dikonfirmasi. Butuh bantuan?
+              <a id="wa" target="_blank" rel="noopener"></a>.</p>
+            <ul class="rek" id="rek"></ul>
+          </div>
+          <div id="kasir" hidden>
+            <p class="note">Bayar langsung di kasir — sebutkan kode pesanan Anda saat membayar.</p>
+            <ul class="rek" id="kasirToko"></ul>
+          </div>
+
+          <p class="note" id="toko"></p>
+        </section>
+
       </div>
 
-      <div id="antar" hidden>
-        <label class="lbl" for="alamat">Alamat Pengiriman</label>
-        <textarea id="alamat" rows="3" placeholder="Nama penerima, alamat lengkap, patokan..."></textarea>
-      </div>
-
-      <label class="lbl">Metode Pembayaran</label>
-      <div class="opt">
-        <label><input type="radio" name="bayar" value="Transfer ke admin" checked> 💳 <span>Transfer ke Admin<em>Unggah bukti transfer setelah pesanan dibuat</em></span></label>
-        <label><input type="radio" name="bayar" value="Bayar di kasir"> 🏬 <span>Bayar di Kasir<em>Bayar langsung di toko</em></span></label>
-      </div>
-
-      <!-- hanya satu yang tampil, sesuai metode pembayaran (checkout.js) -->
-      <div id="transfer">
-        <p class="note">Transfer ke rekening admin, lalu buka halaman <b>Pesan &amp; Booking</b> untuk mengunggah foto
-          bukti transfer agar pesanan dikonfirmasi. Butuh bantuan?
-          <a id="wa" target="_blank" rel="noopener"></a>.</p>
-        <ul class="rek" id="rek"></ul>
-      </div>
-      <div id="kasir" hidden>
-        <p class="note">Bayar langsung di kasir — sebutkan kode pesanan Anda saat membayar.</p>
-        <ul class="rek" id="kasirToko"></ul>
-      </div>
-
-      <p class="note" id="toko"></p>
-    </section>
-
-    <!-- ringkasan dan tombol pesan -->
-    <section class="card">
-      <h2>Ringkasan</h2>
-      <div class="sum"><span>Subtotal</span><b id="sub"></b></div>
-      <div class="sum"><span>Ongkir</span><b id="ong"></b></div>
-      <div class="sum tot"><span>Total</span><b id="tot"></b></div>
-      <button class="primary" id="buat" type="button">Buat Pesanan</button>
-    </section>
+      <!-- ringkasan dan tombol pesan -->
+      <section class="card samping">
+        <h2>Ringkasan</h2>
+        <div class="sum"><span>Subtotal</span><b id="sub"></b></div>
+        <div class="sum"><span>Ongkir</span><b id="ong"></b></div>
+        <div class="sum tot"><span>Total</span><b id="tot"></b></div>
+        <button class="primary" id="buat" type="button">Buat Pesanan</button>
+      </section>
+    </div>
   </main>
 
 </div>

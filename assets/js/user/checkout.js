@@ -4,7 +4,7 @@ const ongkir = db.toko.ongkir;
 const state = { cara: "ambil", bayar: "Transfer ke admin" };
 const subtotal = () => keranjang.reduce((n, i) => n + (produkById(i.produk).harga || 0) * i.jumlah, 0);
 
-/* buang barang yang sudah dihapus staff dan batasi jumlah ke stok terkini */
+/* buang barang yang sudah tidak ada, batasi jumlah ke stok */
 keranjang.forEach((i) => (i.jumlah = Math.min(i.jumlah, produkById(i.produk).stok || 0)));
 const tersedia = keranjang.filter((i) => i.jumlah > 0);
 if (tersedia.length !== keranjang.length) {
@@ -15,12 +15,13 @@ simpanKeranjang();
 
 const item = (i) => {
   const p = produkById(i.produk);
+  const penuh = i.jumlah >= (p.stok || 0);
   return `<div class="row">
     <div class="thumb">${fotoHTML(p)}</div>
-    <div><b>${p.nama}</b><span>${rp(p.harga)} · Rak ${p.rak}</span></div>
+    <div><b>${p.nama}</b><span>${rp(p.harga)} · Rak ${p.rak}${penuh ? ` · <b class="maks">Maks ${p.stok} unit</b>` : ""}</span></div>
     <div class="qty">
-      <button type="button" data-kurang="${p.id}">−</button><b>${i.jumlah}</b><button type="button" data-tambah="${p.id}">＋</button>
-      <button type="button" class="x" data-hapus="${p.id}" title="Hapus">✕</button>
+      <button type="button" data-kurang="${p.id}" aria-label="Kurangi jumlah">−</button><b>${i.jumlah}</b><button type="button" data-tambah="${p.id}" aria-label="Tambah jumlah"${penuh ? " disabled" : ""}>＋</button>
+      <button type="button" class="x" data-hapus="${p.id}" title="Hapus" aria-label="Hapus dari keranjang">✕</button>
     </div>
   </div>`;
 };
@@ -28,7 +29,7 @@ const item = (i) => {
 function render() {
   const kosong = !keranjang.length;
   isi("items", kosong
-    ? `<p class="kosong">Keranjang masih kosong. <a href="cari.html">Cari produk dulu</a>.</p>`
+    ? pesanKosong("shopping-cart", "Keranjang masih kosong — pilih barang dulu.", ["cari.html", "Cari Produk"])
     : keranjang.map(item).join(""));
 
   const ong = state.cara === "antar" ? ongkir : 0;
@@ -51,7 +52,7 @@ isi("toko", `${db.toko.nama} — ${db.toko.alamat}`);
 isi("rek", db.toko.rekening.map((r) => `<li><b>${r.bank}</b><span>${r.nomor}</span><span>a.n. ${r.atasNama}</span></li>`).join(""));
 isi("kasirToko", `<li><b>Kasir ${db.toko.nama}</b><span>${db.toko.alamat}</span><span>${db.toko.jam}</span></li>`);
 
-/* alamat pengiriman terisi dari profil akun, bisa diubah saat checkout */
+/* alamat terisi dari profil akun */
 el("alamat").value = db.akun.alamat || "";
 
 el("items").addEventListener("click", (e) => {
@@ -71,10 +72,21 @@ document.querySelectorAll('input[name="cara"], input[name="bayar"]').forEach((r)
   render();
 }));
 
+/* salah alamat hilang saat mengetik */
+el("alamat").addEventListener("input", () => {
+  el("alamat").classList.remove("salah");
+  el("pesan-alamat").hidden = true;
+});
+
 el("buat").onclick = () => {
-  if (state.cara === "antar" && !el("alamat").value.trim()) return el("alamat").focus();
+  /* validasi alamat inline */
+  const tanpaAlamat = state.cara === "antar" && !el("alamat").value.trim();
+  el("pesan-alamat").hidden = !tanpaAlamat;
+  el("alamat").classList.toggle("salah", tanpaAlamat);
+  if (tanpaAlamat) return el("alamat").focus();
+
   const mulai = Math.max(0, ...db.pesanan.map((o) => o.id)) + 1;
-  db.pesanan.push(...keranjang.map((i, n) => ({
+  const dibuat = keranjang.map((i, n) => ({
     id: mulai + n,
     produk: i.produk,
     pembeli: db.akun.nama,
@@ -86,11 +98,13 @@ el("buat").onclick = () => {
     alamat: state.cara === "antar" ? el("alamat").value.trim() : "",
     lunas: false,
     staff: ""
-  })));
+  }));
+  db.pesanan.push(...dibuat);
   simpan("pesanan");
   keranjang.length = 0;
   simpanKeranjang();
-  location.href = "pesan.html";
+  /* ?baru=1 → notif sukses di pesan.html */
+  location.href = "pesan.html?id=" + dibuat[0].id + "&baru=1";
 };
 
 render();

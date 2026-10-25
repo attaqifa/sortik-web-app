@@ -1,6 +1,4 @@
-/* Tata rak — pindahkan barang antar rak dan atur susunan rak.
-   Skrip bersama: dipakai staff/rak.html dan admin/rak.html. Jangan menaruh
-   logika khusus peran di sini; peran hanya memengaruhi menu di core/store.js. */
+/* Tata rak (staff & admin) — pindahkan barang antar rak. */
 
 let sel = "";
 
@@ -23,7 +21,7 @@ function gambar() {
     <div class="thumb">${fotoHTML(p)}</div>
     <div><b>${p.nama}</b><span>${kat(p)} · ${rp(p.harga)} · stok ${p.stok}</span></div>
     <select data-pindah="${p.id}" title="Pindahkan ke rak">${semuaRak().map((r) => `<option${r === p.rak ? " selected" : ""}>${r}</option>`).join("")}</select>
-  </div>`).join("") : `<p class="kosong">Rak ini kosong. Pilih rak lain di denah, lalu pindahkan barangnya ke ${sel}.</p>`);
+  </div>`).join("") : pesanKosong("package", `Rak ${sel} masih kosong. Pilih rak lain di denah, lalu pindahkan barangnya ke sini.`));
 }
 
 el("denah").addEventListener("click", (e) => {

@@ -1,6 +1,4 @@
-/* SORTIK — data contoh (satu-satunya tempat data awal ditaruh).
-   Halaman lain membaca `db` ini, jadi saat backend siap cukup ganti isi objek
-   dengan hasil GET /api/db dan hapus pemakaian FOTO_BAWAAN. */
+/* SORTIK — data contoh; backend siap = ganti dengan hasil GET /api/db. */
 
 const db = {
   kategori: [
@@ -42,7 +40,7 @@ const db = {
     { id: 17, nama: "Xiaomi Redmi Watch 5", kategori: "wearable", harga: 899000, stok: 11, rak: "F2", ikon: "⌚", deskripsi: "Smartwatch layar AMOLED 2,07 inci, baterai hingga 20 hari, dan 150+ mode olahraga." }
   ],
 
-  /* pesanan merujuk produk lewat id, bukan salinan nama/harga */
+  /* pesanan merujuk produk lewat id */
   pesanan: [
     { id: 1, produk: 1, pembeli: "Rina Kartika", jumlah: 1, status: "Menunggu", tanggal: "2026-09-01", cara: "ambil", bayar: "Transfer ke admin", alamat: "", lunas: false, staff: "" },
     { id: 2, produk: 10, pembeli: "Rina Kartika", jumlah: 1, status: "Diproses", tanggal: "2026-08-27", cara: "antar", bayar: "Transfer ke admin", alamat: "Jl. Merdeka No. 8, Bandung", lunas: true, staff: "Bagas Prasetyo" },
@@ -59,8 +57,7 @@ const db = {
   ]
 };
 
-/* Pilihan ikon Lucide untuk kategori — dipakai form "Kelola Kategori" supaya
-   admin tinggal memilih, bukan mengetik nama ikon. Nama harus ada di Lucide. */
+/* pilihan ikon Lucide untuk form Kategori */
 const IKON_KATEGORI = [
   ["smartphone", "Smartphone"], ["laptop", "Laptop"], ["washing-machine", "Mesin cuci"],
   ["watch", "Jam / Wearable"], ["headphones", "Audio / Headphone"], ["speaker", "Speaker"],
@@ -68,8 +65,7 @@ const IKON_KATEGORI = [
   ["refrigerator", "Kulkas"], ["fan", "Kipas"], ["tag", "Lainnya"]
 ];
 
-/* Foto produk contoh diambil dari tautan internet (bukan emoji). Emoji `ikon`
-   tetap disimpan sebagai cadangan bila gambar gagal dimuat (lihat fotoHTML). */
+/* foto contoh: tautan internet; emoji tetap jadi cadangan */
 const FOTO_BAWAAN = {
   1: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=600&q=70",
   2: "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?auto=format&fit=crop&w=600&q=70",

@@ -24,7 +24,7 @@ el("t-simpan").onclick = () => {
   isi("t-info", "✓ Tersimpan — langsung dipakai halaman checkout pembeli.");
 };
 
-/* id kategori = slug nama, jadi mengubah nama tidak memutus barang yang merujuknya */
+/* id kategori = slug nama — ganti nama tidak memutus barang */
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 kelola({

@@ -1,5 +1,4 @@
-/* Akun saya — ubah profil, avatar, alamat pengiriman, dan kata sandi.
-   Khusus pelanggan (akun.html hanya ada di folder user/). */
+/* Akun — ubah profil, foto, alamat, dan kata sandi (khusus pembeli). */
 
 const u = db.akun;
 let avatar = u.avatar || "";
@@ -44,7 +43,7 @@ el("a-simpan").onclick = () => {
     ikon: el("a-ikon").value.trim()
   });
 
-  /* riwayat pesanan memakai nama pembeli sebagai kunci — ikut diperbarui saat nama berubah */
+  /* riwayat memakai nama pembeli — ikut diperbarui saat nama berubah */
   if (nama !== lama) db.pesanan.forEach((o) => { if (o.pembeli === lama) o.pembeli = nama; });
 
   simpan("pengguna");
@@ -52,6 +51,24 @@ el("a-simpan").onclick = () => {
   gambarSidebar();
   notif("Profil tersimpan");
 };
+
+/* toggle sandi + catatan Caps Lock */
+document.querySelectorAll(".sandi").forEach((kotak) => {
+  const input = kotak.querySelector("input");
+  kotak.querySelector(".lihat").onclick = () => {
+    const terlihat = kotak.classList.toggle("terlihat");
+    input.type = terlihat ? "text" : "password";
+  };
+  const tanda = document.createElement("span");
+  tanda.className = "kaps";
+  tanda.textContent = "Caps Lock menyala";
+  tanda.hidden = true;
+  kotak.appendChild(tanda);
+  const cek = (e) => (tanda.hidden = !(e.getModifierState && e.getModifierState("CapsLock")));
+  input.addEventListener("keydown", cek);
+  input.addEventListener("keyup", cek);
+  input.addEventListener("blur", () => (tanda.hidden = true));
+});
 
 el("a-sandisimpan").onclick = () => {
   const sandi = el("a-sandi").value;

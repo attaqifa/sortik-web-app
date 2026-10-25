@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
   <title>Cari Produk &amp; Rak — SORTIK</title>
   <link rel="stylesheet" href="../assets/css/app.css">
 </head>
@@ -20,6 +21,7 @@
     <section class="card cari">
       <input type="search" id="q" placeholder="Cari produk..." autocomplete="off">
       <div class="chips" id="chips"></div>
+      <div class="filteraktif" id="filter"></div>
 
       <details open>
         <summary>Denah Rak Toko</summary>
@@ -28,7 +30,15 @@
       </details>
     </section>
 
-    <p class="hasil" id="hasil"></p>
+    <!-- jumlah hasil + pilihan urutan -->
+    <div class="barishasil">
+      <p class="hasil" id="hasil"></p>
+      <select id="urut" class="chartsaring" aria-label="Urutkan hasil">
+        <option value="">Paling Relevan</option>
+        <option value="murah">Harga Termurah</option>
+        <option value="mahal">Harga Termahal</option>
+      </select>
+    </div>
     <div class="grid" id="produk"></div>
   </main>
 
