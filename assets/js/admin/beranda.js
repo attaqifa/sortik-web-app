@@ -6,10 +6,17 @@ const lunas = db.pesanan.filter((o) => o.lunas);
 const belum = db.pesanan.filter((o) => !o.lunas);
 const nilaiSemua = db.pesanan.reduce((n, o) => n + nilaiPesanan(o), 0);
 const pendapatan = lunas.reduce((n, o) => n + nilaiPesanan(o), 0);
+const menipis = (p) => p.stok > 0 && p.stok <= 3;
+
+/* kartu angka kunci: bulan ini, yang menunggu, dan yang perlu perhatian */
+const kunciBulan = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+const pendapatanBulanIni = lunas.filter((o) => o.tanggal.startsWith(kunciBulan)).reduce((n, o) => n + nilaiPesanan(o), 0);
 
 isi("stats", [
-  ["wallet", "Pendapatan", rp(pendapatan), true],
-  ["clock", "Belum dibayar", belum.length],
+  ["trending-up", "Pendapatan bulan ini", rp(pendapatanBulanIni), true],
+  ["clipboard-check", "Pesanan menunggu", nTunggu()],
+  ["triangle-alert", "Stok menipis (≤ 3)", db.produk.filter(menipis).length],
+  ["message-square", "Pesan grup belum dibaca", nPesanBaru()],
   ["user-round", "Pengguna aktif", db.pengguna.filter((u) => u.status === "aktif").length],
   ["package", "Barang terdaftar", db.produk.length]
 ].map(([ikon, label, nilai, kecil]) =>
@@ -19,6 +26,7 @@ isi("stats", [
 const itemTindakan = [
   ["clipboard-check", "Pesanan menunggu dikonfirmasi", db.pesanan.filter((o) => o.status === "Menunggu").length, "pesanan.html?status=Menunggu"],
   ["credit-card", "Pesanan belum dibayar", belum.length, "pesanan.html?status=belum"],
+  ["triangle-alert", "Stok menipis (≤ 3) — lengkapi di Kelola Barang", db.produk.filter(menipis).length, "produk.html"],
   ["triangle-alert", "Stok habis — lengkapi di Kelola Barang", db.produk.filter((p) => p.stok < 1).length, "produk.html"]
 ];
 const darurat = itemTindakan.filter(([, , n]) => n > 0);

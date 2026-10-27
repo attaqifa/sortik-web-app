@@ -138,6 +138,38 @@ if (db.akun.role === "admin") {
   });
 }
 
+/* ---------- ekspor: unduh CSV & cetak (khusus admin) ---------- */
+if (db.akun.role === "admin") {
+  isi("eksport", `
+    <button class="btn" type="button" id="unduhCsv"><span class="ikon" data-lucide="download"></span>Unduh CSV</button>
+    <button class="btn" type="button" id="cetak"><span class="ikon" data-lucide="printer"></span>Cetak</button>`);
+
+  el("unduhCsv").onclick = () => {
+    /* tabel: uang masuk (pesanan lunas) + uang keluar (pengeluaran), lalu ringkasan */
+    const tabel = [["Tanggal", "Jenis", "Kategori", "Keterangan", "Jumlah (Rp)"]];
+    db.pesanan.filter((o) => o.lunas).forEach((o) =>
+      tabel.push([o.tanggal, "Masuk", "Pendapatan", `Pesanan ${kodePesanan(o)} — ${produkById(o.produk).nama || "barang"}`, nilaiPesanan(o)]));
+    pengeluaran().forEach((x) =>
+      tabel.push([x.tanggal, "Keluar", x.kategori || "Lain-lain", x.keterangan, +x.jumlah || 0]));
+    tabel.push([], ["", "Ringkasan", "", "Pendapatan", totalPendapatan()]);
+    tabel.push(["", "Ringkasan", "", "Pengeluaran", totalKeluar()]);
+    tabel.push(["", "Ringkasan", "", "Laba bersih", totalPendapatan() - totalKeluar()]);
+
+    /* pemisah ";" (Excel id-ID) + BOM agar karakter pembaca langsung benar */
+    const csv = "\ufeff" + tabel
+      .map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
+    const tautan = document.createElement("a");
+    tautan.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    tautan.download = `keuangan-sortik-${hariIni()}.csv`;
+    tautan.click();
+    URL.revokeObjectURL(tautan.href);
+    notif("Laporan keuangan diunduh.");
+  };
+
+  el("cetak").onclick = () => window.print();
+}
+
 /* pesanan lunas / pengeluaran berubah di tab lain → ikut segarkan */
 window.addEventListener("storage", (e) => {
   if ([VERSI + "keuangan", VERSI + "pesanan"].includes(e.key)) segarkan();

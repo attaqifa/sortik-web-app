@@ -2,7 +2,7 @@
    kolom = [[field, label, jenis, opsi]]; jenis: text|angka|email|pilih|area|foto|galeri.
    baru(data) boleh null untuk menolak; cek(item) mengembalikan pesan penolakan. */
 
-function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari...", cari, urut, baru, cek }) {
+function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari...", cari, urut, baru, cek, chips }) {
   el(wadah).innerHTML = `<div class="formblok" id="${wadah}-blok" hidden>
   <h2 id="${wadah}-judul"></h2>
   <form class="form" id="${wadah}-form"></form>
@@ -11,6 +11,7 @@ function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari.
   <input type="search" id="${wadah}-q" class="grow" placeholder="${petunjuk}" autocomplete="off">
   <button class="btn" type="button" data-tambah>+ Tambah ${nama}</button>
 </div>
+${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
 <p class="hasil" id="${wadah}-hasil"></p>
 <div id="${wadah}-list"></div>`;
 
@@ -18,6 +19,7 @@ function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari.
   let ubah = null; /* baris yang sedang diubah; null = mode tambah */
   let foto = {}; /* foto utama yang sedang diedit: { namaField: dataURL/tautan } */
   let galeri = {}; /* foto detail (array) yang sedang diedit: { namaField: [src, ...] } */
+  let saring = ""; /* nilai chip filter aktif (opsi chips) */
 
   const TIPE = { angka: "number", email: "email" };
   const medan = ([f, label, jenis, opsi = []]) => {
@@ -143,6 +145,7 @@ function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari.
   function gambar() {
     const kata = el(`${wadah}-q`).value.trim().toLowerCase();
     tampil = db[kunci].filter((x) => String(cari ? cari(x) : Object.values(x).join(" ")).toLowerCase().includes(kata));
+    if (saring && chips) tampil = tampil.filter((x) => chips.terapkan(x, saring));
     if (urut) tampil.sort(urut);
     isi(`${wadah}-hasil`, `${tampil.length} dari ${db[kunci].length} ${nama.toLowerCase()}`);
     isi(`${wadah}-list`, tampil.length ? tampil.map((x, i) => `<div class="row">${baris(x, i)}
@@ -223,6 +226,12 @@ function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari.
     }
   });
   el(`${wadah}-q`).addEventListener("input", gambar);
+
+  /* chip filter (opsional): pasang sekali, klik = saring ulang daftar */
+  if (chips) chipSaring(`${wadah}-saring`, chips.opsi, (nilai) => {
+    saring = nilai;
+    gambar();
+  });
 
   gambar();
 

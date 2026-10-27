@@ -8,14 +8,18 @@ const jmlStatus = (s) => db.pesanan.filter((o) => (s === "belum" ? !o.lunas : o.
 
 const baris = (o) => {
   const p = produkById(o.produk);
+  /* cek stok: kurang dari jumlah dipesan = merah (jangan dipromes) */
+  const kurang = p.stok != null && p.stok < o.jumlah;
   return `<div class="row">
     <button class="thumb" type="button" data-foto="${o.id}" title="Perbesar foto barang">${fotoHTML(p)}</button>
     <div>
       <b>${p.nama || "-"}</b>
       <span>${kodePesanan(o)} · ${o.pembeli || "-"} · ${tglID(o.tanggal)}</span>
-      <span>${o.jumlah} unit · ${rp(nilaiPesanan(o))} · Rak ${p.rak || "-"} · ${o.cara === "antar" ? "Antar ke " + (o.alamat || "-") : "Ambil di tempat"}</span>
+      <span>${o.jumlah} unit · ${rp(nilaiPesanan(o))} · ${o.cara === "antar" ? "Antar ke " + (o.alamat || "-") : "Ambil di tempat"}</span>
       <div class="rowinfo">
         <em class="${STATUS[o.status] || ""}">${o.status}</em>
+        ${p.rak ? `<span class="tag ikonnya biru" title="Lokasi rak barang ini"><span class="ikon" data-lucide="warehouse"></span>Rak ${esc(labelRak(p.rak))}</span>` : ""}
+        ${p.stok != null ? `<span class="tag ikonnya ${kurang ? "habis" : "abu"}" title="${kurang ? "Stok tidak cukup — jangan dipromes dulu" : "Sisa stok barang ini"}"><span class="ikon" data-lucide="boxes"></span>Stok ${p.stok}${kurang ? ` — kurang dari ${o.jumlah} dipesan` : " tersisa"}</span>` : ""}
         ${tagBayar(o)}
         ${o.bukti
           ? `<button class="btn bukti" type="button" data-bukti="${o.id}"><span class="ikon" data-lucide="receipt"></span>Lihat bukti transfer</button>`

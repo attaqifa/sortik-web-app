@@ -101,6 +101,20 @@ el("buat").onclick = () => {
   }));
   db.pesanan.push(...dibuat);
   simpan("pesanan");
+  /* beritahu grup toko: satu pesan bot per pesanan baru — staff langsung tahu */
+  db.pesan = db.pesan || [];
+  dibuat.forEach((o) => {
+    const p = produkById(o.produk);
+    db.pesan.push({
+      id: Math.max(0, ...db.pesan.map((m) => m.id)) + 1,
+      dari: "SORTIK Bot",
+      peran: "bot",
+      teks: `Pesanan baru ${kodePesanan(o)} — ${o.pembeli}, ${p.nama || "barang"} ×${o.jumlah}. `
+        + `${o.bayar === "Bayar di kasir" ? "Akan dibayar di kasir." : "Tunggu konfirmasi transfer."}`,
+      waktu: new Date().toISOString()
+    });
+  });
+  simpan("pesan");
   keranjang.length = 0;
   simpanKeranjang();
   /* ?baru=1 → notif sukses di pesan.html */

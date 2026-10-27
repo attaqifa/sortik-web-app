@@ -20,9 +20,11 @@ function gambar() {
   const html = db.pesan.map((m) => {
     const d = new Date(m.waktu);
     const pemisah = hariObrolan(d) !== hari ? (hari = hariObrolan(d), `<div class="hari">${hari}</div>`) : "";
-    const aku = m.dari === db.akun.nama;
-    return `${pemisah}<div class="bubble${aku ? " aku" : ""}" data-id="${m.id}">
-      ${aku ? "" : `<div class="siapa">${esc(m.dari)}<i>${esc(labelPeran(m.peran))}</i></div>`}
+    const bot = m.peran === "bot";
+    const aku = !bot && m.dari === db.akun.nama;
+    return `${pemisah}<div class="bubble${aku ? " aku" : ""}${bot ? " bot" : ""}" data-id="${m.id}">
+      ${aku || bot ? "" : `<div class="siapa">${esc(m.dari)}<i>${esc(labelPeran(m.peran))}</i></div>`}
+      ${bot ? `<div class="siapa"><span class="ikon" data-lucide="bot"></span>${esc(m.dari)}</div>` : ""}
       <p>${esc(m.teks)}</p>
       <time>${jamObrolan(d)}</time>
       ${db.akun.role === "admin" ? `<button type="button" class="hapus" title="Hapus pesan ini">✕</button>` : ""}
