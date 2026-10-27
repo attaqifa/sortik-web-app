@@ -11,20 +11,22 @@ function render() {
   const kata = state.q.trim().toLowerCase();
   const hasil = db.produk.filter((p) =>
     `${p.nama} ${kat(p)} rak ${p.rak}`.toLowerCase().includes(kata) &&
-    (!state.kat || p.kategori === state.kat) &&
+    /* kat = "promo" → khusus barang yang sedang diskon */
+    (!state.kat || (state.kat === "promo" ? p.diskon > 0 : p.kategori === state.kat)) &&
     (!state.rak || p.rak === state.rak)
   );
 
-  /* urutan harga; relevan = urutan asli */
-  const daftar = state.urut === "murah" ? [...hasil].sort((a, b) => a.harga - b.harga)
-    : state.urut === "mahal" ? [...hasil].sort((a, b) => b.harga - a.harga)
+  /* urutan harga jual (diskon diperhitungkan); relevan = urutan asli */
+  const daftar = state.urut === "murah" ? [...hasil].sort((a, b) => hargaJual(a) - hargaJual(b))
+    : state.urut === "mahal" ? [...hasil].sort((a, b) => hargaJual(b) - hargaJual(a))
     : hasil;
 
   isi("hasil", `${hasil.length} dari ${db.produk.length} produk${state.rak ? ` di rak ${labelRak(state.rak)}` : ""}`);
-  isi("produk", daftar.length ? daftar.map(kartu).join("") : pesanKosong("search-x", "Produk tidak ditemukan. Coba kata kunci, kategori, atau rak lain."));
+  isi("produk", daftar.length ? daftar.map(kartu).join("") : pesanKosong("search-x", "Produk tidak ditemukan. Coba kata kunci, kategori, atau rak lain.", ["index.html", "Kembali ke Beranda"]));
 
   /* baris filter aktif: ✕ melepas satu, Reset semua */
-  const nameKat = (db.kategori.find((k) => k.id === state.kat) || {}).nama || state.kat;
+  const nameKat = state.kat === "promo" ? "Sedang Diskon"
+    : (db.kategori.find((k) => k.id === state.kat) || {}).nama || state.kat;
   isi("filter", (state.kat || state.rak)
     ? `<span>Filter aktif:</span>
       ${state.kat ? `<button type="button" class="chipx" data-lepas="kat">${nameKat} <b>✕</b></button>` : ""}
@@ -60,7 +62,7 @@ el("filter").addEventListener("click", (e) => {
 el("q").addEventListener("input", (e) => { state.q = e.target.value; render(); });
 el("urut").addEventListener("change", (e) => { state.urut = e.target.value; render(); });
 
-chipSaring("chips", [["", `<span class="ikon" data-lucide="layout-grid"></span> Semua`], ...db.kategori.map((k) => [k.id, `${ikonKategori(k)} ${k.nama}`])], (v) => {
+chipSaring("chips", [["", `<span class="ikon" data-lucide="layout-grid"></span> Semua`], ...db.kategori.map((k) => [k.id, `${ikonKategori(k)} ${k.nama}`]), ["promo", `<span class="ikon" data-lucide="tag"></span> Sedang Diskon`]], (v) => {
   state.kat = v;
   render();
 }, state.kat);

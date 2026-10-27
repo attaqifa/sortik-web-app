@@ -39,6 +39,18 @@ if (!localStorage.getItem(TANDA_FOTO)) {
   try { localStorage.setItem(TANDA_FOTO, "1"); } catch {}
 }
 
+/* produk lama tanpa diskon: ambil promo contoh sekali — data lama tetap hidup */
+const TANDA_DISKON = VERSI + "diskon-awal";
+if (!localStorage.getItem(TANDA_DISKON)) {
+  let berubah = false;
+  db.produk.forEach((p) => {
+    const c = contohProduk.find((x) => x.id === p.id) || {};
+    if (c.diskon && !p.diskon) { p.diskon = c.diskon; berubah = true; }
+  });
+  if (berubah) simpan("produk");
+  try { localStorage.setItem(TANDA_DISKON, "1"); } catch {}
+}
+
 /* rak lama: {grid, daftar} atau {grid, baris+kolom} → bungkus jadi lantai tunggal
    dengan model multi-lantai — kode rak tetap, jadi barang di dalamnya tidak berubah */
 if (!Array.isArray(db.rak.lantai)) {

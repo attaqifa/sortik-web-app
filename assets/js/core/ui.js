@@ -24,7 +24,14 @@ function gambarIkon() {
   document.querySelectorAll("svg[data-lucide]").forEach((s) => s.removeAttribute("data-lucide"));
 }
 const produkById = (id) => db.produk.find((p) => p.id === id) || {};
-const nilaiPesanan = (o) => (produkById(o.produk).harga || 0) * o.jumlah;
+/* harga jual = harga − diskon% (0–100, dibulatkan ke ratusan agar rapi) */
+const hargaJual = (p) => {
+  const diskon = Math.max(0, Math.min(100, (p && p.diskon) || 0));
+  return Math.round(((p && p.harga) || 0) * (1 - diskon / 100) / 100) * 100;
+};
+/* nilaiPesanan: pesanan baru menyimpan harga saat dipesan (o.harga) —
+   ubah diskon/harga tidak mengubah riwayat; pesanan lama pakai harga kini */
+const nilaiPesanan = (o) => (o.harga != null ? o.harga : hargaJual(produkById(o.produk))) * o.jumlah;
 /* ---------- lantai & rak ---------- */
 /* denah kini bisa beberapa lantai: db.rak.lantai = [{ nama, lebar, tinggi,
    pintu: { sisi, pos }, daftar: [rak] }]; db.rak.aktif = lantai yang tampil */
@@ -79,11 +86,11 @@ const fotoHTML = (p) => {
 };
 
 const kartu = (p) => `<a class="pcard" href="produk.html?id=${p.id}">
-  <div class="pimg">${fotoHTML(p)}</div>
+  <div class="pimg">${p.diskon ? `<span class="ptanda">−${p.diskon}%</span>` : ""}${fotoHTML(p)}</div>
   <div class="pbody">
     <span class="pcat">${kat(p)}</span>
     <h3>${p.nama}</h3>
-    <b>${rp(p.harga)}</b>
+    <b>${rp(hargaJual(p))}${p.diskon ? `<s class="hargalama">${rp(p.harga)}</s>` : ""}</b>
     <span class="pstok${p.stok ? "" : " habis"}">${p.stok ? `Stok ${p.stok} · Rak ${labelRak(p.rak)}` : "Stok habis"}</span>
   </div>
 </a>`;

@@ -17,6 +17,7 @@ kelola({
     ["nama", "Nama barang", "text"],
     ["kategori", "Kategori", "pilih", () => db.kategori.map((k) => [k.id, k.nama])],
     ["harga", "Harga (Rp)", "angka"],
+    ["diskon", "Diskon (%) — 0 = tanpa promo", "angka"],
     ["stok", "Stok", "angka"],
     ["rak", "Rak", "pilih", () => semuaRak().map((r) => [r, labelRak(r)])],
     ["foto", "Foto barang (tautan/unggah)", "foto"],
@@ -26,8 +27,8 @@ kelola({
 
   cari: (p) => `${p.nama} ${kat(p)} ${p.rak}`,
   urut: (a, b) => a.nama.localeCompare(b.nama),
-  baris: (p) => `<div class="thumb">${fotoHTML(p)}</div>
-  <div><b>${p.nama}</b><span>${kat(p)} · ${rp(p.harga)} · stok ${p.stok} · rak ${p.rak}</span>
+  baris: (p) => `<div class="thumb">${p.diskon ? `<span class="ptanda">−${p.diskon}%</span>` : ""}${fotoHTML(p)}</div>
+  <div><b>${p.nama}</b><span>${kat(p)} · ${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""} · stok ${p.stok} · rak ${p.rak}</span>
     <div class="rowinfo">${p.stok < 1
       ? `<span class="tag habis">Stok habis</span>`
       : p.stok <= 3 ? `<span class="tag menipis">Stok menipis</span>` : ""}</div></div>`,

@@ -61,7 +61,7 @@ const rincian = (o) => {
 
 function daftar() {
   const hasil = pesanan().filter((o) => tampil(o) && (!status || o.status === status));
-  isi("list", hasil.length ? hasil.map(baris).join("") : pesanKosong("receipt", "Belum ada pesanan di sini."));
+  isi("list", hasil.length ? hasil.map(baris).join("") : pesanKosong("receipt", "Belum ada pesanan di sini.", ["cari.html", "Mulai belanja"]));
 }
 
 function buka(id) {

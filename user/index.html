@@ -14,20 +14,12 @@
 
   <main>
     <header class="head">
-      <h1>Dashboard</h1>
-      <p>Ringkasan aktivitas Anda</p>
+      <h1>Beranda</h1>
+      <p>Katalog elektronik &amp; status pesanan Anda</p>
     </header>
 
-    <section class="hello">
-      <div>
-        <p>Selamat datang kembali 👋</p>
-        <h2 id="nama"></h2>
-      </div>
-      <div class="acts">
-        <a href="cari.html">Cari Produk</a>
-        <a href="pesan.html">Pesanan Saya</a>
-      </div>
-    </section>
+    <!-- etalase depan: toko + produk unggulan (diisi beranda.js) -->
+    <section class="hero" id="hero"></section>
 
     <section class="stats" id="stats"></section>
 
@@ -36,9 +28,10 @@
       <div id="pesanan"></div>
     </section>
 
-    <!-- produk terbaru (beranda.js) -->
+    <!-- produk terbaru + pil kategori (beranda.js) -->
     <section class="card" id="baruWrap">
-      <h2>Produk Terbaru <a href="cari.html">Lihat Semua</a></h2>
+      <h2 id="judulBaru"></h2>
+      <div class="chips" id="pilKat"></div>
       <div class="grid" id="baru"></div>
     </section>
 

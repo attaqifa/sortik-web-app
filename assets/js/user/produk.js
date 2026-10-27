@@ -4,6 +4,7 @@ const p = produkById(+new URLSearchParams(location.search).get("id"));
 
 function gambar(p) {
   const habis = p.stok < 1;
+  const tipis = p.stok > 0 && p.stok <= 3;
   /* ikon cadangan tampil bila foto gagal (onerror) */
   const foto = (src) => `${ikonCadangan(p)}<img src="${src}" alt="${p.nama}" onerror="this.remove()">`;
 
@@ -29,10 +30,11 @@ function gambar(p) {
   }
 
   isi("info", `<h2>${p.nama}</h2>
-  <b class="harga">${rp(p.harga)}</b>
+  <b class="harga">${rp(hargaJual(p))}${p.diskon ? `<s class="hargalama">${rp(p.harga)}</s>` : ""}</b>
 
   <div class="chipstat">
-    <span class="stok${habis ? " habis" : ""}"><span class="ikon" data-lucide="${habis ? "triangle-alert" : "package"}"></span>${habis ? "Stok habis" : `Stok ${p.stok} unit`}</span>
+    <span class="stok${habis ? " habis" : tipis ? " menipis" : ""}"><span class="ikon" data-lucide="${habis ? "triangle-alert" : tipis ? "triangle-alert" : "package"}"></span>${habis ? "Stok habis" : tipis ? `Stok menipis — ${p.stok} unit` : `Stok ${p.stok} unit`}</span>
+    ${p.diskon ? `<span class="promo"><span class="ikon" data-lucide="tag"></span>Diskon ${p.diskon}% — hemat ${rp(p.harga - hargaJual(p))}</span>` : ""}
     <a href="cari.html?rak=${encodeURIComponent(p.rak)}" title="Lihat produk di rak ini"><span class="ikon" data-lucide="warehouse"></span>Rak ${p.rak}</a>
     <a href="cari.html?kat=${p.kategori}" title="Lihat kategori ini"><span class="ikon" data-lucide="layout-grid"></span>${kat(p)}</a>
   </div>
@@ -51,7 +53,7 @@ function gambar(p) {
       <div class="qty">
         <button type="button" id="kurang" aria-label="Kurangi jumlah">−</button><b id="jumlah">1</b><button type="button" id="tambah" aria-label="Tambah jumlah">＋</button>
       </div>
-      <div class="totalbeli"><span>Total</span><b id="totalBeli">${rp(p.harga)}</b></div>
+      <div class="totalbeli"><span>Total</span><b id="totalBeli">${rp(hargaJual(p))}</b></div>
     </div>
     <div class="beli-aksi">
       <button class="primary" id="keranjang" type="button"${habis ? " disabled" : ""}>${habis ? "Stok Habis" : "Tambah ke Keranjang"}</button>
@@ -64,7 +66,7 @@ function gambar(p) {
   /* jumlah & total beli berubah bersama */
   const tampil = () => {
     el("jumlah").textContent = n;
-    el("totalBeli").textContent = rp(p.harga * n);
+    el("totalBeli").textContent = rp(hargaJual(p) * n);
   };
   const masuk = () => {
     const item = keranjang.find((i) => i.produk === p.id);

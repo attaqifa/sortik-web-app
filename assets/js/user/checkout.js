@@ -2,7 +2,7 @@
 
 const ongkir = db.toko.ongkir;
 const state = { cara: "ambil", bayar: "Transfer ke admin" };
-const subtotal = () => keranjang.reduce((n, i) => n + (produkById(i.produk).harga || 0) * i.jumlah, 0);
+const subtotal = () => keranjang.reduce((n, i) => n + hargaJual(produkById(i.produk)) * i.jumlah, 0);
 
 /* buang barang yang sudah tidak ada, batasi jumlah ke stok */
 keranjang.forEach((i) => (i.jumlah = Math.min(i.jumlah, produkById(i.produk).stok || 0)));
@@ -18,7 +18,7 @@ const item = (i) => {
   const penuh = i.jumlah >= (p.stok || 0);
   return `<div class="row">
     <div class="thumb">${fotoHTML(p)}</div>
-    <div><b>${p.nama}</b><span>${rp(p.harga)} · Rak ${p.rak}${penuh ? ` · <b class="maks">Maks ${p.stok} unit</b>` : ""}</span></div>
+    <div><b>${p.nama}</b><span>${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""} · Rak ${p.rak}${penuh ? ` · <b class="maks">Maks ${p.stok} unit</b>` : ""}</span></div>
     <div class="qty">
       <button type="button" data-kurang="${p.id}" aria-label="Kurangi jumlah">−</button><b>${i.jumlah}</b><button type="button" data-tambah="${p.id}" aria-label="Tambah jumlah"${penuh ? " disabled" : ""}>＋</button>
       <button type="button" class="x" data-hapus="${p.id}" title="Hapus" aria-label="Hapus dari keranjang">✕</button>
@@ -91,6 +91,8 @@ el("buat").onclick = () => {
     produk: i.produk,
     pembeli: db.akun.nama,
     jumlah: i.jumlah,
+    /* harga jual dikunci saat dipesan — diskon belakangan tidak mengubah riwayat */
+    harga: hargaJual(produkById(i.produk)),
     status: "Menunggu",
     tanggal: new Date().toISOString().slice(0, 10),
     cara: state.cara,
