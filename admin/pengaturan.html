@@ -22,7 +22,18 @@
     <section class="card">
       <h2>Profil &amp; Pembayaran</h2>
       <div class="form">
-        <div><label class="lbl" for="t-nama">Nama toko</label><input type="text" id="t-nama"></div>
+        <div class="full">
+          <label class="lbl">Logo perusahaan</label>
+          <div class="branding">
+            <div class="pratinjau-logo" id="logoPratinjau"></div>
+            <div class="pilihfoto">
+              <input type="file" id="t-logo" accept="image/*">
+              <span class="petunjuk">Tampil di sidebar admin &amp; staff, diganti "with SORTIK" di sebelah nama perusahaan</span>
+              <button class="btn" id="t-logoHapus" type="button">Hapus logo</button>
+            </div>
+          </div>
+        </div>
+        <div><label class="lbl" for="t-nama">Nama perusahaan / toko</label><input type="text" id="t-nama"></div>
         <div><label class="lbl" for="t-jam">Jam operasional</label><input type="text" id="t-jam"></div>
         <div><label class="lbl" for="t-wa">WhatsApp</label><input type="text" id="t-wa" placeholder="6281200001122"></div>
         <div><label class="lbl" for="t-ongkir">Ongkir dalam kota (Rp)</label><input type="number" id="t-ongkir" min="0" step="1000"></div>

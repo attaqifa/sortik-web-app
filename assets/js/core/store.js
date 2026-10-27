@@ -4,7 +4,7 @@
 
 /* ---------- penyimpanan ---------- */
 const VERSI = "sortik2:";
-const KOLEKSI = ["kategori", "toko", "rak", "produk", "pesanan", "pengguna"];
+const KOLEKSI = ["kategori", "toko", "rak", "produk", "pesanan", "pengguna", "pesan", "keuangan"];
 const baca = (k, d) => { try { return JSON.parse(localStorage.getItem(VERSI + k)) ?? d; } catch { return d; } };
 const simpan = (k) => {
   try {
@@ -39,6 +39,35 @@ if (!localStorage.getItem(TANDA_FOTO)) {
   try { localStorage.setItem(TANDA_FOTO, "1"); } catch {}
 }
 
+/* rak lama: {grid, daftar} atau {grid, baris+kolom} → bungkus jadi lantai tunggal
+   dengan model multi-lantai — kode rak tetap, jadi barang di dalamnya tidak berubah */
+if (!Array.isArray(db.rak.lantai)) {
+  const daftar = Array.isArray(db.rak.daftar) ? db.rak.daftar : susunAwal(db.rak.baris, db.rak.kolom);
+  db.rak = { grid: db.rak.grid || 28, aktif: 0, lantai: [lantaiAwal(daftar)] };
+  simpan("rak");
+}
+
+/* lengkapi lantai lama yang atributnya kurang (nama, luas, pintu) */
+let rakMigrasi = false;
+if (db.rak.aktif == null || !db.rak.lantai[db.rak.aktif]) { db.rak.aktif = 0; rakMigrasi = true; }
+db.rak.lantai.forEach((l, i) => {
+  const ujung = (f, d) => (d.length ? Math.max(...d.map(f)) : 0);
+  l.daftar = Array.isArray(l.daftar) ? l.daftar : [];
+  /* blok/halangan (kasir, lift, tembok, ...) — lantai lama belum punya */
+  if (!Array.isArray(l.area)) { l.area = []; rakMigrasi = true; }
+  if (!l.nama) { l.nama = "Lantai " + (i + 1); rakMigrasi = true; }
+  /* luas minimal = luas yang menampung semua raknya */
+  const lebarBaru = Math.max(ujung((r) => r.x + r.w, l.daftar), +l.lebar || 24);
+  const tinggiBaru = Math.max(ujung((r) => r.y + r.h, l.daftar), +l.tinggi || 18);
+  if (lebarBaru !== l.lebar || tinggiBaru !== l.tinggi) { l.lebar = lebarBaru; l.tinggi = tinggiBaru; rakMigrasi = true; }
+  const pintu = l.pintu || {};
+  if (!["atas", "bawah", "kiri", "kanan"].includes(pintu.sisi)) { pintu.sisi = "bawah"; rakMigrasi = true; }
+  const maks = Math.max(0, (pintu.sisi === "kiri" || pintu.sisi === "kanan" ? l.tinggi : l.lebar) - 3);
+  if (!Number.isInteger(pintu.pos) || pintu.pos < 0 || pintu.pos > maks) { pintu.pos = Math.min(maks, Math.floor(l.lebar / 3)); rakMigrasi = true; }
+  if (l.pintu !== pintu) { l.pintu = pintu; rakMigrasi = true; }
+});
+if (rakMigrasi) simpan("rak");
+
 /* ---------- keranjang ---------- */
 /* { produk: id, jumlah }; harga dari db.produk */
 const keranjang = baca("keranjang", []);
@@ -69,6 +98,12 @@ const pesananku = () => db.pesanan.filter((o) => o.pembeli === db.akun.nama);
 /* badge pesanan Menunggu untuk menu staff/admin */
 const nTunggu = () => db.pesanan.filter((o) => o.status === "Menunggu").length;
 
+/* badge pesan grup yang belum dibaca (stempel waktu terakhir dibaca per peran) */
+const nPesanBaru = () => {
+  const terakhir = +baca("pesanBaca-" + peran, 0);
+  return db.pesan.filter((m) => new Date(m.waktu).getTime() > terakhir && m.dari !== db.akun.nama).length;
+};
+
 /* ---------- sidebar ---------- */
 /* [nama ikon Lucide, label desktop, href, ekstra, label mobile] */
 const MENU = {
@@ -83,7 +118,9 @@ const MENU = {
     ["house", "Beranda", "index.html", "", "Beranda"],
     ["warehouse", "Tata Rak", "rak.html", "", "Rak"],
     ["package", "Kelola Barang", "produk.html", "", "Barang"],
-    ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"]
+    ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"],
+    ["message-square", "Pesan Grup", "pesan.html", `<b class="badge" id="badgePesan">${nPesanBaru() || ""}</b>`, "Pesan"],
+    ["wallet", "Keuangan", "keuangan.html", "", "Uang"]
   ],
   admin: [
     ["house", "Beranda", "index.html", "", "Beranda"],
@@ -91,6 +128,8 @@ const MENU = {
     ["warehouse", "Tata Rak", "rak.html", "", "Rak"],
     ["package", "Kelola Barang", "produk.html", "", "Barang"],
     ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"],
+    ["message-square", "Pesan Grup", "pesan.html", `<b class="badge" id="badgePesan">${nPesanBaru() || ""}</b>`, "Pesan"],
+    ["wallet", "Keuangan", "keuangan.html", "", "Uang"],
     ["users", "Kelola Pengguna", "pengguna.html", "", "Pengguna"],
     ["settings", "Pengaturan Toko", "pengaturan.html", "", "Toko"]
   ]
@@ -113,12 +152,15 @@ const hrefAkun = "akun.html";
 const tautanProfil = (html) => (peran === "pembeli")
   ? `<a class="profil" href="${hrefAkun}" title="Akun saya">${html}</a>` : html;
 isi("side", `<a class="logo" href="index.html">
-  <img src="../assets/img/SortikLogo.jpeg" alt="" width="34"><b>SORTIK</b>
+  <img src="${db.toko.logo || "../assets/img/SortikLogo.jpeg"}" alt="" width="34"><span class="namatoko"><b>${esc(db.toko.nama)}</b><i>with SORTIK</i></span>
 </a>
 <nav>${MENU[peran].map(([ikon, label, href, ekstra = "", singkat = label]) =>
     `<a${href === berkas ? ' class="on"' : ""} href="${href}"><span class="ikon" data-lucide="${ikon}"></span><span class="lengkap">${label}</span><span class="pendek">${singkat}</span> ${ekstra}</a>`).join("")}</nav>
 <div class="me">${tautanProfil(`<div class="avatar">${avatarHTML(db.akun)}</div><div class="siapa"><b>${db.akun.nama}</b><span>${labelPeran(db.akun.role)}</span></div>`)}
 <a class="keluar" href="../auth/login.html" title="Keluar"><span class="ikon" data-lucide="log-out"></span><span class="lengkap">Keluar</span></a></div>`);
+/* badge pesan grup dihitung ulang saat sidebar digambar (mis. setelah membuka halaman pesan) */
+const badgePesan = el("badgePesan");
+if (badgePesan) badgePesan.textContent = nPesanBaru() || "";
 }
 gambarSidebar();
 muatLucide();

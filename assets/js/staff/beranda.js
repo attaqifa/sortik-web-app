@@ -38,11 +38,15 @@ isi("tindak", jalan.length ? terbaru(jalan).map(kartuPesanan).join("") : pesanKo
 
 isi("tipis", tipis.length ? tipis.map((p) => `<a class="row" href="produk.html?id=${p.id}">
   <div class="thumb">${fotoHTML(p)}</div>
-  <div><b>${p.nama}</b><span>${kat(p)} · Rak ${p.rak} · ${rp(p.harga)}</span></div>
+  <div><b>${p.nama}</b><span>${kat(p)} · Rak ${labelRak(p.rak)} · ${rp(p.harga)}</span></div>
   <em class="${p.stok ? "wait" : "done"}">stok ${p.stok}</em>
 </a>`).join("") : pesanKosong("package", "Semua stok di atas 5 unit."));
 
 const hitung = {};
-db.produk.forEach((p) => (hitung[p.rak] = (hitung[p.rak] || 0) + 1));
+db.produk.forEach((p) => {
+  /* { n, kategori } → warna rak mengikuti kategori barangnya */
+  const h = hitung[p.rak] = hitung[p.rak] || { n: 0, kategori: p.kategori };
+  h.n++;
+});
 isi("rakInfo", `${Object.keys(hitung).length} dari ${semuaRak().length} rak terisi (rak kosong ditandai samar).`);
-denahRak("denah", hitung, { klik: false });
+denahToko("denah", hitung, { klik: false, piksel: 20, tab: true });

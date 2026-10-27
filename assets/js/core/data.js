@@ -18,7 +18,9 @@ const db = {
     rekening: [{ bank: "BCA", nomor: "1234567890", atasNama: "Admin SORTIK" }]
   },
 
-  rak: { baris: "ABCDEF", kolom: 4 },
+  /* rak: denah toko. grid = ukuran satu kotak alas (px); daftar lantai & rak
+     diisi di bawah — siap dipetakan ke tabel lantai dan tabel rak. */
+  rak: { grid: 28 },
 
   produk: [
     { id: 1, nama: "Samsung Galaxy A26 5G 8GB/256GB", kategori: "handphone", harga: 4999000, stok: 12, rak: "A1", ikon: "📱", deskripsi: "Ponsel 5G layar Super AMOLED 6,7 inci, RAM 8 GB, memori 256 GB, dan baterai 5.000 mAh." },
@@ -54,7 +56,27 @@ const db = {
     { id: 3, nama: "Dewi Lestari", email: "dewi@sortik.id", role: "admin", status: "aktif", telepon: "", alamat: "", avatar: "" },
     { id: 4, nama: "Andi Saputra", email: "andi@mail.com", role: "pembeli", status: "aktif", telepon: "", alamat: "", avatar: "" },
     { id: 5, nama: "Sari Melati", email: "sari@mail.com", role: "pembeli", status: "nonaktif", telepon: "", alamat: "", avatar: "" }
-  ]
+  ],
+
+  /* pesan grup: obrolan admin & staff dalam satu grup "Grup Toko" */
+  pesan: [
+    { id: 1, dari: "Dewi Lestari", peran: "admin", teks: "Siang tim 👋 Lantai 2 sudah saya buka di Tata Rak — silakan ditata raknya di sana.", waktu: "2026-10-20T09:12:00" },
+    { id: 2, dari: "Bagas Prasetyo", peran: "staff", teks: "Siap Pak/Bu. Sore ini saya rapikan stok speaker yang laris ke rak dekat pintu biar gampang dijangkau.", waktu: "2026-10-20T13:40:00" },
+    { id: 3, dari: "Dewi Lestari", peran: "admin", teks: "Boleh. Jangan lupa blok dekat tangga jangan tertutup rak ya, itu jalur pelanggan.", waktu: "2026-10-20T13:55:00" },
+    { id: 4, dari: "Bagas Prasetyo", peran: "staff", teks: "Aman 👍. Oh iya, pesanan BK-2026-0011 sudah saya proses, tinggal diambil pembesok.", waktu: "2026-10-21T16:02:00" }
+  ],
+
+  /* keuangan: pendapatan dihitung dari pesanan lunas; pengeluaran dicatat manual */
+  keuangan: {
+    pengeluaran: [
+      { id: 1, tanggal: "2026-08-05", keterangan: "Listrik & air sebulan", kategori: "Operasional", jumlah: 820000 },
+      { id: 2, tanggal: "2026-08-10", keterangan: "Belanja stok mesin cuci Aqua", kategori: "Belanja barang", jumlah: 9500000 },
+      { id: 3, tanggal: "2026-08-28", keterangan: "Gaji staff Agustus", kategori: "Gaji", jumlah: 6500000 },
+      { id: 4, tanggal: "2026-09-07", keterangan: "Sewa ruko September", kategori: "Sewa", jumlah: 4500000 },
+      { id: 5, tanggal: "2026-09-15", keterangan: "Iklan media sosial", kategori: "Pemasaran", jumlah: 350000 },
+      { id: 6, tanggal: "2026-09-30", keterangan: "Gaji staff September", kategori: "Gaji", jumlah: 6500000 }
+    ]
+  }
 };
 
 /* pilihan ikon Lucide untuk form Kategori */
@@ -86,3 +108,22 @@ const FOTO_BAWAAN = {
   17: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=70"
 };
 db.produk.forEach((p) => { if (FOTO_BAWAAN[p.id]) p.foto = FOTO_BAWAAN[p.id]; });
+
+/* Denah toko: bisa beberapa lantai. Tiap lantai punya luas (lebar×tinggi dalam
+   kotak grid), satu pintu masuk (sisi + posisi di sisi itu), dan daftar rak.
+   Posisi & ukuran rak disimpan dalam satuan kotak grid (bukan piksel),
+   jadi ukuran kotak (db.rak.grid) boleh diubah tanpa merusak susunan. */
+function susunAwal(baris = "ABCDEF", kolom = 4) {
+  const daftar = [];
+  [...baris].forEach((b, r) => {
+    for (let i = 1; i <= kolom; i++) daftar.push({ kode: b + i, x: (i - 1) * 5, y: r * 3, w: 4, h: 2 });
+  });
+  return daftar;
+}
+function lantaiAwal(daftar) {
+  const ujung = (f) => (daftar.length ? Math.max(...daftar.map(f)) : 0);
+  const lebar = Math.max(24, ujung((r) => r.x + r.w));
+  const tinggi = Math.max(18, ujung((r) => r.y + r.h));
+  return { nama: "Lantai 1", lebar, tinggi, pintu: { sisi: "bawah", pos: Math.floor((lebar - 2) / 2) }, daftar };
+}
+db.rak = { grid: db.rak.grid || 28, lantai: [lantaiAwal(susunAwal())] };

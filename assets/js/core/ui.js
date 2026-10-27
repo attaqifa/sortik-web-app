@@ -25,7 +25,24 @@ function gambarIkon() {
 }
 const produkById = (id) => db.produk.find((p) => p.id === id) || {};
 const nilaiPesanan = (o) => (produkById(o.produk).harga || 0) * o.jumlah;
-const semuaRak = () => db.rak.baris.split("").flatMap((b) => Array.from({ length: db.rak.kolom }, (_, i) => `${b}${i + 1}`));
+/* ---------- lantai & rak ---------- */
+/* denah kini bisa beberapa lantai: db.rak.lantai = [{ nama, lebar, tinggi,
+   pintu: { sisi, pos }, daftar: [rak] }]; db.rak.aktif = lantai yang tampil */
+const lantaiIni = () => db.rak.lantai[Math.min(db.rak.aktif || 0, db.rak.lantai.length - 1)]
+  || { nama: "Lantai 1", lebar: 24, tinggi: 18, pintu: { sisi: "bawah", pos: 7 }, daftar: [] };
+const daftarRak = () => lantaiIni().daftar || [];
+/* semua kode rak dari seluruh lantai (kode unik antar lantai) */
+const semuaRak = () => db.rak.lantai.flatMap((l) => (l.daftar || []).map((r) => r.kode)).sort();
+/* label rak + lantainya, mis. "A1 · Lantai 2"; disingkat bila cuma satu lantai */
+const labelRak = (kode) => {
+  const i = lantaiDari(kode);
+  return i >= 0 && db.rak.lantai.length > 1 ? `${kode} · ${db.rak.lantai[i].nama}` : String(kode);
+};
+/* nomor lantai tempat rak berkode itu (−1 bila tidak ketemu) */
+const lantaiDari = (kode) => db.rak.lantai.findIndex((l) => (l.daftar || []).some((r) => r.kode === kode));
+
+/* loloskan HTML: nama lantai/kode rak ketikan pengguna jadi aman */
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 const bln = "Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des".split(" ");
 const tglID = (s) => { const [y, m, d] = String(s).split("-"); return `${d} ${bln[m - 1]} ${y}`; };
@@ -67,7 +84,7 @@ const kartu = (p) => `<a class="pcard" href="produk.html?id=${p.id}">
     <span class="pcat">${kat(p)}</span>
     <h3>${p.nama}</h3>
     <b>${rp(p.harga)}</b>
-    <span class="pstok${p.stok ? "" : " habis"}">${p.stok ? `Stok ${p.stok} · Rak ${p.rak}` : "Stok habis"}</span>
+    <span class="pstok${p.stok ? "" : " habis"}">${p.stok ? `Stok ${p.stok} · Rak ${labelRak(p.rak)}` : "Stok habis"}</span>
   </div>
 </a>`;
 
@@ -165,19 +182,72 @@ function lihatGambar(sumber, judul = "Bukti transfer") {
 }
 
 /* ---------- widget daftar ---------- */
-/* denah rak — jumlah = { kode: n }; sel jadi tombol bila klik */
-function denahRak(wadah, jumlah = {}, { klik = true, aktif = "" } = {}) {
+/* denah toko: kotak grid jadi alas, tiap rak digambar sesuai posisi & ukurannya.
+   jumlah = { kode: n } untuk rak yang berisi barang; aktif = kode rak tersorot;
+   piksel = ukuran satu kotak grid (kecilkan untuk denah mini);
+   sunting = true menambahkan titik ubah ukuran (dipakai halaman Tata Rak). */
+function denahToko(wadah, jumlah = {}, { klik = true, aktif = "", aktifArea = "", piksel = db.rak.grid, sunting = false, tab = false } = {}) {
+  const g = Math.max(8, Math.round(+piksel || db.rak.grid));
+  const L = lantaiIni();
+  const daftar = L.daftar || [];
+  /* papan = luas lantai (lebar×tinggi kotak grid), bukan lagi ujung rak terjauh */
+  const lebar = Math.max(8, +L.lebar || 24) * g;
+  const tinggi = Math.max(6, +L.tinggi || 18) * g;
   const sel = klik ? "button" : "span";
-  el(wadah).style.gridTemplateColumns = `auto repeat(${db.rak.kolom}, minmax(0, 1fr))`;
-  isi(wadah, db.rak.baris.split("").map((b) =>
-    `<span class="rlbl">Rak ${b}</span>` +
-    Array.from({ length: db.rak.kolom }, (_, i) => {
-      const kode = `${b}${i + 1}`, n = jumlah[kode] || 0;
-      const label = n ? `${n} barang` : "kosong";
-      return `<${sel} class="rcell${n ? " ada" : ""}${kode === aktif ? " on" : ""}" data-rak="${kode}" title="Rak ${kode} — ${label}"${klik ? ' type="button"' : ""}>`
-        + `<b>${kode}</b><i>${n ? n + " unit" : "kosong"}</i></${sel}>`;
-    }).join("")
-  ).join(""));
+  /* pintu masuk: garis tebal di tepi lantai sesuai sisi & posisinya */
+  const { gaya, sisi } = gayaPintu(L, g);
+  const pintu = `<span class="ppintu${sunting ? " bisa" : ""}" data-pintu style="${gaya}"
+    title="Pintu masuk sisi ${sisi}${sunting ? " — tarik untuk memindah" : ""}"></span>`;
+  /* tab pilih lantai untuk halaman lihat (beranda & cari) */
+  const tabs = tab && db.rak.lantai.length > 1
+    ? `<div class="pilihlantai">${db.rak.lantai.map((l, i) =>
+      `<button type="button" data-lantai="${i}" class="${i === db.rak.aktif ? "on" : ""}">${esc(l.nama)}</button>`).join("")}</div>`
+    : "";
+  /* jumlah boleh angka (model lama) atau { n, kategori } — kategori menentukan warna rak */
+  const infoRak = (kode) => {
+    const v = jumlah[kode];
+    return typeof v === "object" && v ? { n: v.n || 0, kategori: v.kategori || "" } : { n: +v || 0, kategori: "" };
+  };
+  isi(wadah, `${tabs}<div class="papan${sunting ? " sunting" : ""}" style="width:${lebar}px;height:${tinggi}px;--g:${g}px">
+    ${pintu}${(L.area || []).map((a) => `
+    <${sel} class="parea${a.id === aktifArea ? " on" : ""}" data-area="${a.id}"
+      style="left:${a.x * g}px;top:${a.y * g}px;width:${a.w * g}px;height:${a.h * g}px"
+      title="Blok ${esc(a.nama) || "(tanpa nama)"} — rak tidak boleh di sini"${klik ? ' type="button"' : ""}>
+      ${a.nama ? `<b>${esc(a.nama)}</b>` : ""}${sunting ? `<span class="ukur" data-ukur="${a.id}" title="Tarik untuk mengubah ukuran"></span>` : ""}</${sel}>`).join("")}${daftar.map((r) => {
+    const { n, kategori } = infoRak(r.kode);
+    const iKat = kategori ? db.kategori.findIndex((k) => k.id === kategori) : -1;
+    const warna = n && iKat >= 0 ? " kat" + (iKat % 8) : "";
+    const label = n ? `${n} unit` : "kosong";
+    return `<${sel} class="prak${n ? " ada" : ""}${warna}${r.kode === aktif ? " on" : ""}" data-rak="${r.kode}"
+      style="left:${r.x * g}px;top:${r.y * g}px;width:${r.w * g}px;height:${r.h * g}px"
+      title="Rak ${r.kode} — ${label}"${klik ? ' type="button"' : ""}>
+      <b>${r.kode}</b><i>${label}</i>${sunting ? `<span class="ukur" data-ukur="${r.kode}" title="Tarik untuk mengubah ukuran"></span>` : ""}</${sel}>`;
+  }).join("")}${sunting ? `<span class="ukur-lantai" title="Tarik untuk memperluas / mempersempit lantai"></span>` : ""}</div>`);
+  /* klik tab = pindah lantai lalu gambar ulang denah ini */
+  if (tabs) el(wadah).querySelector(".pilihlantai").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-lantai]");
+    if (!b || +b.dataset.lantai === db.rak.aktif) return;
+    db.rak.aktif = +b.dataset.lantai;
+    simpan("rak");
+    denahToko(wadah, jumlah, { klik, aktif, piksel, sunting, tab });
+  });
+}
+
+/* gaya (style) elemen pintu masuk: dipakai denahToko & editor saat pintu digeser */
+function gayaPintu(L, g) {
+  const pt = L.pintu || { sisi: "bawah", pos: 2 };
+  const sisi = ["atas", "bawah", "kiri", "kanan"].includes(pt.sisi) ? pt.sisi : "bawah";
+  const maks = Math.max(0, (sisi === "kiri" || sisi === "kanan" ? +L.tinggi || 18 : +L.lebar || 24) - 3);
+  const pos = Math.max(0, Math.min(+pt.pos || 0, maks));
+  const t = g * 0.55; /* tebal garis pintu */
+  const p = 3 * g;    /* panjang pintu = 3 kotak */
+  const lebar = Math.max(8, +L.lebar || 24) * g;
+  const tinggi = Math.max(6, +L.tinggi || 18) * g;
+  const gaya = sisi === "bawah" ? `left:${pos * g}px;top:${tinggi - t}px;width:${p}px;height:${t}px`
+    : sisi === "atas" ? `left:${pos * g}px;top:0;width:${p}px;height:${t}px`
+      : sisi === "kiri" ? `left:0;top:${pos * g}px;width:${t}px;height:${p}px`
+        : `left:${lebar - t}px;top:${pos * g}px;width:${t}px;height:${p}px`;
+  return { gaya, sisi, pos };
 }
 
 /* chip filter — opsi = [[nilai, label]]; awal = nilai terpilih */

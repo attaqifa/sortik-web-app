@@ -12,7 +12,7 @@ kelola({
     ["kategori", "Kategori", "pilih", () => db.kategori.map((k) => [k.id, k.nama])],
     ["harga", "Harga (Rp)", "angka"],
     ["stok", "Stok", "angka"],
-    ["rak", "Rak", "pilih", () => semuaRak().map((r) => [r, r])],
+    ["rak", "Rak", "pilih", () => semuaRak().map((r) => [r, labelRak(r)])],
     ["foto", "Foto barang (tautan/unggah)", "foto"],
     ["galeri", "Foto detail (tautan/unggah)", "galeri"],
     ["deskripsi", "Deskripsi", "area"]

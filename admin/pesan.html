@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
+  <title>Pesan Grup — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="side" id="side"></aside>
+
+  <main>
+    <header class="head">
+      <h1>Pesan Grup</h1>
+      <p>Grup bersama admin &amp; staff — koordinasi susunan rak, stok, dan pesanan</p>
+    </header>
+
+    <section class="card">
+      <h2>Grup Toko <span id="anggota" style="font-size:12px;font-weight:500;color:var(--tinta-3)"></span></h2>
+      <div class="dinding" id="dinding"></div>
+      <form id="formKirim" class="kirimpesan" autocomplete="off">
+        <input type="text" id="teksPesan" placeholder="Tulis pesan untuk tim..." maxlength="2000">
+        <button type="submit" class="btn primary" title="Kirim"><span class="ikon" data-lucide="send"></span></button>
+      </form>
+    </section>
+  </main>
+
+</div>
+<script src="../assets/js/core/data.js"></script>
+<script src="../assets/js/core/ui.js"></script>
+<script src="../assets/js/core/store.js"></script>
+<script src="../assets/js/core/kelola.js"></script>
+<script src="../assets/js/toko/pesan.js"></script>
+</body>
+</html>

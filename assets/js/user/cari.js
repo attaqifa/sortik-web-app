@@ -20,7 +20,7 @@ function render() {
     : state.urut === "mahal" ? [...hasil].sort((a, b) => b.harga - a.harga)
     : hasil;
 
-  isi("hasil", `${hasil.length} dari ${db.produk.length} produk${state.rak ? ` di rak ${state.rak}` : ""}`);
+  isi("hasil", `${hasil.length} dari ${db.produk.length} produk${state.rak ? ` di rak ${labelRak(state.rak)}` : ""}`);
   isi("produk", daftar.length ? daftar.map(kartu).join("") : pesanKosong("search-x", "Produk tidak ditemukan. Coba kata kunci, kategori, atau rak lain."));
 
   /* baris filter aktif: ✕ melepas satu, Reset semua */
@@ -33,8 +33,16 @@ function render() {
     : "");
 
   const jumlah = {};
-  hasil.forEach((p) => (jumlah[p.rak] = (jumlah[p.rak] || 0) + 1));
-  denahRak("denah", jumlah, { aktif: state.rak });
+  hasil.forEach((p) => {
+    /* { n, kategori } → warna rak mengikuti kategori barangnya */
+    const h = jumlah[p.rak] = jumlah[p.rak] || { n: 0, kategori: p.kategori };
+    h.n++;
+  });
+  /* rak hasil cari mungkin di lantai lain — tampilkan lantai tempat rak terpilih */
+  if (state.rak) { const i = lantaiDari(state.rak); if (i >= 0) db.rak.aktif = i; }
+  /* denah mini: kotak grid lebih kecil, rak berisi hasil cari ikut tersorot,
+     ada tab lantai bila tokonya beberapa lantai */
+  denahToko("denah", jumlah, { aktif: state.rak, piksel: 20, tab: true });
 }
 
 el("filter").addEventListener("click", (e) => {
@@ -58,7 +66,7 @@ chipSaring("chips", [["", `<span class="ikon" data-lucide="layout-grid"></span> 
 }, state.kat);
 
 el("denah").addEventListener("click", (e) => {
-  const c = e.target.closest(".rcell");
+  const c = e.target.closest(".prak");
   if (c) { state.rak = state.rak === c.dataset.rak ? "" : c.dataset.rak; render(); }
 });
 

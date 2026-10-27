@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
+  <title>Keuangan — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="side" id="side"></aside>
+
+  <main>
+    <header class="head">
+      <h1>Keuangan</h1>
+      <p>Pendapatan dari pesanan lunas, piutang, dan pengeluaran yang Anda catat sendiri</p>
+    </header>
+
+    <section class="card">
+      <h2>Ringkasan</h2>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section class="card">
+      <h2>Arus Kas 6 Bulan Terakhir
+        <span class="grafikleg"><span class="tag biru">Pendapatan</span><span class="tag abu">Pengeluaran</span></span>
+      </h2>
+      <div class="grafik" id="grafik"></div>
+    </section>
+
+    <section class="card">
+      <h2>Arus Kas Terakhir</h2>
+      <div class="chips" id="chips"></div>
+      <div id="list"></div>
+    </section>
+
+    <!-- kartu catat pengeluaran: hanya untuk admin (dibuka dari keuangan.js) -->
+    <section class="card" id="catat" hidden></section>
+  </main>
+
+</div>
+<script src="../assets/js/core/data.js"></script>
+<script src="../assets/js/core/ui.js"></script>
+<script src="../assets/js/core/store.js"></script>
+<script src="../assets/js/core/kelola.js"></script>
+<script src="../assets/js/toko/keuangan.js"></script>
+</body>
+</html>

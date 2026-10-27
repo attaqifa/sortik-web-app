@@ -15,20 +15,31 @@
   <main>
     <header class="head">
       <h1>Tata Rak</h1>
-      <p>Pindahkan barang antar rak dan atur susunan rak toko</p>
+      <p>Denah toko — susunan rak mirip toko asli, barang mudah ditemukan</p>
     </header>
 
     <section class="card">
       <div class="toolbar">
-        <label class="lbl" for="kolom">Jumlah kolom</label>
-        <input type="number" id="kolom" min="1" max="12">
-        <button class="btn" id="tambahBaris" type="button">+ Baris rak</button>
-        <button class="btn danger" id="hapusBaris" type="button">− Baris terakhir</button>
+        <button class="btn" id="modeAtur" type="button" title="Ganti mode atur ↔ lihat">✏ Mode atur</button>
+        <button class="btn" id="tambahRak" type="button">+ Tambah rak</button>
+        <button class="btn" id="tambahBlok" type="button" title="Blok abu-abu: kasir, lift, tembok, dll.">+ Tambah blok</button>
+        <button class="btn danger" id="hapusRak" type="button">− Hapus terpilih</button>
+        <button class="btn" id="urungkan" type="button" disabled>↩ Urungkan</button>
+        <span class="grow"></span>
+        <div class="zum">
+          <button class="btn" id="zumKecil" type="button" title="Perkecil (Ctrl+gulir juga bisa)">−</button>
+          <b id="zumNilai">100%</b>
+          <button class="btn" id="zumBesar" type="button" title="Perbesar">+</button>
+          <button class="btn" id="zumPasar" type="button" title="Pas lebar layar">Sesuai</button>
+        </div>
       </div>
+      <div class="lantaitab" id="lantaiTab"></div>
+      <div class="lantai-set" id="lantaiSet"></div>
+      <p class="petunjuk">Mode atur: tahan rak lalu geser untuk memindahkan; tarik kotak kecil di pojok kanan bawah rak untuk mengubah ukurannya. Blok abu-abu bergaris miring adalah halangan (kasir, lift, tembok, ...) — rak tidak boleh menimpanya, dan namanya bisa diganti lewat panel. Luas lantai diubah lewat kotak isian atau tarik titik di pojok kanan bawah papan; pintu masuk digeser di tepi papan atau lewat daftar pilihan. Rak menempel ke grid dan tidak boleh saling menimpa (ditandai merah). Ctrl+Z untuk mengurungkan, Delete menghapus yang terpilih.</p>
 
-      <!-- denah rak: klik sel untuk melihat & memindahkan barang di rak itu -->
-      <div class="rak" id="denah"></div>
-      <p class="raklegenda"><span class="k">Kosong</span><span class="a">Ada barang</span><span class="o">Sedang dipilih</span></p>
+      <!-- denah toko: klik rak untuk melihat & memindahkan barang di rak itu -->
+      <div class="denah" id="denah"></div>
+      <p class="raklegenda" id="legenda"></p>
       <p class="hasil" id="info"></p>
     </section>
 
