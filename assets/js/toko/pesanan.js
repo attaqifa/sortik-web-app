@@ -81,8 +81,12 @@ el("list").addEventListener("click", (e) => {
   o.lunas = true;
   o.staff = db.akun.nama;
   if (o.status === "Menunggu") o.status = "Diproses";
+  /* stok otomatis: barang benar-benar keluar saat pembayaran sah —
+     (pembatalan hanya boleh sebelum lunas, jadi stok tidak perlu dikembalikan) */
+  const p = produkById(o.produk);
+  if (p.id) { p.stok = Math.max(0, p.stok - o.jumlah); simpan("produk"); }
   simpan("pesanan");
-  notif("Pembayaran dikonfirmasi");
+  notif(`Pembayaran dikonfirmasi — stok ${p.nama || "barang"} −${o.jumlah}`);
   daftar();
 });
 

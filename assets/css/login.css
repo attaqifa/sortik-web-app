@@ -7,6 +7,7 @@
   --biru-muda: #eef4ff;
   --biru-garis: #dbe6fd;
   --tinta: #111827;
+  --tinta-2: #374151;
   --tinta-3: #6b7280;
   --garis: #e5e8ef;
   --bidang: #d7dce3;
@@ -33,13 +34,24 @@ body {
   padding: 40px 44px;
   color: #fff;
   text-align: center;
-  background: var(--biru);
+  /* foto toko + lapisan biru tua agar teks putih tetap terbaca
+     (login.css ada di assets/css/ → jalur gambar relatif: ../img/) */
+  background:
+    linear-gradient(rgba(17, 42, 108, .68), rgba(17, 42, 108, .68)),
+    url("../img/LoginBackground.png") center / cover no-repeat var(--biru);
 }
 
 .brand h1 { font-size: 40px; font-weight: 800; letter-spacing: 3px; line-height: 1; }
 .brand h1 .co { display: block; margin-top: 8px; font-size: 12.5px; font-weight: 700; font-style: normal; letter-spacing: 2.5px; text-transform: uppercase; opacity: .7; }
-.brand .brandlogo { display: block; width: 56px; height: 56px; object-fit: contain; margin-bottom: 14px; padding: 5px; background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+.brand .brandlogo { display: block; width: 56px; height: 56px; object-fit: contain; margin: 0 auto 14px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.25)); }
 .brand p { margin-top: 8px; font-size: 13px; letter-spacing: .6px; opacity: .8; }
+
+/* pesan galat & kotak akun demo */
+.galat { margin-top: 4px; padding: 10px 14px; font-size: 13px; color: #b91c1c; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; }
+.demo { margin-top: 16px; font-size: 12.5px; color: var(--tinta-3); }
+.demo summary { cursor: pointer; font-weight: 600; color: var(--tinta-2); user-select: none; }
+.demo summary:hover { color: var(--biru-tua); }
+.demo ul { margin: 8px 0 0 18px; display: grid; gap: 4px; }
 
 .hero h2 { font-size: clamp(30px, 3vw, 42px); margin-bottom: 18px; }
 .hero h2 span { color: #bfdbfe; }
@@ -95,9 +107,10 @@ body {
 .roles input:checked + label span { color: var(--biru-tua); }
 .roles input:focus-visible + label { outline: 2px solid var(--biru); outline-offset: 2px; }
 
-/* field + tombol; tautan masuk <-> daftar */
+/* field + tombol; tautan masuk <-> daftar
+   (input sandi dibungkus .sandi — pakai selektor keturunan, bukan anak langsung) */
 .form form > label { display: block; margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--tinta-3); }
-.form form > input {
+.form form input {
   width: 100%;
   margin-bottom: 22px;
   padding: 15px 18px;
@@ -107,7 +120,7 @@ body {
   border-radius: 12px;
   transition: border-color var(--cepat), box-shadow var(--cepat);
 }
-.form form > input:focus { outline: 0; border-color: var(--biru); box-shadow: var(--fokus); }
+.form form input:focus { outline: 0; border-color: var(--biru); box-shadow: var(--fokus); }
 
 .form button {
   width: 100%;

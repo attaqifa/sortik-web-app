@@ -1,5 +1,13 @@
 /* SORTIK — data contoh; backend siap = ganti dengan hasil GET /api/db. */
 
+/* hash sandi demo — djb2 ringan (BUKAN kriptografi; backend nanti ganti bcrypt).
+   Dipakai login/daftar & kelola pengguna; simpan hash, bukan teks sandinya. */
+const sandiHash = (s) => {
+  let h = 5381;
+  for (const c of String(s)) h = ((h * 33) ^ c.charCodeAt(0)) >>> 0;
+  return "h" + h.toString(36);
+};
+
 const db = {
   kategori: [
     { id: "handphone", nama: "Handphone", ikon: "📱", lucide: "smartphone" },
@@ -51,11 +59,11 @@ const db = {
   ],
 
   pengguna: [
-    { id: 1, nama: "Rina Kartika", email: "rina@mail.com", role: "pembeli", status: "aktif", telepon: "0812-1111-2222", alamat: "Jl. Merdeka No. 8, Bandung", avatar: "" },
-    { id: 2, nama: "Bagas Prasetyo", email: "bagas@sortik.id", role: "staff", status: "aktif", telepon: "", alamat: "", avatar: "" },
-    { id: 3, nama: "Dewi Lestari", email: "dewi@sortik.id", role: "admin", status: "aktif", telepon: "", alamat: "", avatar: "" },
-    { id: 4, nama: "Andi Saputra", email: "andi@mail.com", role: "pembeli", status: "aktif", telepon: "", alamat: "", avatar: "" },
-    { id: 5, nama: "Sari Melati", email: "sari@mail.com", role: "pembeli", status: "nonaktif", telepon: "", alamat: "", avatar: "" }
+    { id: 1, nama: "Rina Kartika", email: "rina@mail.com", role: "pembeli", status: "aktif", telepon: "0812-1111-2222", alamat: "Jl. Merdeka No. 8, Bandung", avatar: "", ikon: "🧑", sandi: "h5b6tp1" },
+    { id: 2, nama: "Bagas Prasetyo", email: "bagas@sortik.id", role: "staff", status: "aktif", telepon: "", alamat: "", avatar: "", ikon: "🧑", sandi: "h15n3cuf" },
+    { id: 3, nama: "Dewi Lestari", email: "dewi@sortik.id", role: "admin", status: "aktif", telepon: "", alamat: "", avatar: "", ikon: "🧑", sandi: "hukbj1q" },
+    { id: 4, nama: "Andi Saputra", email: "andi@mail.com", role: "pembeli", status: "aktif", telepon: "", alamat: "", avatar: "", ikon: "🧑", sandi: "" },
+    { id: 5, nama: "Sari Melati", email: "sari@mail.com", role: "pembeli", status: "nonaktif", telepon: "", alamat: "", avatar: "", ikon: "🧑", sandi: "" }
   ],
 
   /* pesan grup: obrolan admin & staff dalam satu grup "Grup Toko" */

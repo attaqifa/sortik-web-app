@@ -17,7 +17,20 @@ const simpan = (k) => {
 /* contoh dipakai sekali untuk mengisi data lama */
 const contohProduk = db.produk.map((p) => ({ ...p }));
 const contohKategori = db.kategori.map((k) => ({ ...k }));
+const contohPengguna = db.pengguna.map((u) => ({ ...u }));
 KOLEKSI.forEach((k) => (db[k] = baca(k, db[k])));
+
+/* pengguna lama tanpa sandi: isi sekali dari data contoh — masuk tetap bisa */
+const TANDA_SANDI = VERSI + "sandi-awal";
+if (!localStorage.getItem(TANDA_SANDI)) {
+  let berubah = false;
+  db.pengguna.forEach((u) => {
+    const c = contohPengguna.find((x) => x.email === u.email) || {};
+    if (c.sandi && !u.sandi) { u.sandi = c.sandi; berubah = true; }
+  });
+  if (berubah) simpan("pengguna");
+  try { localStorage.setItem(TANDA_SANDI, "1"); } catch {}
+}
 
 /* kategori lama: lengkapi nama ikon dari data contoh */
 let ikonBaru = false;
@@ -159,12 +172,10 @@ function muatLucide() {
 
 function gambarSidebar() {
   const berkas = location.pathname.split("/").pop() || "index.html";
-  /* profil pembeli jadi tautan ke akun */
-const hrefAkun = "akun.html";
-const tautanProfil = (html) => (peran === "pembeli")
-  ? `<a class="profil" href="${hrefAkun}" title="Akun saya">${html}</a>` : html;
+  /* profil semua peran jadi tautan ke halaman akun masing-masing folder */
+const tautanProfil = (html) => `<a class="profil" href="akun.html" title="Akun saya">${html}</a>`;
 isi("side", `<a class="logo" href="index.html">
-  <img src="${db.toko.logo || "../assets/img/SortikLogo.jpeg"}" alt="" width="34"><span class="namatoko"><b>${esc(db.toko.nama)}</b><i>with SORTIK</i></span>
+  <img src="${db.toko.logo || "../assets/img/favicon.svg"}" alt="" width="34"><span class="namatoko"><b>${esc(db.toko.nama)}</b><i>with SORTIK</i></span>
 </a>
 <nav>${MENU[peran].map(([ikon, label, href, ekstra = "", singkat = label]) =>
     `<a${href === berkas ? ' class="on"' : ""} href="${href}"><span class="ikon" data-lucide="${ikon}"></span><span class="lengkap">${label}</span><span class="pendek">${singkat}</span> ${ekstra}</a>`).join("")}</nav>

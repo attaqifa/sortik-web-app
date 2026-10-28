@@ -1,6 +1,16 @@
 /* Beranda staff — ringkasan operasional toko. */
 
 isi("nama", db.akun.nama);
+el("sapa").innerHTML = avatarHTML(db.akun);
+
+/* sambutan bisa ditutup dengan × — disembunyikan sampai besok */
+const sapa = document.querySelector(".hello");
+const hariSapa = new Date().toISOString().slice(0, 10);
+if (localStorage.getItem(VERSI + "sapa") === hariSapa) sapa.hidden = true;
+el("sapTutup").onclick = () => {
+  sapa.hidden = true;
+  try { localStorage.setItem(VERSI + "sapa", hariSapa); } catch {}
+};
 
 const jalan = db.pesanan.filter((o) => o.status !== "Selesai");
 const belumBayar = jalan.filter((o) => !o.lunas);

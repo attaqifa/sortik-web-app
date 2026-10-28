@@ -1,4 +1,5 @@
-/* Akun — ubah profil, foto, alamat, dan kata sandi (khusus pembeli). */
+/* Akun — profil, foto, dan kata sandi. Dipakai pembeli, staff, dan admin
+   (halaman akun.html di masing-masing folder; peran menentukan detail). */
 
 const u = db.akun;
 let avatar = u.avatar || "";
@@ -31,7 +32,13 @@ el("a-hapusfoto").onclick = () => { avatar = ""; renderAvatar(); };
 
 el("a-simpan").onclick = () => {
   const nama = el("a-nama").value.trim();
+  const email = el("a-email").value.trim().toLowerCase();
   if (!nama) return el("a-nama").focus();
+  if (!email) return el("a-email").focus();
+  /* email unik: dipakai untuk masuk, jadi tidak boleh bentrok dengan milik orang lain */
+  if (email !== (u.email || "").toLowerCase() && db.pengguna.some((x) => x.id !== u.id && (x.email || "").toLowerCase() === email))
+    return notif(`Email sudah dipakai pengguna lain.`);
+
   const lama = u.nama;
 
   Object.assign(u, {
@@ -43,11 +50,11 @@ el("a-simpan").onclick = () => {
     ikon: el("a-ikon").value.trim()
   });
 
-  /* riwayat memakai nama pembeli — ikut diperbarui saat nama berubah */
-  if (nama !== lama) db.pesanan.forEach((o) => { if (o.pembeli === lama) o.pembeli = nama; });
+  /* riwayat & pesanan memakai nama pembeli — ikut diperbarui saat nama berubah */
+  if (u.role === "pembeli" && nama !== lama) db.pesanan.forEach((o) => { if (o.pembeli === lama) o.pembeli = nama; });
 
   simpan("pengguna");
-  if (nama !== lama) simpan("pesanan");
+  if (u.role === "pembeli" && nama !== lama) simpan("pesanan");
   gambarSidebar();
   notif("Profil tersimpan");
 };
@@ -74,7 +81,7 @@ el("a-sandisimpan").onclick = () => {
   const sandi = el("a-sandi").value;
   if (sandi.length < 8) return notif("Kata sandi minimal 8 karakter.");
   if (sandi !== el("a-sandi2").value) return notif("Ulangi kata sandi belum sama.");
-  u.sandi = sandi;
+  u.sandi = sandiHash(sandi); /* simpan hash, bukan teks sandinya */
   simpan("pengguna");
   el("a-sandi").value = "";
   el("a-sandi2").value = "";

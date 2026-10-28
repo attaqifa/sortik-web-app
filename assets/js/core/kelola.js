@@ -2,7 +2,7 @@
    kolom = [[field, label, jenis, opsi]]; jenis: text|angka|email|pilih|area|foto|galeri.
    baru(data) boleh null untuk menolak; cek(item) mengembalikan pesan penolakan. */
 
-function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari...", cari, urut, baru, cek, chips }) {
+function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari...", cari, urut, baru, cek, chips, siapkan }) {
   el(wadah).innerHTML = `<div class="formblok" id="${wadah}-blok" hidden>
   <h2 id="${wadah}-judul"></h2>
   <form class="form" id="${wadah}-form"></form>
@@ -28,6 +28,7 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
     const kontrol = jenis === "pilih"
       ? `<select id="${id}" data-f="${f}">${pilihan.map(([v, t]) => `<option value="${v}">${t}</option>`).join("")}</select>`
       : jenis === "area" ? `<textarea id="${id}" data-f="${f}" rows="3"></textarea>`
+      : jenis === "sandi" ? `<input id="${id}" data-f="${f}" type="password" autocomplete="new-password" placeholder="Ketik sandi baru — kosongkan jika tetap">`
         : jenis === "foto" ? `<div class="medanfoto">
         <div class="pratinjau" id="${id}-pratinjau"></div>
         <div class="pilihfoto">
@@ -95,6 +96,7 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
         renderGaleri(f);
         return;
       }
+      if (jenis === "sandi") return; /* sandi tidak pernah diisi ulang ke form */
       const x2 = el(`${wadah}-${f}`);
       if (x2 && x && x[f] != null) x2.value = x[f];
     });
@@ -114,9 +116,11 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
     });
     const pertama = el(`${wadah}-${kolom[0][0]}`);
     if (!data[kolom[0][0]]) return pertama.focus();
-    if (ubah) Object.assign(ubah, data);
+    /* hook siapkan(data, lama): ubah isi sebelum disimpan (mis. hash sandi) */
+    const siap = siapkan ? siapkan(data, ubah) : data;
+    if (ubah) Object.assign(ubah, siap);
     else {
-      const x = baru ? baru(data) : { id: Math.max(0, ...db[kunci].map((y) => y.id)) + 1, ...data };
+      const x = baru ? baru(siap) : { id: Math.max(0, ...db[kunci].map((y) => y.id)) + 1, ...siap };
       if (!x) return;
       db[kunci].push(x);
     }

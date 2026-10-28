@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
+  <title>Akun Saya — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="side" id="side"></aside>
+
+  <main>
+    <header class="head">
+      <h1>Akun Saya</h1>
+      <p>Ubah profil, foto, dan kata sandi</p>
+    </header>
+
+    <!-- profil & avatar; diisi akun.js -->
+    <section class="card">
+      <h2>Profil</h2>
+      <div class="form">
+        <div class="full">
+          <label class="lbl">Foto &amp; ikon profil</label>
+          <div class="medanfoto">
+            <div class="pratinjau" id="a-avatar"></div>
+            <div class="pilihfoto">
+              <input type="file" id="a-foto" accept="image/*">
+              <div class="barisfoto">
+                <input type="text" id="a-ikon" maxlength="4" placeholder="Emoji, mis. 🧑" aria-label="Ikon emoji">
+                <button class="btn danger" type="button" id="a-hapusfoto" hidden>Hapus foto</button>
+              </div>
+              <span class="petunjuk">Unggah foto (JPG/PNG, otomatis diperkecil) atau pakai emoji sebagai cadangan.</span>
+            </div>
+          </div>
+        </div>
+
+        <div><label class="lbl" for="a-nama">Nama lengkap</label><input type="text" id="a-nama"></div>
+        <div><label class="lbl" for="a-email">Email</label><input type="email" id="a-email"></div>
+        <div><label class="lbl" for="a-telepon">Telepon</label><input type="text" id="a-telepon" placeholder="08xx-xxxx-xxxx"></div>
+        <div class="full">
+          <label class="lbl" for="a-alamat">Alamat</label>
+          <textarea id="a-alamat" rows="2" placeholder="Alamat lengkap (opsional)"></textarea>
+        </div>
+
+        <div class="btns full"><button class="primary" id="a-simpan" type="button">Simpan Profil</button></div>
+      </div>
+    </section>
+
+    <!-- ganti kata sandi; diisi akun.js -->
+    <section class="card">
+      <h2>Kata Sandi</h2>
+      <div class="form">
+        <div><label class="lbl" for="a-sandi">Kata sandi baru</label>
+          <div class="sandi">
+            <input type="password" id="a-sandi" autocomplete="new-password">
+            <button class="lihat" type="button" aria-label="Tampilkan kata sandi">
+              <span class="ikon terbuka" data-lucide="eye"></span><span class="ikon tertutup" data-lucide="eye-off"></span>
+            </button>
+          </div>
+        </div>
+        <div><label class="lbl" for="a-sandi2">Ulangi kata sandi</label>
+          <div class="sandi">
+            <input type="password" id="a-sandi2" autocomplete="new-password">
+            <button class="lihat" type="button" aria-label="Tampilkan kata sandi">
+              <span class="ikon terbuka" data-lucide="eye"></span><span class="ikon tertutup" data-lucide="eye-off"></span>
+            </button>
+          </div>
+        </div>
+        <div class="btns full"><button class="primary garis" id="a-sandisimpan" type="button">Ganti Kata Sandi</button></div>
+      </div>
+      <p class="note">Kata sandi disimpan di browser ini saja (mode demo tanpa backend).</p>
+    </section>
+  </main>
+
+</div>
+<script src="../assets/js/core/data.js"></script>
+<script src="../assets/js/core/ui.js"></script>
+<script src="../assets/js/core/store.js"></script>
+<script src="../assets/js/core/kelola.js"></script>
+<script src="../assets/js/akun.js"></script>
+</body>
+</html>

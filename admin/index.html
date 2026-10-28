@@ -19,14 +19,18 @@
     </header>
 
     <section class="hello">
-      <div>
-        <p>Selamat bertugas 👋</p>
-        <h2 id="nama"></h2>
+      <div class="sapa">
+        <div class="avatar" id="sapa"></div>
+        <div>
+          <p>Selamat bertugas 👋</p>
+          <h2 id="nama"></h2>
+        </div>
       </div>
       <div class="acts">
         <a href="pengguna.html">Kelola Pengguna</a>
         <a href="pengaturan.html">Pengaturan Toko</a>
       </div>
+      <button class="tutup" id="sapTutup" type="button" aria-label="Tutup sambutan" title="Tutup sambutan"><span class="ikon" data-lucide="x"></span></button>
     </section>
 
     <section class="stats" id="stats"></section>
@@ -36,25 +40,12 @@
       <div class="tindakanlist" id="tindakan"></div>
     </section>
 
-    <!-- grafik penghasilan: diisi assets/js/admin/beranda.js -->
+    <!-- ringkasan bulanan: diisi assets/js/admin/beranda.js -->
     <section class="card">
-      <h2>Grafik Penghasilan
-        <select id="rentang" class="chartsaring" aria-label="Rentang grafik">
-          <option value="6">6 bulan terakhir</option>
-          <option value="12">12 bulan terakhir</option>
-        </select>
+      <h2>Ringkasan Bulanan <a href="pesanan.html">Kelola Pesanan</a>
+        <span class="grafikleg"><span class="tag biru">Sudah dibayar</span><span class="tag kuning">Belum dibayar</span></span>
       </h2>
-      <div class="chart" id="grafik"></div>
-      <p class="hasil" id="grafikInfo"></p>
-      <div class="legend">
-        <span><i class="dibayar"></i> Sudah dibayar</span>
-        <span><i class="belumdibayar"></i> Belum dibayar</span>
-      </div>
-    </section>
-
-    <!-- laporan: diisi assets/js/admin/beranda.js -->
-    <section class="card">
-      <h2>Penjualan per Bulan <a href="pesanan.html">Kelola Pesanan</a></h2>
+      <div class="grafik" id="grafik"></div>
       <p class="hasil" id="total"></p>
       <div id="lapor"></div>
     </section>
