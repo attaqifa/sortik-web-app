@@ -109,11 +109,26 @@ const PERAN = { pembeli: "Pembeli", staff: "Staff Toko", admin: "Admin Toko" };
 const FOLDER = { user: "pembeli", staff: "staff", admin: "admin" };
 const peran = FOLDER[(location.pathname.match(/\/(user|staff|admin)\//) || [])[1]] || "pembeli";
 
-const idSesi = +baca("sesi", 0);
-db.akun = db.pengguna.find((u) => u.id === idSesi && u.role === peran)
-  || db.pengguna.find((u) => u.role === peran)
-  || { id: 0, nama: "Pengguna", role: peran, email: "", telepon: "", alamat: "", avatar: "", ikon: "🧑" };
+/* sesi dari Supabase: profil diambil dari tabel profil (uuid = auth.uid) */
+db.akun = { id: 0, nama: "Pengguna", role: peran, email: "", telepon: "", alamat: "", avatar: "", ikon: "🧑" };
 db.akun.peran = peran;
+const TUJUAN_PERAN = { pembeli: "../user/index.html", staff: "../staff/index.html", admin: "../admin/index.html" };
+sb.auth.getSession().then(({ data }) => {
+  const uid = data?.session?.user?.id;
+  if (!uid) return;                                    /* belum login: tampil sebagai pengunjung */
+  sb.from("profil").select("*").eq("id", uid).single().then(({ data: p }) => {
+    if (!p) return;
+    if (p.role !== peran) {                            /* buka folder yang bukan perannya → alihkan */
+      location.href = TUJUAN_PERAN[p.role] || TUJUAN_PERAN.pembeli;
+      return;
+    }
+    db.akun = { id: uid, nama: p.nama || "Pengguna", email: p.email || "", role: p.role,
+      status: p.status, telepon: p.telepon || "", alamat: p.alamat || "",
+      avatar: p.avatar || "", ikon: (p.ikon && p.ikon !== "🧑") ? p.ikon : "🧑" };
+    db.akun.peran = peran;
+    gambarSidebar();                                   /* gambar ulang sidebar dengan data profil */
+  });
+});
 
 const labelPeran = (r) => PERAN[r] || r;
 const inisial = (nama) => String(nama || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();

@@ -1,37 +1,16 @@
-/* Masuk & daftar — kredensial dicek ke pengguna tersimpan (sandi di-hash).
-   ui.js/store.js tidak dimuat di sini: data pengguna dibaca langsung dari
-   localStorage (awalan sortik2:), sama seperti pola tokoMasuk di bawah. */
+/* Masuk & daftar — Supabase Auth. Sesi disimpan otomatis oleh supabase-js
+   (bukan localStorage "sortik2:" lagi — itu hanya dipakai sisa data contoh). */
 
-const KUNCI_MASUK = "sortik2:";
-const bacaMasuk = (k, d) => {
-  try { return JSON.parse(localStorage.getItem(KUNCI_MASUK + k)) ?? d; }
-  catch { return d; }
-};
-const simpanMasuk = (k, v) => {
-  try { localStorage.setItem(KUNCI_MASUK + k, JSON.stringify(v)); } catch {}
-};
+/* buka halaman masuk/daftar selalu mengakhiri sesi sebelumnya */
+sb.auth.signOut().catch(() => {});
 
-/* keluar: membuka halaman masuk/daftar selalu mengakhiri sesi sebelumnya */
-try { localStorage.removeItem(KUNCI_MASUK + "sesi"); } catch {}
-
-const penggunaMasuk = bacaMasuk("pengguna", db.pengguna);
 const PERAN_MASUK = { pembeli: "Pembeli", staff: "Staff Toko", admin: "Admin Toko" };
 
-/* branding toko: logo perusahaan (bila diunggah admin) + nama perusahaan
-   dengan "with SORTIK" di sebelahnya. */
-const tokoMasuk = bacaMasuk("toko", db.toko);
+/* branding toko: dari data contoh — akan diambil dari tabel toko di tahap data */
+const tokoMasuk = db.toko;
 document.querySelectorAll(".brand").forEach((brand) => {
   const h1 = brand.querySelector("h1");
   if (!h1) return;
-  /* logo hanya bila admin mengunggahnya — berkas JPEG bawaan putih di atas
-     putih (transparensinya hilang saat diekspor JPEG), jadi tak dipakai */
-  if (tokoMasuk.logo && !brand.querySelector("img")) {
-    const img = document.createElement("img");
-    img.src = tokoMasuk.logo;
-    img.alt = "";
-    img.className = "brandlogo";
-    h1.before(img);
-  }
   h1.textContent = tokoMasuk.nama || "SORTIK";
   const co = document.createElement("i");
   co.className = "co";
@@ -54,47 +33,53 @@ const sembunyiGalat = () => {
   if (x) x.hidden = true;
 };
 
-const masukSebagai = (u) => {
-  try { localStorage.setItem(KUNCI_MASUK + "sesi", String(u.id)); } catch {}
-  location.href = TUJUAN[u.role] || TUJUAN.pembeli;
+/* galat Supabase → bahasa pengguna */
+const artiGalat = (e) => {
+  const m = String(e?.message || e || "");
+  if (/invalid login credentials/i.test(m)) return "Email atau kata sandi salah.";
+  if (/already registered/i.test(m)) return "Email sudah terdaftar — silakan masuk di halaman Masuk.";
+  if (/confirm/i.test(m)) return "Email belum dikonfirmasi — cek kotak masuk Anda.";
+  return "Terjadi kesalahan: " + m;
 };
 
 document.querySelectorAll("form").forEach((f) => {
-  f.onsubmit = (e) => {
+  f.onsubmit = async (e) => {
     e.preventDefault();
     sembunyiGalat();
     const data = f.elements;
 
     /* ---------- daftar: buat akun pembeli baru ---------- */
     if (data.konfirmasi) {
-      const nama = data.nama.value.trim();
-      const email = data.email.value.trim().toLowerCase();
-      const sandi = data.password.value;
-      if (sandi !== data.konfirmasi.value) return galat("Kata sandi belum sama — ulangi dengan benar.");
-      if (penggunaMasuk.some((u) => u.email.toLowerCase() === email))
-        return galat("Email sudah terdaftar — silakan masuk di halaman Masuk.");
-      const baru = {
-        id: Math.max(0, ...penggunaMasuk.map((u) => u.id)) + 1,
-        nama, email, role: "pembeli", status: "aktif",
-        telepon: "", alamat: "", avatar: "", ikon: "🧑",
-        sandi: sandiHash(sandi)
-      };
-      penggunaMasuk.push(baru);
-      simpanMasuk("pengguna", penggunaMasuk);
-      masukSebagai(baru);
+      if (data.password.value !== data.konfirmasi.value)
+        return galat("Kata sandi belum sama — ulangi dengan benar.");
+      const { data: hasil, error } = await sb.auth.signUp({
+        email: data.email.value.trim(),
+        password: data.password.value,
+        options: { data: { nama: data.nama.value.trim() } }   // dipakai trigger untuk kolom nama profil
+      });
+      if (error) return galat(artiGalat(error));
+      if (hasil.session) location.href = TUJUAN.pembeli;       // langsung masuk (auto confirm)
+      else galat("Daftar berhasil — cek email untuk konfirmasi, lalu masuk.");
       return;
     }
 
-    /* ---------- masuk: email + sandi + peran harus cocok ---------- */
-    const email = data.email.value.trim().toLowerCase();
-    const u = penggunaMasuk.find((x) => x.email.toLowerCase() === email);
-    if (!u) return galat("Email tidak terdaftar — daftar dulu lewat tautan di bawah.");
-    if (u.status !== "aktif") return galat("Akun ini nonaktif — hubungi admin toko.");
-    if (!u.sandi || sandiHash(data.password.value) !== u.sandi) return galat("Kata sandi salah.");
-    const peranPilih = data.role ? data.role.value : u.role;
-    if (u.role !== peranPilih)
-      return galat(`Email ini terdaftar sebagai ${PERAN_MASUK[u.role] || u.role} — pilih peran itu di atas.`);
-    masukSebagai(u);
+    /* ---------- masuk: email + sandi, peran dicek dari tabel profil ---------- */
+    const { data: sesi, error } = await sb.auth.signInWithPassword({
+      email: data.email.value.trim(),
+      password: data.password.value
+    });
+    if (error) return galat(artiGalat(error));
+
+    const { data: profil, error: errProfil } = await sb.from("profil")
+      .select("nama, role, status").eq("id", sesi.user.id).single();
+    if (errProfil || !profil) return galat("Profil tidak ditemukan — hubungi admin toko.");
+    if (profil.status !== "aktif") return galat("Akun ini nonaktif — hubungi admin toko.");
+
+    const peranPilih = data.role ? data.role.value : profil.role;
+    if (profil.role !== peranPilih)
+      return galat(`Email ini terdaftar sebagai ${PERAN_MASUK[profil.role] || profil.role} — pilih peran itu di atas.`);
+
+    location.href = TUJUAN[profil.role] || TUJUAN.pembeli;
   };
 });
 
