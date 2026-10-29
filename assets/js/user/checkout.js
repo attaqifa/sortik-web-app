@@ -129,6 +129,7 @@ el("buat").onclick = async () => {
   dibuat.forEach((o) => {
     const p = produkById(o.produk);
     db.pesan.push({
+      user_id: db.akun.id,
       dari: "SORTIK Bot",
       peran: "bot",
       teks: `Pesanan baru ${kodePesanan(o)} — ${o.pembeli}, ${p.nama || "barang"} ×${o.jumlah}. `
