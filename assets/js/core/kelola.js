@@ -105,7 +105,7 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
     el(`${wadah}-${kolom[0][0]}`).focus();
   }
 
-  function simpanBaris() {
+  async function simpanBaris() {
     const data = {};
     el(`${wadah}-form`).querySelectorAll("[data-f]").forEach((x) => {
       data[x.dataset.f] = x.type === "number" ? +x.value || 0 : x.value.trim();
@@ -118,13 +118,20 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
     if (!data[kolom[0][0]]) return pertama.focus();
     /* hook siapkan(data, lama): ubah isi sebelum disimpan (mis. hash sandi) */
     const siap = siapkan ? siapkan(data, ubah) : data;
+    let baris = ubah;
+    const sebelumnya = ubah ? { ...ubah } : null;
     if (ubah) Object.assign(ubah, siap);
     else {
-      const x = baru ? baru(siap) : { id: Math.max(0, ...db[kunci].map((y) => y.id)) + 1, ...siap };
-      if (!x) return;
-      db[kunci].push(x);
+      baris = baru ? baru(siap) : { id: Math.max(0, ...db[kunci].map((y) => y.id)) + 1, ...siap };
+      if (!baris) return;
+      db[kunci].push(baris);
     }
-    simpan(kunci);
+    if (!await simpan(kunci)) {
+      if (sebelumnya) Object.assign(baris, sebelumnya);
+      else db[kunci].splice(db[kunci].indexOf(baris), 1);
+      gambar();
+      return;
+    }
     notif(`${nama} ${ubah ? "diperbarui" : "ditambahkan"}`);
     el(`${wadah}-blok`).hidden = true;
     gambar();
