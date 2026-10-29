@@ -1,7 +1,6 @@
 /* Pesan Grup — admin & staff berkomunikasi dalam satu grup "Grup Toko".
    Berkas ini dipakai bersama halaman staff/pesan.html dan admin/pesan.html.
-   Data tersimpan di db.pesan (localStorage); admin bisa menghapus pesan,
-   dan tab lain ikut memperbarui otomatis lewat event "storage". */
+   Data tersimpan di db.pesan (Supabase); admin bisa menghapus pesan. */
 
 /* stempel waktu terakhir dibaca per peran → badge di sidebar */
 const tandaiBaca = () => { try { localStorage.setItem(VERSI + "pesanBaca-" + peran, Date.now()); } catch {} };
@@ -41,7 +40,7 @@ el("formKirim").addEventListener("submit", (e) => {
   e.preventDefault();
   const teks = el("teksPesan").value.trim();
   if (!teks) return;
-  const id = db.pesan.reduce((m, x) => Math.max(m, x.id), 0) + 1;
+  const id = db.pesan.reduce((m, x) => Math.max(m, x.id || 0), 0) + 1;
   db.pesan.push({ id, dari: db.akun.nama, peran: db.akun.role, teks, waktu: new Date().toISOString() });
   el("teksPesan").value = "";
   tandaiBaca();

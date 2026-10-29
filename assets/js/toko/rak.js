@@ -184,8 +184,6 @@ let tarik = null; /* seretan yang sedang berjalan: rak / pintu / luas / papan */
 el("denah").addEventListener("pointerdown", (e) => {
   /* mode lihat: tidak ada seretan — papan tetap bisa digulir seperti biasa */
   if (!atur) return;
-  notif("Aplikasi hanya-baca. Ubah denah hanya melalui Supabase Table Editor.");
-  e.preventDefault();
 
   const elPintu = e.target.closest(".ppintu");
   const elLuas = e.target.closest(".ukur-lantai");
