@@ -1,59 +1,7 @@
 /* SORTIK — util & komponen tampilan bersama. */
 
 /* ---------- util singkat ---------- */
-const el = (id) => document.getElementById(id);/* ---------- penguncian baca-saja untuk data toko ----------
-   Katalog, pengaturan toko, denah, pesanan, pesan grup, dan keuangan hanya
-   boleh ditulis lewat Supabase Dashboard. Kontrol yang menulis data toko
-   dimatikan begitu elemennya muncul. AKUN PRIBADI (profil & kata sandi)
-   tetap boleh diubah oleh pemilik akunnya. */
-
-const AKUN_PRIBADI = "#a-simpan, #a-sandisimpan, #a-hapusfoto, #a-foto";
-const KONTROL_TULIS = "button, select";
-
-const tulisDataToko = (x) => {
-  if (x.matches(AKUN_PRIBADI)) return false;
-  if (x.tagName === "SELECT") return x.matches(".statuspilih, [data-pindah], #sisiPintu");
-  if (x.tagName !== "BUTTON") return false;
-  return /^(\+ Tambah |Tambah |Ubah |Hapus|Simpan|Buat Pesanan|Kirim|Tandai Dibayar|Konfirmasi Transfer|Ganti Kata Sandi|✏ Mode atur|↩ Urungkan|＋ Lantai|− Hapus|Catat Pengeluaran)/i.test(x.textContent.trim())
-    || x.matches("[data-lunas], [data-pindah], [data-hapusfoto], [data-tambahgaleri], [data-hapusgaleri], #t-simpan, #t-logoHapus, #buat, #simpan, #k-simpan, #batalkan, #modeAtur, #tambahRak, #tambahBlok, #urungkan, #hapusRak, [data-tambahlantai], [data-hapuslantai]");
-};
-
-const matikanKontrolTulis = (akar) => {
-  if (!(akar instanceof Element)) return;
-  const daftar = [...akar.querySelectorAll(KONTROL_TULIS)];
-  if (akar.matches(KONTROL_TULIS)) daftar.push(akar);
-  daftar.forEach((x) => {
-    if (!tulisDataToko(x)) return;
-    x.disabled = true;
-    x.title = "Data toko dikelola lewat Supabase Dashboard";
-  });
-};
-
-new MutationObserver((daftar) => daftar.forEach((m) => m.addedNodes.forEach(matikanKontrolTulis)))
-  .observe(document.documentElement, { childList: true, subtree: true });
-matikanKontrolTulis(document.body);
-
-document.addEventListener("click", (e) => {
-  const tombol = e.target.closest("button");
-  if (!tombol || !tulisDataToko(tombol)) return;
-  e.preventDefault();
-  e.stopImmediatePropagation();
-  notif("Data toko hanya bisa ditambah dan diubah lewat Supabase Dashboard.");
-}, true);
-
-document.addEventListener("change", (e) => {
-  if (!e.target.matches("#t-logo, #buktiFile, input[data-foto], input[data-galeri], [data-namaarea], #lebarLantai, #tinggiLantai, #namaLantai")) return;
-  e.preventDefault();
-  e.stopImmediatePropagation();
-  notif("Data toko hanya bisa ditambah dan diubah lewat Supabase Dashboard.");
-}, true);
-
-document.addEventListener("submit", (e) => {
-  if (!e.target.matches(".formblok form, #formKirim")) return;
-  e.preventDefault();
-  e.stopImmediatePropagation();
-  notif("Aplikasi hanya-baca. Tambahkan atau ubah data melalui Supabase Table Editor.");
-}, true);
+const el = (id) => document.getElementById(id);
 
 /* isi(): isi HTML + gambar ikon yang baru */
 const isi = (id, html) => {

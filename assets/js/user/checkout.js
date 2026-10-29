@@ -78,12 +78,18 @@ el("alamat").addEventListener("input", () => {
   el("pesan-alamat").hidden = true;
 });
 
-el("buat").onclick = () => {
+el("buat").onclick = async () => {
   /* validasi alamat inline */
   const tanpaAlamat = state.cara === "antar" && !el("alamat").value.trim();
   el("pesan-alamat").hidden = !tanpaAlamat;
   el("alamat").classList.toggle("salah", tanpaAlamat);
   if (tanpaAlamat) return el("alamat").focus();
+
+  if (!db.akun.id) {
+    notif("Masuk dulu dengan akun Anda untuk membuat pesanan.");
+    location.href = "../auth/login.html";
+    return;
+  }
 
   const mulai = Math.max(0, ...db.pesanan.map((o) => o.id)) + 1;
   const dibuat = keranjang.map((i, n) => ({
@@ -102,13 +108,27 @@ el("buat").onclick = () => {
     staff: ""
   }));
   db.pesanan.push(...dibuat);
-  simpan("pesanan");
-  /* beritahu grup toko: satu pesan bot per pesanan baru — staff langsung tahu */
+
+  const tombol = el("buat");
+  const labelTombol = tombol.textContent;
+  tombol.disabled = true;
+  tombol.textContent = "Menyimpan pesanan…";
+
+  const tersimpan = await simpan("pesanan");
+  if (!tersimpan) {
+    /* pembatalan: buang baris optimis agar tidak dobel saat dicoba lagi */
+    db.pesanan = db.pesanan.filter((o) => !dibuat.includes(o));
+    tombol.disabled = false;
+    tombol.textContent = labelTombol;
+    render();
+    return;                                        /* pesan galat sudah tampil */
+  }
+
+  /* id final dari database → kode pesan di grup memakai nomor yang benar */
   db.pesan = db.pesan || [];
   dibuat.forEach((o) => {
     const p = produkById(o.produk);
     db.pesan.push({
-      id: Math.max(0, ...db.pesan.map((m) => m.id)) + 1,
       dari: "SORTIK Bot",
       peran: "bot",
       teks: `Pesanan baru ${kodePesanan(o)} — ${o.pembeli}, ${p.nama || "barang"} ×${o.jumlah}. `
@@ -116,7 +136,8 @@ el("buat").onclick = () => {
       waktu: new Date().toISOString()
     });
   });
-  simpan("pesan");
+  await simpan("pesan");
+
   keranjang.length = 0;
   simpanKeranjang();
   /* ?baru=1 → notif sukses di pesan.html */

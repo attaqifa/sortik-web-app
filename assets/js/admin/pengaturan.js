@@ -8,9 +8,6 @@ el("t-wa").value = t.wa;
 el("t-ongkir").value = t.ongkir;
 el("t-rek").value = t.rekening.map((r) => `${r.bank} | ${r.nomor} | ${r.atasNama}`).join("\n");
 
-/* form baca-saja: data toko diubah di Supabase Dashboard, bukan di sini */
-document.querySelectorAll(".card .form input, .card .form textarea").forEach((x) => { x.disabled = true; });
-
 /* logo perusahaan: pratinjau + unggah/hapus — data URL kecil (maks 180px) di db.toko.logo */
 const pratinjauLogo = () => isi("logoPratinjau", t.logo
   ? `<img src="${t.logo}" alt="Logo toko">`

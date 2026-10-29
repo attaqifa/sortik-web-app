@@ -9,6 +9,7 @@ function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari.
 </div>
 <div class="toolbar">
   <input type="search" id="${wadah}-q" class="grow" placeholder="${petunjuk}" autocomplete="off">
+  <button class="btn" type="button" data-tambah>+ Tambah ${nama}</button>
 </div>
 ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
 <p class="hasil" id="${wadah}-hasil"></p>
@@ -151,7 +152,12 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
     if (saring && chips) tampil = tampil.filter((x) => chips.terapkan(x, saring));
     if (urut) tampil.sort(urut);
     isi(`${wadah}-hasil`, `${tampil.length} dari ${db[kunci].length} ${nama.toLowerCase()}`);
-    isi(`${wadah}-list`, tampil.length ? tampil.map((x, i) => `<div class="row">${baris(x, i)}</div>`).join("") : pesanKosong("search-x", `Belum ada ${nama.toLowerCase()} yang cocok — ubah kata kunci atau tambah baru.`));
+    isi(`${wadah}-list`, tampil.length ? tampil.map((x, i) => `<div class="row">${baris(x, i)}
+  <div class="btns">
+    <button class="btn" type="button" data-ubah="${i}">Ubah</button>
+    <button class="btn danger" type="button" data-hapus="${i}">Hapus</button>
+  </div>
+</div>`).join("") : pesanKosong("search-x", `Belum ada ${nama.toLowerCase()} yang cocok — ubah kata kunci atau tambah baru.`));
   }
 
   el(wadah).addEventListener("click", (e) => {
@@ -233,6 +239,8 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
 
   gambar();
 
+  const awal = +new URLSearchParams(location.search).get("id");
+  if (awal) { const x = tampil.find((y) => y.id === awal); if (x) buka(x); }
 }
 
 /* Esc menutup form/detail/lightbox yang terbuka */

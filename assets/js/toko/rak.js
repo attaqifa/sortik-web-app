@@ -8,7 +8,7 @@
 
 let sel = "";      /* kode rak terpilih */
 let selArea = "";  /* id blok/halangan terpilih */
-let atur = false; /* aplikasi baca-saja; denah hanya ditampilkan */
+let atur = true; /* true = mode atur (edit), false = mode lihat */
 let zum = 1;     /* tingkat zoom sekarang: pengali ukuran kotak grid */
 let zumI = 4;    /* indeks tingkat zoom pada DAFTAR_ZUM (zum = DAFTAR_ZUM[zumI]) */
 const DAFTAR_ZUM = [0.4, 0.55, 0.7, 0.85, 1, 1.25, 1.5, 1.75, 2];
