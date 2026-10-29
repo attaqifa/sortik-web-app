@@ -105,6 +105,10 @@ if (db.akun.role === "admin") {
     </div>
   </div>`;
 
+  /* catatan pengeluaran dicatat di Supabase Dashboard, bukan dari web */
+  kartu.querySelectorAll("input").forEach((x) => { x.disabled = true; });
+  kartu.querySelector("#k-simpan").title = "Data keuangan dikelola lewat Supabase Dashboard";
+
   el("k-simpan").onclick = () => {
     const tanggal = el("k-tanggal").value;
     const keterangan = el("k-ket").value.trim();

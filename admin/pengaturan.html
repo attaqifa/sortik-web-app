@@ -15,7 +15,7 @@
   <main>
     <header class="head">
       <h1>Pengaturan Toko</h1>
-      <p>Data toko, rekening pembayaran, dan kategori produk</p>
+      <p>Data toko, rekening pembayaran, dan kategori produk — diubah di Supabase Dashboard</p>
     </header>
 
     <!-- profil toko: dipakai halaman checkout & deskripsi produk pembeli -->
@@ -64,6 +64,6 @@
 <script src="../assets/js/core/ui.js"></script>
 <script src="../assets/js/core/store.js"></script>
 <script src="../assets/js/core/kelola.js"></script>
-<script src="../assets/js/admin/pengaturan.js"></script>
+<script>mulaiAplikasi(() => { const halaman = document.createElement('script'); halaman.src = '../assets/js/admin/pengaturan.js'; document.body.append(halaman); });</script>
 </body>
 </html>

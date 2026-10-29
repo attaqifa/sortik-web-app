@@ -15,7 +15,7 @@
   <main>
     <header class="head">
       <h1>Kelola Barang</h1>
-      <p>Tambah, ubah, atau hapus barang beserta foto, rak, stok, dan harganya</p>
+      <p>Daftar barang beserta foto, rak, stok, dan harganya — kelola datanya di Supabase Dashboard</p>
     </header>
 
     <!-- dirender mesin kelola; kolom di assets/js/toko/produk.js -->
@@ -29,6 +29,6 @@
 <script src="../assets/js/core/ui.js"></script>
 <script src="../assets/js/core/store.js"></script>
 <script src="../assets/js/core/kelola.js"></script>
-<script src="../assets/js/toko/produk.js"></script>
+<script>mulaiAplikasi(() => { const halaman = document.createElement('script'); halaman.src = '../assets/js/toko/produk.js'; document.body.append(halaman); });</script>
 </body>
 </html>

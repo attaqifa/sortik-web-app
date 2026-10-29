@@ -38,7 +38,7 @@
         </div>
 
         <div><label class="lbl" for="a-nama">Nama lengkap</label><input type="text" id="a-nama"></div>
-        <div><label class="lbl" for="a-email">Email</label><input type="email" id="a-email"></div>
+        <div><label class="lbl" for="a-email">Email</label><input type="email" id="a-email" readonly title="Email dipakai untuk masuk — ubah lewat Supabase Dashboard bila perlu"></div>
         <div><label class="lbl" for="a-telepon">Telepon</label><input type="text" id="a-telepon" placeholder="08xx-xxxx-xxxx"></div>
         <div class="full">
           <label class="lbl" for="a-alamat">Alamat</label>
@@ -71,7 +71,7 @@
         </div>
         <div class="btns full"><button class="primary garis" id="a-sandisimpan" type="button">Ganti Kata Sandi</button></div>
       </div>
-      <p class="note">Kata sandi disimpan di browser ini saja (mode demo tanpa backend).</p>
+      <p class="note">Kata sandi disimpan di Supabase Authentication — minimal 8 karakter.</p>
     </section>
   </main>
 
@@ -82,6 +82,6 @@
 <script src="../assets/js/core/ui.js"></script>
 <script src="../assets/js/core/store.js"></script>
 <script src="../assets/js/core/kelola.js"></script>
-<script src="../assets/js/akun.js"></script>
+<script>mulaiAplikasi(() => { const halaman = document.createElement('script'); halaman.src = '../assets/js/akun.js'; document.body.append(halaman); });</script>
 </body>
 </html>

@@ -29,8 +29,6 @@
     <p>Daftar sebagai Pembeli — gratis, cukup satu menit.</p>
 
     <form method="post" action="#">
-      <input type="hidden" name="role" value="pembeli">
-
       <label for="nama">Nama Lengkap</label>
       <input type="text" id="nama" name="nama" required placeholder="Masukkan nama lengkap...">
 
@@ -47,9 +45,12 @@
       <input type="password" id="konfirmasi" name="konfirmasi" minlength="8" required placeholder="Masukkan ulang kata sandi..." autocomplete="new-password">
 
       <button type="submit">Daftar</button>
+
+      <p class="galat" id="galatMasuk" hidden></p>
     </form>
 
     <p class="switch">Sudah punya akun? <a href="login.html">Masuk</a></p>
+
   </section>
 
 </main>

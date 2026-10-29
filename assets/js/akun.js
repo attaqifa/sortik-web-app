@@ -1,5 +1,8 @@
 /* Akun — profil, foto, dan kata sandi. Dipakai pembeli, staff, dan admin
-   (halaman akun.html di masing-masing folder; peran menentukan detail). */
+   (halaman akun.html di masing-masing folder; peran menentukan detail).
+   Perubahan hanya menyangkut AKUN PRIBADI: nama/telepon/alamat/ikon/avatar
+   disimpan ke tabel profil, kata sandi ke Supabase Auth. Data toko tetap
+   dikelola lewat Supabase Dashboard. */
 
 const u = db.akun;
 let avatar = u.avatar || "";
@@ -30,31 +33,26 @@ el("a-foto").onchange = async (e) => {
 
 el("a-hapusfoto").onclick = () => { avatar = ""; renderAvatar(); };
 
-el("a-simpan").onclick = () => {
+el("a-simpan").onclick = async () => {
+  if (!u.id) return notif("Masuk dulu dengan akun Anda untuk mengubah profil.");
   const nama = el("a-nama").value.trim();
-  const email = el("a-email").value.trim().toLowerCase();
   if (!nama) return el("a-nama").focus();
-  if (!email) return el("a-email").focus();
-  /* email unik: dipakai untuk masuk, jadi tidak boleh bentrok dengan milik orang lain */
-  if (email !== (u.email || "").toLowerCase() && db.pengguna.some((x) => x.id !== u.id && (x.email || "").toLowerCase() === email))
-    return notif(`Email sudah dipakai pengguna lain.`);
 
-  const lama = u.nama;
-
-  Object.assign(u, {
+  const perubahan = {
     nama,
-    email: el("a-email").value.trim(),
     telepon: el("a-telepon").value.trim(),
     alamat: el("a-alamat").value.trim(),
-    avatar,
-    ikon: el("a-ikon").value.trim()
-  });
+    ikon: el("a-ikon").value.trim(),
+    avatar
+  };
 
-  /* riwayat & pesanan memakai nama pembeli — ikut diperbarui saat nama berubah */
-  if (u.role === "pembeli" && nama !== lama) db.pesanan.forEach((o) => { if (o.pembeli === lama) o.pembeli = nama; });
+  const tombol = el("a-simpan");
+  tombol.disabled = true;
+  const { error } = await sb.from("profil").update(perubahan).eq("id", u.id);
+  tombol.disabled = false;
+  if (error) return notif("Gagal menyimpan profil: " + error.message);
 
-  simpan("pengguna");
-  if (u.role === "pembeli" && nama !== lama) simpan("pesanan");
+  Object.assign(u, perubahan);
   gambarSidebar();
   notif("Profil tersimpan");
 };
@@ -77,12 +75,18 @@ document.querySelectorAll(".sandi").forEach((kotak) => {
   input.addEventListener("blur", () => (tanda.hidden = true));
 });
 
-el("a-sandisimpan").onclick = () => {
+el("a-sandisimpan").onclick = async () => {
+  if (!u.id) return notif("Masuk dulu dengan akun Anda untuk mengubah kata sandi.");
   const sandi = el("a-sandi").value;
   if (sandi.length < 8) return notif("Kata sandi minimal 8 karakter.");
   if (sandi !== el("a-sandi2").value) return notif("Ulangi kata sandi belum sama.");
-  u.sandi = sandiHash(sandi); /* simpan hash, bukan teks sandinya */
-  simpan("pengguna");
+
+  const tombol = el("a-sandisimpan");
+  tombol.disabled = true;
+  const { error } = await sb.auth.updateUser({ password: sandi });
+  tombol.disabled = false;
+  if (error) return notif("Gagal mengubah kata sandi: " + error.message);
+
   el("a-sandi").value = "";
   el("a-sandi2").value = "";
   notif("Kata sandi diperbarui");

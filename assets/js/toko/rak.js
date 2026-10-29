@@ -8,7 +8,7 @@
 
 let sel = "";      /* kode rak terpilih */
 let selArea = "";  /* id blok/halangan terpilih */
-let atur = true; /* true = mode atur, false = mode lihat */
+let atur = false; /* aplikasi baca-saja; denah hanya ditampilkan */
 let zum = 1;     /* tingkat zoom sekarang: pengali ukuran kotak grid */
 let zumI = 4;    /* indeks tingkat zoom pada DAFTAR_ZUM (zum = DAFTAR_ZUM[zumI]) */
 const DAFTAR_ZUM = [0.4, 0.55, 0.7, 0.85, 1, 1.25, 1.5, 1.75, 2];
@@ -184,6 +184,8 @@ let tarik = null; /* seretan yang sedang berjalan: rak / pintu / luas / papan */
 el("denah").addEventListener("pointerdown", (e) => {
   /* mode lihat: tidak ada seretan — papan tetap bisa digulir seperti biasa */
   if (!atur) return;
+  notif("Aplikasi hanya-baca. Ubah denah hanya melalui Supabase Table Editor.");
+  e.preventDefault();
 
   const elPintu = e.target.closest(".ppintu");
   const elLuas = e.target.closest(".ukur-lantai");
@@ -407,12 +409,11 @@ el("lantaiTab").addEventListener("click", async (e) => {
   const b = e.target.closest("button");
   if (!b) return;
 
-  /* pindah lantai */
+  /* pindah lantai (tampilan saja — bukan perubahan data) */
   if (b.dataset.ke != null) {
     if (+b.dataset.ke === db.rak.aktif) return;
     db.rak.aktif = +b.dataset.ke;
     sel = ""; selArea = "";
-    simpan("rak");
     gambar();
     return;
   }

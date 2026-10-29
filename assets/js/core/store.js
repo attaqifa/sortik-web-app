@@ -1,151 +1,139 @@
-/* SORTIK — penyimpanan browser, sesi, dan sidebar.
-   Satu koleksi = satu endpoint /api/<koleksi>[/<id>] — bila backend siap,
-   cukup ganti baca()/simpan() dengan panggilan API. */
-
-/* ---------- penyimpanan ---------- */
+/* SORTIK — sesi Supabase, data permanen, dan sidebar. */
 const VERSI = "sortik2:";
 const KOLEKSI = ["kategori", "toko", "rak", "produk", "pesanan", "pengguna", "pesan", "keuangan"];
-const baca = (k, d) => { try { return JSON.parse(localStorage.getItem(VERSI + k)) ?? d; } catch { return d; } };
+const PERAN = { pembeli: "Pembeli", staff: "Staff Toko", admin: "Admin Toko" };
+const FOLDER = { user: "pembeli", staff: "staff", admin: "admin" };
+const TUJUAN_PERAN = { pembeli: "../user/index.html", staff: "../staff/index.html", admin: "../admin/index.html" };
+const peran = FOLDER[(location.pathname.match(/\/(user|staff|admin)\//) || [])[1]] || "pembeli";
+
+/* UI lama yang belum dialihkan ke Supabase hanya boleh membaca data.
+   Snapshot ini juga membatalkan perubahan sementara di memori browser. */
+const dataAwal = {};
+const salinData = (nilai) => JSON.parse(JSON.stringify(nilai));
+const bekukanData = () => {
+  ["kategori", "toko", "rak", "produk", "pesanan", "pengguna", "pesan", "keuangan", "akun"]
+    .forEach((k) => { dataAwal[k] = salinData(db[k]); });
+};
 const simpan = (k) => {
-  try {
-    localStorage.setItem(VERSI + k, JSON.stringify(db[k]));
-  } catch {
-    notif("Penyimpanan browser penuh — hapus foto lama atau gunakan foto yang lebih kecil.");
-  }
+  if (Object.prototype.hasOwnProperty.call(dataAwal, k)) db[k] = salinData(dataAwal[k]);
+  if (k === "pengguna" && dataAwal.akun) db.akun = salinData(dataAwal.akun);
+  window.__sortikBacaSaja = true;
+  setTimeout(() => { window.__sortikBacaSaja = false; }, 0);
+  notif("Aplikasi hanya-baca. Tambahkan atau ubah data melalui Supabase Table Editor.");
+  return false;
+};
+/* localStorage hanya untuk keranjang belanja (status sementara per browser);
+   seluruh data bisnis datang dari Supabase, bukan dari localStorage. */
+const baca = (k, nilaiKosong = []) => {
+  if (k !== "keranjang") return nilaiKosong;
+  try { return JSON.parse(localStorage.getItem(VERSI + k)) ?? nilaiKosong; } catch { return nilaiKosong; }
 };
 
-/* contoh dipakai sekali untuk mengisi data lama */
-const contohProduk = db.produk.map((p) => ({ ...p }));
-const contohKategori = db.kategori.map((k) => ({ ...k }));
-const contohPengguna = db.pengguna.map((u) => ({ ...u }));
-KOLEKSI.forEach((k) => (db[k] = baca(k, db[k])));
+const formatRak = (konfig, lantai, rak, blok) => {
+  const urut = [...lantai].sort((a, b) => a.urutan - b.urutan);
+  return {
+    grid: konfig?.grid || 28,
+    aktif: Math.max(0, urut.findIndex((l) => l.id === konfig?.lantai_aktif)),
+    lantai: urut.map((l) => ({
+      id: l.id, nama: l.nama, lebar: l.lebar, tinggi: l.tinggi,
+      pintu: { sisi: l.pintu_sisi, pos: l.pintu_pos },
+      daftar: rak.filter((r) => r.lantai_id === l.id).map(({ kode, x, y, w, h }) => ({ kode, x, y, w, h })),
+      area: blok.filter((b) => b.lantai_id === l.id).map(({ id, nama, x, y, w, h }) => ({ id: String(id), nama, x, y, w, h }))
+    }))
+  };
+};
 
-/* pengguna lama tanpa sandi: isi sekali dari data contoh — masuk tetap bisa */
-const TANDA_SANDI = VERSI + "sandi-awal";
-if (!localStorage.getItem(TANDA_SANDI)) {
-  let berubah = false;
-  db.pengguna.forEach((u) => {
-    const c = contohPengguna.find((x) => x.email === u.email) || {};
-    if (c.sandi && !u.sandi) { u.sandi = c.sandi; berubah = true; }
-  });
-  if (berubah) simpan("pengguna");
-  try { localStorage.setItem(TANDA_SANDI, "1"); } catch {}
+async function muatData() {
+  const [{ data: kategori, error: ek }, { data: toko, error: et },
+    { data: konfig, error: ec }, { data: lantai, error: elantai },
+    { data: rak, error: er }, { data: blok, error: eb },
+    { data: produk, error: ep }] = await Promise.all([
+    sb.from("kategori").select("*").order("urutan"),
+    sb.from("toko").select("*").maybeSingle(),
+    sb.from("rak_konfig").select("*").maybeSingle(),
+    sb.from("lantai").select("*").order("urutan"),
+    sb.from("rak").select("*"),
+    sb.from("blok").select("*"),
+    sb.from("produk").select("*").order("id")
+  ]);
+  const error = ek || et || ec || elantai || er || eb || ep;
+  if (error) throw error;
+
+  db.kategori = kategori || [];
+  db.toko = toko || { id: 1, nama: "", alamat: "", jam: "", wa: "", ongkir: 0, rekening: [] };
+  db.rak = formatRak(konfig, lantai || [], rak || [], blok || []);
+  db.produk = (produk || []).map((p) => ({ ...p, kategori: p.kategori || "", galeri: Array.isArray(p.galeri) ? p.galeri : [] }));
+
+  const { data: sesi } = await sb.auth.getSession();
+  const user = sesi?.session?.user;
+  if (!user) {
+    if (peran !== "pembeli") {
+      location.replace("../auth/login.html");
+      return;
+    }
+    db.akun = { id: null, nama: "Pengunjung", role: peran, email: "", telepon: "", alamat: "", avatar: "", ikon: "🧑" };
+    db.pesanan = [];
+    db.pengguna = [];
+    db.pesan = [];
+    db.keuangan = { pengeluaran: [] };
+    bekukanData();
+    return;
+  }
+
+  const { data: profil, error: eprofil } = await sb.from("profil").select("*").eq("id", user.id).single();
+  if (eprofil || !profil) throw eprofil || new Error("Profil akun tidak ditemukan.");
+  if (profil.status !== "aktif") {
+    await sb.auth.signOut();
+    location.replace("../auth/login.html");
+    throw new Error("Akun dinonaktifkan.");
+  }
+  if (profil.role !== peran) {
+    location.replace(TUJUAN_PERAN[profil.role] || TUJUAN_PERAN.pembeli);
+    throw new Error("Peran akun tidak sesuai halaman.");
+  }
+  db.akun = { ...profil, peran };
+
+  if (["staff", "admin"].includes(peran)) {
+    const [{ data: pesanan, error: eo }, { data: pengguna, error: eu },
+      { data: pesan, error: em }, { data: pengeluaran, error: epg }] = await Promise.all([
+      sb.from("pesanan").select("*").order("tanggal", { ascending: false }),
+      sb.from("profil").select("*").order("nama"),
+      sb.from("pesan").select("*").order("waktu"),
+      sb.from("pengeluaran").select("*").order("tanggal", { ascending: false })
+    ]);
+    const err = eo || eu || em || epg;
+    if (err) throw err;
+    db.pesanan = (pesanan || []).map((o) => ({ ...o, produk: o.produk_id }));
+    db.pengguna = pengguna || [];
+    db.pesan = pesan || [];
+    db.keuangan = { pengeluaran: pengeluaran || [] };
+  } else {
+    const { data: pesanan, error: eo } = await sb.from("pesanan").select("*").eq("pembeli_id", user.id).order("tanggal", { ascending: false });
+    if (eo) throw eo;
+    db.pesanan = (pesanan || []).map((o) => ({ ...o, produk: o.produk_id }));
+    db.pengguna = [];
+    db.pesan = [];
+    db.keuangan = { pengeluaran: [] };
+  }
+  bekukanData();
 }
 
-/* kategori lama: lengkapi nama ikon dari data contoh */
-let ikonBaru = false;
-db.kategori.forEach((k) => {
-  const c = contohKategori.find((x) => x.id === k.id);
-  if (!k.lucide && c && c.lucide) { k.lucide = c.lucide; ikonBaru = true; }
-});
-if (ikonBaru) simpan("kategori");
-
-/* produk lama tanpa foto: isi sekali, lalu ditandai admin tetap dihormati */
-const TANDA_FOTO = VERSI + "foto-awal";
-if (!localStorage.getItem(TANDA_FOTO)) {
-  let berubah = false;
-  db.produk.forEach((p) => {
-    const c = contohProduk.find((x) => x.id === p.id) || {};
-    if (c.foto && !p.foto) { p.foto = c.foto; berubah = true; }
-  });
-  if (berubah) simpan("produk");
-  try { localStorage.setItem(TANDA_FOTO, "1"); } catch {}
-}
-
-/* produk lama tanpa diskon: ambil promo contoh sekali — data lama tetap hidup */
-const TANDA_DISKON = VERSI + "diskon-awal";
-if (!localStorage.getItem(TANDA_DISKON)) {
-  let berubah = false;
-  db.produk.forEach((p) => {
-    const c = contohProduk.find((x) => x.id === p.id) || {};
-    if (c.diskon && !p.diskon) { p.diskon = c.diskon; berubah = true; }
-  });
-  if (berubah) simpan("produk");
-  try { localStorage.setItem(TANDA_DISKON, "1"); } catch {}
-}
-
-/* rak lama: {grid, daftar} atau {grid, baris+kolom} → bungkus jadi lantai tunggal
-   dengan model multi-lantai — kode rak tetap, jadi barang di dalamnya tidak berubah */
-if (!Array.isArray(db.rak.lantai)) {
-  const daftar = Array.isArray(db.rak.daftar) ? db.rak.daftar : susunAwal(db.rak.baris, db.rak.kolom);
-  db.rak = { grid: db.rak.grid || 28, aktif: 0, lantai: [lantaiAwal(daftar)] };
-  simpan("rak");
-}
-
-/* lengkapi lantai lama yang atributnya kurang (nama, luas, pintu) */
-let rakMigrasi = false;
-if (db.rak.aktif == null || !db.rak.lantai[db.rak.aktif]) { db.rak.aktif = 0; rakMigrasi = true; }
-db.rak.lantai.forEach((l, i) => {
-  const ujung = (f, d) => (d.length ? Math.max(...d.map(f)) : 0);
-  l.daftar = Array.isArray(l.daftar) ? l.daftar : [];
-  /* blok/halangan (kasir, lift, tembok, ...) — lantai lama belum punya */
-  if (!Array.isArray(l.area)) { l.area = []; rakMigrasi = true; }
-  if (!l.nama) { l.nama = "Lantai " + (i + 1); rakMigrasi = true; }
-  /* luas minimal = luas yang menampung semua raknya */
-  const lebarBaru = Math.max(ujung((r) => r.x + r.w, l.daftar), +l.lebar || 24);
-  const tinggiBaru = Math.max(ujung((r) => r.y + r.h, l.daftar), +l.tinggi || 18);
-  if (lebarBaru !== l.lebar || tinggiBaru !== l.tinggi) { l.lebar = lebarBaru; l.tinggi = tinggiBaru; rakMigrasi = true; }
-  const pintu = l.pintu || {};
-  if (!["atas", "bawah", "kiri", "kanan"].includes(pintu.sisi)) { pintu.sisi = "bawah"; rakMigrasi = true; }
-  const maks = Math.max(0, (pintu.sisi === "kiri" || pintu.sisi === "kanan" ? l.tinggi : l.lebar) - 3);
-  if (!Number.isInteger(pintu.pos) || pintu.pos < 0 || pintu.pos > maks) { pintu.pos = Math.min(maks, Math.floor(l.lebar / 3)); rakMigrasi = true; }
-  if (l.pintu !== pintu) { l.pintu = pintu; rakMigrasi = true; }
-});
-if (rakMigrasi) simpan("rak");
-
-/* ---------- keranjang ---------- */
-/* { produk: id, jumlah }; harga dari db.produk */
+/* { produk: id, jumlah } hanya keranjang sementara, bukan sumber data bisnis. */
 const keranjang = baca("keranjang", []);
 const jmlKeranjang = () => keranjang.reduce((n, i) => n + i.jumlah, 0);
 const simpanKeranjang = () => {
-  localStorage.setItem(VERSI + "keranjang", JSON.stringify(keranjang));
+  try { localStorage.setItem(VERSI + "keranjang", JSON.stringify(keranjang)); } catch {}
   const badge = el("jml");
   if (badge) badge.textContent = jmlKeranjang() || "";
 };
 
-/* ---------- sesi ---------- */
-/* sesi: akun masuk = baris pengguna sesuai folder halaman (sortik2:sesi = id) */
-const PERAN = { pembeli: "Pembeli", staff: "Staff Toko", admin: "Admin Toko" };
-const FOLDER = { user: "pembeli", staff: "staff", admin: "admin" };
-const peran = FOLDER[(location.pathname.match(/\/(user|staff|admin)\//) || [])[1]] || "pembeli";
-
-/* sesi dari Supabase: profil diambil dari tabel profil (uuid = auth.uid) */
-db.akun = { id: 0, nama: "Pengguna", role: peran, email: "", telepon: "", alamat: "", avatar: "", ikon: "🧑" };
-db.akun.peran = peran;
-const TUJUAN_PERAN = { pembeli: "../user/index.html", staff: "../staff/index.html", admin: "../admin/index.html" };
-sb.auth.getSession().then(({ data }) => {
-  const uid = data?.session?.user?.id;
-  if (!uid) return;                                    /* belum login: tampil sebagai pengunjung */
-  sb.from("profil").select("*").eq("id", uid).single().then(({ data: p }) => {
-    if (!p) return;
-    if (p.role !== peran) {                            /* buka folder yang bukan perannya → alihkan */
-      location.href = TUJUAN_PERAN[p.role] || TUJUAN_PERAN.pembeli;
-      return;
-    }
-    db.akun = { id: uid, nama: p.nama || "Pengguna", email: p.email || "", role: p.role,
-      status: p.status, telepon: p.telepon || "", alamat: p.alamat || "",
-      avatar: p.avatar || "", ikon: (p.ikon && p.ikon !== "🧑") ? p.ikon : "🧑" };
-    db.akun.peran = peran;
-    gambarSidebar();                                   /* gambar ulang sidebar dengan data profil */
-  });
-});
-
 const labelPeran = (r) => PERAN[r] || r;
 const inisial = (nama) => String(nama || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 const avatarHTML = (u) => (u.avatar ? `<img src="${u.avatar}" alt="">` : (u.ikon || inisial(u.nama)));
-const pesananku = () => db.pesanan.filter((o) => o.pembeli === db.akun.nama);
-
-/* badge pesanan Menunggu untuk menu staff/admin */
+const pesananku = () => db.pesanan.filter((o) => o.pembeli_id === db.akun.id);
 const nTunggu = () => db.pesanan.filter((o) => o.status === "Menunggu").length;
+const nPesanBaru = () => 0;
 
-/* badge pesan grup yang belum dibaca (stempel waktu terakhir dibaca per peran) */
-const nPesanBaru = () => {
-  const terakhir = +baca("pesanBaca-" + peran, 0);
-  return db.pesan.filter((m) => new Date(m.waktu).getTime() > terakhir && m.dari !== db.akun.nama).length;
-};
-
-/* ---------- sidebar ---------- */
-/* [nama ikon Lucide, label desktop, href, ekstra, label mobile] */
 const MENU = {
   pembeli: [
     ["house", "Beranda", "index.html", "", "Beranda"],
@@ -159,23 +147,21 @@ const MENU = {
     ["warehouse", "Tata Rak", "rak.html", "", "Rak"],
     ["package", "Kelola Barang", "produk.html", "", "Barang"],
     ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"],
-    ["message-square", "Pesan Grup", "pesan.html", `<b class="badge" id="badgePesan">${nPesanBaru() || ""}</b>`, "Pesan"],
+    ["message-square", "Pesan Grup", "pesan.html", "", "Pesan"],
     ["wallet", "Keuangan", "keuangan.html", "", "Uang"]
   ],
   admin: [
     ["house", "Beranda", "index.html", "", "Beranda"],
-    /* admin mewarisi menu staff; skrip bersama di assets/js/toko/ */
     ["warehouse", "Tata Rak", "rak.html", "", "Rak"],
     ["package", "Kelola Barang", "produk.html", "", "Barang"],
     ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"],
-    ["message-square", "Pesan Grup", "pesan.html", `<b class="badge" id="badgePesan">${nPesanBaru() || ""}</b>`, "Pesan"],
+    ["message-square", "Pesan Grup", "pesan.html", "", "Pesan"],
     ["wallet", "Keuangan", "keuangan.html", "", "Uang"],
     ["users", "Kelola Pengguna", "pengguna.html", "", "Pengguna"],
     ["settings", "Pengaturan Toko", "pengaturan.html", "", "Toko"]
   ]
 };
 
-/* ---------- ikon: Lucide via CDN ---------- */
 const LUCIDE = "https://unpkg.com/lucide@latest/dist/umd/lucide.min.js";
 function muatLucide() {
   if (window.lucide) return gambarIkon();
@@ -184,21 +170,33 @@ function muatLucide() {
   s.onload = gambarIkon;
   document.head.append(s);
 }
-
 function gambarSidebar() {
+  const side = el("side");
+  if (!side) return;
   const berkas = location.pathname.split("/").pop() || "index.html";
-  /* profil semua peran jadi tautan ke halaman akun masing-masing folder */
-const tautanProfil = (html) => `<a class="profil" href="akun.html" title="Akun saya">${html}</a>`;
-isi("side", `<a class="logo" href="index.html">
-  <img src="${db.toko.logo || "../assets/img/favicon.svg"}" alt="" width="34"><span class="namatoko"><b>${esc(db.toko.nama)}</b><i>with SORTIK</i></span>
+  const akun = db.akun || { nama: "Memuat…", role: peran, ikon: "🧑" };
+  const tautanProfil = (html) => `<a class="profil" href="akun.html" title="Akun saya">${html}</a>`;
+  isi("side", `<a class="logo" href="index.html">
+  <img src="../assets/img/favicon.svg" alt="" width="34"><span class="namatoko"><b>${esc(db.toko.nama || "SORTIK")}</b><i>with SORTIK</i></span>
 </a>
 <nav>${MENU[peran].map(([ikon, label, href, ekstra = "", singkat = label]) =>
     `<a${href === berkas ? ' class="on"' : ""} href="${href}"><span class="ikon" data-lucide="${ikon}"></span><span class="lengkap">${label}</span><span class="pendek">${singkat}</span> ${ekstra}</a>`).join("")}</nav>
-<div class="me">${tautanProfil(`<div class="avatar">${avatarHTML(db.akun)}</div><div class="siapa"><b>${db.akun.nama}</b><span>${labelPeran(db.akun.role)}</span></div>`)}
+<div class="me">${tautanProfil(`<div class="avatar">${avatarHTML(akun)}</div><div class="siapa"><b>${esc(akun.nama)}</b><span>${labelPeran(akun.role)}</span></div>`)}
 <a class="keluar" href="../auth/login.html" title="Keluar"><span class="ikon" data-lucide="log-out"></span><span class="lengkap">Keluar</span></a></div>`);
-/* badge pesan grup dihitung ulang saat sidebar digambar (mis. setelah membuka halaman pesan) */
-const badgePesan = el("badgePesan");
-if (badgePesan) badgePesan.textContent = nPesanBaru() || "";
 }
-gambarSidebar();
-muatLucide();
+
+async function mulaiAplikasi(mulai) {
+  gambarSidebar();
+  muatLucide();
+  try {
+    await muatData();
+    gambarSidebar();
+    mulai();
+  } catch (error) {
+    console.error("Gagal memuat data Supabase:", error);
+    document.querySelector("main")?.replaceChildren(Object.assign(document.createElement("p"), {
+      className: "kosong",
+      textContent: "Data Supabase gagal dimuat. Periksa koneksi dan izin database, lalu muat ulang halaman."
+    }));
+  }
+}

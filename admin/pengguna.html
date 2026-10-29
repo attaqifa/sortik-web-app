@@ -15,7 +15,7 @@
   <main>
     <header class="head">
       <h1>Kelola Pengguna</h1>
-      <p>Tambah, ubah, atau hapus akun beserta perannya</p>
+      <p>Daftar akun toko — tambah akun, ubah peran, dan ubah status dilakukan di Supabase Dashboard</p>
     </header>
 
     <!-- dirender mesin kelola; kolom di assets/js/admin/pengguna.js -->
@@ -29,6 +29,6 @@
 <script src="../assets/js/core/ui.js"></script>
 <script src="../assets/js/core/store.js"></script>
 <script src="../assets/js/core/kelola.js"></script>
-<script src="../assets/js/admin/pengguna.js"></script>
+<script>mulaiAplikasi(() => { const halaman = document.createElement('script'); halaman.src = '../assets/js/admin/pengguna.js'; document.body.append(halaman); });</script>
 </body>
 </html>

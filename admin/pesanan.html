@@ -15,7 +15,7 @@
   <main>
     <header class="head">
       <h1>Kelola Pesanan</h1>
-      <p>Tandai pembayaran yang sudah diterima, lihat bukti transfer, dan ubah status pesanan</p>
+      <p>Pantau pesanan dan bukti transfer — konfirmasi bayar & ubah status dilakukan di Supabase Dashboard</p>
     </header>
 
     <section class="card pesanan">
@@ -33,6 +33,6 @@
 <script src="../assets/js/core/ui.js"></script>
 <script src="../assets/js/core/store.js"></script>
 <script src="../assets/js/core/kelola.js"></script>
-<script src="../assets/js/toko/pesanan.js"></script>
+<script>mulaiAplikasi(() => { const halaman = document.createElement('script'); halaman.src = '../assets/js/toko/pesanan.js'; document.body.append(halaman); });</script>
 </body>
 </html>

@@ -1,3 +1,6 @@
 .freebuff/project-id
 tools/static-server.ps1
 supabase/setelah-akun.sql
+supabase/baca-saja.sql
+supabase/hapus-data-demo.sql
+supabase/setup.sql

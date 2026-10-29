@@ -1,12 +1,12 @@
-/* Masuk & daftar — Supabase Auth. Sesi disimpan otomatis oleh supabase-js
-   (bukan localStorage "sortik2:" lagi — itu hanya dipakai sisa data contoh). */
+/* Masuk & daftar — Supabase Auth. Sesi disimpan otomatis oleh supabase-js. */
 
 /* buka halaman masuk/daftar selalu mengakhiri sesi sebelumnya */
 sb.auth.signOut().catch(() => {});
 
 const PERAN_MASUK = { pembeli: "Pembeli", staff: "Staff Toko", admin: "Admin Toko" };
 
-/* branding toko: dari data contoh — akan diambil dari tabel toko di tahap data */
+/* branding toko: diambil dari tabel toko; halaman login tidak memuat store.js,
+   jadi nama toko diambil langsung dari Supabase (atau tetap "SORTIK"). */
 const tokoMasuk = db.toko;
 document.querySelectorAll(".brand").forEach((brand) => {
   const h1 = brand.querySelector("h1");
@@ -48,8 +48,12 @@ document.querySelectorAll("form").forEach((f) => {
     sembunyiGalat();
     const data = f.elements;
 
-    /* ---------- daftar: buat akun pembeli baru ---------- */
+    /* ---------- daftar: buat akun pembeli baru lewat Supabase Auth ----------
+       Baris profil dibuat otomatis oleh trigger buat_profil_baru(); peran
+       selalu "pembeli" — staf/admin ditetapkan pemilik di dashboard. */
     if (data.konfirmasi) {
+      if (data.password.value.length < 8)
+        return galat("Kata sandi minimal 8 karakter.");
       if (data.password.value !== data.konfirmasi.value)
         return galat("Kata sandi belum sama — ulangi dengan benar.");
       const { data: hasil, error } = await sb.auth.signUp({
