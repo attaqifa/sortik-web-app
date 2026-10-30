@@ -161,7 +161,7 @@ body {
 /* kolom sandi */
 .sandi { position: relative; margin-bottom: 22px; }
 .sandi input { margin-bottom: 0; padding-right: 52px; }
-.sandi .lihat { position: absolute; top: 50%; right: 6px; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; color: var(--tinta-3); background: none; border: 0; border-radius: 9px; cursor: pointer; transform: translateY(-50%); transition: color var(--cepat), background var(--cepat); }
+.sandi .lihat { position: absolute; top: 35%; right: 6px; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; color: var(--tinta-3); background: none; border: 0; border-radius: 9px; cursor: pointer; transform: translateY(-50%); transition: color var(--cepat), background var(--cepat); }
 .sandi .lihat:hover { color: var(--biru); background: var(--biru-muda); }
 .sandi .lihat .ikon { width: 18px; height: 18px; }
 .sandi .lihat .tertutup, .sandi.terlihat .terbuka { display: none; }
