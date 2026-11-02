@@ -1,4 +1,4 @@
-/* Pengaturan toko & kategori — profil toko satu form, kategori lewat mesin kelola. */
+/* Pengaturan toko — profil toko satu form; kategori dikelola di halaman Kelola Barang. */
 
 const t = db.toko;
 el("t-nama").value = t.nama;
@@ -54,32 +54,3 @@ el("t-simpan").onclick = () => {
   simpan("toko");
   isi("t-info", "✓ Tersimpan — langsung dipakai halaman checkout pembeli.");
 };
-
-/* id kategori = slug nama — ganti nama tidak memutus barang */
-const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-
-kelola({
-  wadah: "kategori",
-  kunci: "kategori",
-  nama: "Kategori",
-  petunjuk: "Cari nama kategori...",
-  kolom: [["nama", "Nama kategori", "text"], ["lucide", "Ikon kategori", "pilih", () => IKON_KATEGORI]],
-  cari: (k) => k.nama,
-  urut: (a, b) => a.nama.localeCompare(b.nama),
-
-  baru: (d) => {
-    const id = slug(d.nama);
-    if (db.kategori.some((k) => k.id === id)) {
-      alert(`Kategori "${d.nama}" sudah ada.`);
-      return null;
-    }
-    return { id, ...d, lucide: d.lucide || "tag" };
-  },
-
-  cek: (k) => (db.produk.some((p) => p.kategori === k.id)
-    ? `Kategori "${k.nama}" masih dipakai barang — pindahkan dulu barangnya di Kelola Barang.`
-    : ""),
-
-  baris: (k) => `<div class="thumb">${ikonKategori(k)}</div>
-  <div><b>${k.nama}</b><span>kode: ${k.id} · dipakai ${db.produk.filter((p) => p.kategori === k.id).length} barang</span></div>`
-});

@@ -38,3 +38,32 @@ kelola({
     ? `"${p.nama}" sudah ada di riwayat pesanan. Kosongkan stoknya saja bila barang tidak dijual lagi.`
     : "")
 });
+
+/* kategori barang — id = slug nama, ganti nama tidak memutus barang */
+const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+kelola({
+  wadah: "kategori",
+  kunci: "kategori",
+  nama: "Kategori",
+  petunjuk: "Cari nama kategori...",
+  kolom: [["nama", "Nama kategori", "text"], ["lucide", "Ikon kategori", "pilih", () => IKON_KATEGORI]],
+  cari: (k) => k.nama,
+  urut: (a, b) => a.nama.localeCompare(b.nama),
+
+  baru: (d) => {
+    const id = slug(d.nama);
+    if (db.kategori.some((k) => k.id === id)) {
+      alert(`Kategori "${d.nama}" sudah ada.`);
+      return null;
+    }
+    return { id, ...d, lucide: d.lucide || "tag" };
+  },
+
+  cek: (k) => (db.produk.some((p) => p.kategori === k.id)
+    ? `Kategori "${k.nama}" masih dipakai barang — pindahkan dulu barangnya ke kategori lain.`
+    : ""),
+
+  baris: (k) => `<div class="thumb">${ikonKategori(k)}</div>
+  <div><b>${k.nama}</b><span>kode: ${k.id} · dipakai ${db.produk.filter((p) => p.kategori === k.id).length} barang</span></div>`
+});

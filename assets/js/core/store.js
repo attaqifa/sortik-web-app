@@ -379,7 +379,7 @@ function gambarSidebar() {
   const akun = db.akun || { nama: "Memuat…", role: peran, ikon: "🧑" };
   const tautanProfil = (html) => `<a class="profil" href="akun.html" title="Akun saya">${html}</a>`;
   isi("side", `<a class="logo" href="index.html">
-  <img src="../assets/img/favicon.svg" alt="" width="34"><span class="namatoko"><b>${esc(db.toko.nama || "SORTIK")}</b><i>with SORTIK</i></span>
+  <img src="${db.toko.logo || "../assets/img/SortikLogo.jpeg"}" alt="Logo toko" width="34"><span class="namatoko"><b>${esc(db.toko.nama || "SORTIK")}</b><i>with SORTIK</i></span>
 </a>
 <nav>${MENU[peran].map(([ikon, label, href, ekstra = "", singkat = label]) =>
     `<a${href === berkas ? ' class="on"' : ""} href="${href}"><span class="ikon" data-lucide="${ikon}"></span><span class="lengkap">${label}</span><span class="pendek">${singkat}</span> ${ekstra}</a>`).join("")}</nav>
