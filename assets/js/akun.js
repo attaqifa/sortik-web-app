@@ -1,8 +1,7 @@
 /* Akun — profil, foto, dan kata sandi. Dipakai pembeli, staff, dan admin
    (halaman akun.html di masing-masing folder; peran menentukan detail).
    Perubahan hanya menyangkut AKUN PRIBADI: nama/telepon/alamat/ikon/avatar
-   disimpan ke tabel profil, kata sandi ke Supabase Auth. Data toko tetap
-   dikelola lewat Supabase Dashboard. */
+   disimpan ke baris akun di database lokal. */
 
 const u = db.akun;
 let avatar = u.avatar || "";
@@ -48,9 +47,12 @@ el("a-simpan").onclick = async () => {
 
   const tombol = el("a-simpan");
   tombol.disabled = true;
-  const { error } = await sb.from("profil").update(perubahan).eq("id", u.id);
+  const baris = db.pengguna.find((p) => p.id === u.id);
+  if (!baris) { tombol.disabled = false; return notif("Akun tidak ditemukan di database lokal."); }
+  Object.assign(baris, perubahan);
+  const ok = await simpan("pengguna");
   tombol.disabled = false;
-  if (error) return notif("Gagal menyimpan profil: " + error.message);
+  if (!ok) return;
 
   Object.assign(u, perubahan);
   gambarSidebar();
@@ -75,19 +77,5 @@ document.querySelectorAll(".sandi").forEach((kotak) => {
   input.addEventListener("blur", () => (tanda.hidden = true));
 });
 
-el("a-sandisimpan").onclick = async () => {
-  if (!u.id) return notif("Masuk dulu dengan akun Anda untuk mengubah kata sandi.");
-  const sandi = el("a-sandi").value;
-  if (sandi.length < 8) return notif("Kata sandi minimal 8 karakter.");
-  if (sandi !== el("a-sandi2").value) return notif("Ulangi kata sandi belum sama.");
-
-  const tombol = el("a-sandisimpan");
-  tombol.disabled = true;
-  const { error } = await sb.auth.updateUser({ password: sandi });
-  tombol.disabled = false;
-  if (error) return notif("Gagal mengubah kata sandi: " + error.message);
-
-  el("a-sandi").value = "";
-  el("a-sandi2").value = "";
-  notif("Kata sandi diperbarui");
-};
+el("a-sandisimpan").onclick = () =>
+  notif("Mode lokal tidak memakai kata sandi — kolom ini diabaikan.");

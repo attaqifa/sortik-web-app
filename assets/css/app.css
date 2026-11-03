@@ -862,16 +862,21 @@ input[type="file"]::file-selector-button:hover { background: #e2ecff; border-col
 .hero .btn.putih.garis { color: #fff; background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .55); }
 .hero .btn.putih:hover { background: #eef2ff; }
 .hero .btn.putih.garis:hover { background: rgba(255, 255, 255, .24); }
-.heroFoto { position: relative; display: block; flex: none; width: 200px; overflow: hidden; background: #fff; border-radius: var(--r); }
-.heroFoto img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.heroFoto .foto-cadangan { position: absolute; inset: 0; margin: auto; width: 64px; height: 64px; color: #c3ccdb; }
-.heroTag { position: absolute; inset: auto 0 0; display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; color: #fff; background: rgba(17, 24, 39, .58); }
+.heroBanner { position: relative; flex: none; width: 320px; min-height: 230px; overflow: hidden; background: rgba(255, 255, 255, .12); border-radius: var(--r); }
+.heroBanner .slide { position: absolute; inset: 0; display: block; opacity: 0; transition: opacity .5s; }
+.heroBanner .slide.on { opacity: 1; }
+.heroBanner img { width: 100%; height: 100%; object-fit: cover; }
+.heroTag { position: absolute; inset: auto 0 0; display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; color: #fff; background: linear-gradient(transparent, rgba(17, 24, 39, .78)); }
 .heroTag span { font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; opacity: .8; }
 .heroTag b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .heroTag em { font-style: normal; font-weight: 700; font-variant-numeric: tabular-nums; }
+.heroTag s { font-weight: 400; opacity: .7; }
+.dots { position: absolute; top: 10px; right: 12px; display: flex; gap: 6px; }
+.dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 4px; background: rgba(255, 255, 255, .55); cursor: pointer; transition: width var(--cepat), background var(--cepat); }
+.dots button.on { width: 20px; background: #fff; }
 @media (max-width: 860px) {
   .hero { flex-direction: column; padding: 24px; }
-  .heroFoto { width: 100%; aspect-ratio: 16 / 9; }
+  .heroBanner { width: 100%; aspect-ratio: 16 / 9; }
 }
 
 /* ---------- halaman keuangan ---------- */
@@ -917,3 +922,32 @@ input[type="file"]::file-selector-button:hover { background: #e2ecff; border-col
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- improvement tampilan pembeli ---------- */
+/* notif bisa memuat tautan aksi (mis. "Lihat Keranjang") */
+#notif a { margin-left: 4px; padding-left: 10px; color: #93c5fd; border-left: 1px solid rgba(255,255,255,.3); }
+
+/* badge ganda di kartu: Terlaris kiri, diskon kanan */
+.ptanda.laris { background: #059669; }
+.ptanda.diskon { left: auto; right: 8px; }
+
+/* tombol keranjang cepat di sudut foto kartu */
+.belicepat { position: absolute; right: 8px; bottom: 8px; z-index: 1; display: grid; place-items: center; width: 34px; height: 34px; color: var(--biru-tua); background: rgba(255,255,255,.92); border: 1px solid var(--garis); border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,.14); cursor: pointer; transition: transform var(--cepat), background var(--cepat), color var(--cepat); }
+.belicepat:hover { color: #fff; background: var(--biru); transform: scale(1.08); }
+.belicepat .ikon { width: 17px; height: 17px; }
+
+/* kartu stok habis diredupkan */
+.pcard.habis .pimg img { filter: grayscale(.9); opacity: .55; }
+.pcard.habis .pbody h3 { color: var(--tinta-3); }
+
+/* titik progres status pesanan di daftar */
+.langkah { display: flex; gap: 4px; margin-top: 7px; }
+.langkah i { width: 20px; height: 4px; background: var(--garis); border-radius: 2px; }
+.langkah i.on { background: var(--biru); }
+
+/* subtotal per baris keranjang */
+.subbaris { display: block; margin-top: 2px; font-size: 13px; color: var(--biru-tua); font-variant-numeric: tabular-nums; }
+
+/* kilau skeleton saat gambar belum termuat (tertutup gambar begitu tampil) */
+.pimg, .galeri-utama { background: linear-gradient(100deg, var(--sorot) 40%, #edf0f6 50%, var(--sorot) 60%) left / 220% 100% no-repeat var(--sorot); animation: kilau 1.4s infinite linear; }
+@keyframes kilau { to { background-position: -220% 0; } }

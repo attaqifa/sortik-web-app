@@ -1,4 +1,4 @@
-/* SORTIK — wadah data kosong; core/store.js mengisinya dari Supabase. */
+/* SORTIK — wadah data kosong; core/store.js mengisinya dari database lokal. */
 const db = {
   kategori: [],
   toko: { id: 1, nama: "", alamat: "", jam: "", wa: "", ongkir: 0, rekening: [], logo: "" },

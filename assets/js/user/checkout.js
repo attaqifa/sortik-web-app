@@ -18,7 +18,7 @@ const item = (i) => {
   const penuh = i.jumlah >= (p.stok || 0);
   return `<div class="row">
     <div class="thumb">${fotoHTML(p)}</div>
-    <div><b>${p.nama}</b><span>${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""} · Rak ${p.rak}${penuh ? ` · <b class="maks">Maks ${p.stok} unit</b>` : ""}</span></div>
+    <div><b>${p.nama}</b><span>${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""} · Rak ${p.rak}${penuh ? ` · <b class="maks">Maks ${p.stok} unit</b>` : ""}</span><b class="subbaris">${rp(hargaJual(p) * i.jumlah)}</b></div>
     <div class="qty">
       <button type="button" data-kurang="${p.id}" aria-label="Kurangi jumlah">−</button><b>${i.jumlah}</b><button type="button" data-tambah="${p.id}" aria-label="Tambah jumlah"${penuh ? " disabled" : ""}>＋</button>
       <button type="button" class="x" data-hapus="${p.id}" title="Hapus" aria-label="Hapus dari keranjang">✕</button>
@@ -91,10 +91,17 @@ el("buat").onclick = async () => {
     return;
   }
 
+  /* konfirmasi sebelum pesanan benar-benar dibuat */
+  const yakin = await konfirmasi("Buat pesanan ini?",
+    `${keranjang.reduce((n, i) => n + i.jumlah, 0)} item — total ${rp(subtotal() + (state.cara === "antar" ? ongkir : 0))}`
+    + (state.cara === "antar" ? " (termasuk ongkir)." : "."), "Ya, Buat Pesanan");
+  if (!yakin) return;
+
   const mulai = Math.max(0, ...db.pesanan.map((o) => o.id)) + 1;
   const dibuat = keranjang.map((i, n) => ({
     id: mulai + n,
     produk: i.produk,
+    pembeli_id: db.akun.id,
     pembeli: db.akun.nama,
     jumlah: i.jumlah,
     /* harga jual dikunci saat dipesan — diskon belakangan tidak mengubah riwayat */

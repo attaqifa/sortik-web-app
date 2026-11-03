@@ -9,9 +9,11 @@ const pesanan = () => [...pesananku()].sort((a, b) => b.tanggal.localeCompare(a.
 
 const baris = (o) => {
   const p = produkById(o.produk);
+  const n = ALUR.indexOf(o.status);
   return `<button class="row" data-id="${o.id}">
     <div class="thumb">${fotoHTML(p)}</div>
-    <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${o.jumlah} item · ${rp(nilaiPesanan(o))}${o.lunas ? "" : " · belum dibayar"}</span></div>
+    <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${o.jumlah} item · ${rp(nilaiPesanan(o))}${o.lunas ? "" : " · belum dibayar"}</span>
+      <span class="langkah" title="Tahap ${n + 1} dari ${ALUR.length}: ${o.status}">${ALUR.map((s, i) => `<i${i <= n ? ' class="on"' : ""}></i>`).join("")}</span></div>
     <em class="${STATUS[o.status] || ""}">${o.status}</em>
   </button>`;
 };
@@ -115,6 +117,7 @@ function buka(id) {
     if (!yakin) return;
     db.pesanan.splice(db.pesanan.indexOf(o), 1);
     simpan("pesanan");
+    gambarSidebar();
     notif("Pesanan dibatalkan");
     el("detail").hidden = true;
     el("daftar").hidden = false;

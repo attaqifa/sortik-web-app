@@ -19,6 +19,7 @@ function render() {
   /* urutan harga jual (diskon diperhitungkan); relevan = urutan asli */
   const daftar = state.urut === "murah" ? [...hasil].sort((a, b) => hargaJual(a) - hargaJual(b))
     : state.urut === "mahal" ? [...hasil].sort((a, b) => hargaJual(b) - hargaJual(a))
+    : state.urut === "laris" ? [...hasil].sort((a, b) => jmlTerjual(b.id) - jmlTerjual(a.id))
     : hasil;
 
   isi("hasil", `${hasil.length} dari ${db.produk.length} produk${state.rak ? ` di rak ${labelRak(state.rak)}` : ""}`);

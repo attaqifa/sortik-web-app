@@ -33,6 +33,8 @@ const hargaJual = (p) => {
 /* nilaiPesanan: pesanan baru menyimpan harga saat dipesan (o.harga) —
    ubah diskon/harga tidak mengubah riwayat; pesanan lama pakai harga kini */
 const nilaiPesanan = (o) => (o.harga != null ? o.harga : hargaJual(produkById(o.produk))) * o.jumlah;
+/* total unit terjual satu produk (dari seluruh pesanan) — untuk badge/urutan Terlaris */
+const jmlTerjual = (id) => db.pesanan.reduce((n, o) => n + (o.produk === id ? o.jumlah : 0), 0);
 /* ---------- lantai & rak ---------- */
 /* denah kini bisa beberapa lantai: db.rak.lantai = [{ nama, lebar, tinggi,
    pintu: { sisi, pos }, daftar: [rak] }]; db.rak.aktif = lantai yang tampil */
@@ -86,8 +88,8 @@ const fotoHTML = (p) => {
   return `${ikonCadangan(p)}<img src="${utama}" alt="${alt}" loading="lazy" onerror="this.remove()">`;
 };
 
-const kartu = (p) => `<a class="pcard" href="produk.html?id=${p.id}">
-  <div class="pimg">${p.diskon ? `<span class="ptanda">−${p.diskon}%</span>` : ""}${fotoHTML(p)}</div>
+const kartu = (p) => `<a class="pcard${p.stok ? "" : " habis"}" href="produk.html?id=${p.id}">
+  <div class="pimg">${jmlTerjual(p.id) ? `<span class="ptanda laris">Terlaris</span>` : ""}${p.diskon ? `<span class="ptanda diskon">−${p.diskon}%</span>` : ""}${fotoHTML(p)}${p.stok ? `<span class="belicepat" data-beli="${p.id}" role="button" title="Tambah ke keranjang"><span class="ikon" data-lucide="shopping-cart"></span></span>` : ""}</div>
   <div class="pbody">
     <span class="pcat">${kat(p)}</span>
     <h3>${p.nama}</h3>
@@ -96,9 +98,24 @@ const kartu = (p) => `<a class="pcard" href="produk.html?id=${p.id}">
   </div>
 </a>`;
 
+/* tombol cepat "+ keranjang" di kartu — delegasi global agar berlaku di
+   semua halaman yang memakai kartu (beranda, cari, produk serupa) */
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-beli]");
+  if (!b) return;
+  e.preventDefault();
+  const p = produkById(+b.dataset.beli);
+  if (!p || !p.stok) return;
+  const item = keranjang.find((i) => i.produk === p.id);
+  if (item) item.jumlah = Math.min(p.stok, item.jumlah + 1);
+  else keranjang.push({ produk: p.id, jumlah: 1 });
+  simpanKeranjang();
+  notif(`${p.nama} masuk keranjang`, { href: "checkout.html", label: "Lihat Keranjang" });
+});
+
 /* ---------- notifikasi ---------- */
 /* satu elemen dipakai ulang */
-function notif(teks) {
+function notif(teks, aksi) {
   let t = el("notif");
   if (!t) {
     t = document.createElement("div");
@@ -107,10 +124,11 @@ function notif(teks) {
     t.onclick = () => { clearTimeout(notif.waktu); t.classList.remove("tampil"); };
     document.body.appendChild(t);
   }
-  t.textContent = teks;
+  /* aksi opsional: { href, label } — tautan di dalam notif, mis. ke keranjang */
+  t.innerHTML = esc(String(teks)) + (aksi ? ` <a href="${aksi.href}">${esc(aksi.label)}</a>` : "");
   t.classList.add("tampil");
   clearTimeout(notif.waktu);
-  notif.waktu = setTimeout(() => t.classList.remove("tampil"), 2200);
+  notif.waktu = setTimeout(() => t.classList.remove("tampil"), 2600);
 }
 
 /* ---------- dialog konfirmasi (pengganti confirm) ---------- */
