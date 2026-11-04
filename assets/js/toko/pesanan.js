@@ -8,7 +8,7 @@ const jmlStatus = (s) => db.pesanan.filter((o) => (s === "belum" ? !o.lunas : o.
 
 const baris = (o) => {
   const p = produkById(o.produk);
-  /* cek stok: kurang dari jumlah dipesan = merah (jangan dipromes) */
+  /* cek stok: kurang dari jumlah yang diminta = merah (jangan dipromes) */
   const kurang = p.stok != null && p.stok < o.jumlah;
   return `<div class="row">
     <button class="thumb" type="button" data-foto="${o.id}" title="Perbesar foto barang">${fotoHTML(p)}</button>
@@ -17,9 +17,9 @@ const baris = (o) => {
       <span>${kodePesanan(o)} · ${o.pembeli || "-"} · ${tglID(o.tanggal)}</span>
       <span>${o.jumlah} unit · ${rp(nilaiPesanan(o))} · ${o.cara === "antar" ? "Antar ke " + (o.alamat || "-") : "Ambil di tempat"}</span>
       <div class="rowinfo">
-        <em class="${STATUS[o.status] || ""}">${o.status}</em>
+        ${tagStatus(o.status)}
         ${p.rak ? `<span class="tag ikonnya biru" title="Lokasi rak barang ini"><span class="ikon" data-lucide="warehouse"></span>Rak ${esc(labelRak(p.rak))}</span>` : ""}
-        ${p.stok != null ? `<span class="tag ikonnya ${kurang ? "habis" : "abu"}" title="${kurang ? "Stok tidak cukup — jangan dipromes dulu" : "Sisa stok barang ini"}"><span class="ikon" data-lucide="boxes"></span>Stok ${p.stok}${kurang ? ` — kurang dari ${o.jumlah} dipesan` : " tersisa"}</span>` : ""}
+        ${p.stok != null ? `<span class="tag ikonnya ${kurang ? "habis" : "abu"}" title="${kurang ? "Stok tidak cukup — jangan dipromes dulu" : "Sisa stok barang ini"}"><span class="ikon" data-lucide="boxes"></span>Stok ${p.stok}${kurang ? ` — kurang dari ${o.jumlah} unit` : " tersisa"}</span>` : ""}
         ${tagBayar(o)}
         ${o.bukti
           ? `<button class="btn bukti" type="button" data-bukti="${o.id}"><span class="ikon" data-lucide="receipt"></span>Lihat bukti transfer</button>`
@@ -47,13 +47,15 @@ function daftar() {
   segarChip();
 }
 
-/* label chip menyertakan hitungan */
+/* label chip: ikon status + hitungan */
 function segarChip() {
-  const label = ["Semua", ...ALUR, "Belum dibayar"];
+  const label = [["", "Semua"], ...ALUR.map((s) => [s, s]), ["belum", "Belum dibayar"]];
   el("chips").querySelectorAll("button").forEach((b, i) => {
-    const s = i === 0 ? "" : i === label.length - 1 ? "belum" : label[i];
-    b.textContent = `${label[i]} (${i ? jmlStatus(s) : db.pesanan.length})`;
+    const [nilai, teks] = label[i];
+    const ikon = nilai === "belum" ? '<span class="ikon" data-lucide="credit-card"></span>' : nilai ? ikonStatus(nilai) : "";
+    b.innerHTML = `${ikon}${teks} (${nilai ? jmlStatus(nilai) : db.pesanan.length})`;
   });
+  gambarIkon();
 }
 
 chipSaring("chips", [["", "Semua"], ...ALUR.map((s) => [s, s]), ["belum", "Belum dibayar"]],

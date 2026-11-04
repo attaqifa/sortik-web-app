@@ -28,7 +28,7 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
     const kontrol = jenis === "pilih"
       ? `<select id="${id}" data-f="${f}">${pilihan.map(([v, t]) => `<option value="${v}">${t}</option>`).join("")}</select>`
       : jenis === "area" ? `<textarea id="${id}" data-f="${f}" rows="3"></textarea>`
-      : jenis === "sandi" ? `<input id="${id}" data-f="${f}" type="password" autocomplete="new-password" placeholder="Ketik sandi baru — kosongkan jika tetap">`
+      : jenis === "sandi" ? `<input id="${id}" data-f="${f}" type="password" minlength="8" autocomplete="new-password" placeholder="Ketik sandi baru — kosongkan jika tetap">`
         : jenis === "foto" ? `<div class="medanfoto">
         <div class="pratinjau" id="${id}-pratinjau"></div>
         <div class="pilihfoto">
@@ -108,7 +108,8 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
   async function simpanBaris() {
     const data = {};
     el(`${wadah}-form`).querySelectorAll("[data-f]").forEach((x) => {
-      data[x.dataset.f] = x.type === "number" ? +x.value || 0 : x.value.trim();
+      /* sandi tidak di-trim agar spasi yang diketik tetap sama saat masuk */
+      data[x.dataset.f] = x.type === "number" ? +x.value || 0 : x.type === "password" ? x.value : x.value.trim();
     });
     kolom.forEach(([f, , jenis]) => {
       if (jenis === "foto") data[f] = foto[f] || "";
@@ -116,8 +117,10 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
     });
     const pertama = el(`${wadah}-${kolom[0][0]}`);
     if (!data[kolom[0][0]]) return pertama.focus();
-    /* hook siapkan(data, lama): ubah isi sebelum disimpan (mis. hash sandi) */
-    const siap = siapkan ? siapkan(data, ubah) : data;
+    /* hook siapkan(data, lama): ubah isi sebelum disimpan (mis. hash sandi);
+       kembalikan null untuk membatalkan simpan */
+    const siap = siapkan ? await siapkan(data, ubah) : data;
+    if (!siap) return;
     let baris = ubah;
     const sebelumnya = ubah ? { ...ubah } : null;
     if (ubah) Object.assign(ubah, siap);

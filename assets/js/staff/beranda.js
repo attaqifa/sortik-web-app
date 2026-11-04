@@ -41,7 +41,7 @@ const kartuPesanan = (o) => {
   return `<a class="row" href="pesanan.html">
     <div class="thumb">${fotoHTML(p)}</div>
     <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${o.pembeli || "-"} · ${o.bayar}</span>${tagBayar(o)}</div>
-    <em class="${STATUS[o.status] || ""}">${o.status}</em>
+    ${tagStatus(o.status)}
   </a>`;
 };
 isi("tindak", jalan.length ? terbaru(jalan).map(kartuPesanan).join("") : pesanKosong("receipt", "Tidak ada pesanan yang menunggu ditindak."));

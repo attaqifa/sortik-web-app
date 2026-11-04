@@ -104,7 +104,7 @@ el("buat").onclick = async () => {
     pembeli_id: db.akun.id,
     pembeli: db.akun.nama,
     jumlah: i.jumlah,
-    /* harga jual dikunci saat dipesan — diskon belakangan tidak mengubah riwayat */
+    /* harga jual dikunci saat pesanan dibuat — diskon belakangan tidak mengubah riwayat */
     harga: hargaJual(produkById(i.produk)),
     status: "Menunggu",
     tanggal: new Date().toISOString().slice(0, 10),
@@ -130,21 +130,6 @@ el("buat").onclick = async () => {
     render();
     return;                                        /* pesan galat sudah tampil */
   }
-
-  /* id final dari database → kode pesan di grup memakai nomor yang benar */
-  db.pesan = db.pesan || [];
-  dibuat.forEach((o) => {
-    const p = produkById(o.produk);
-    db.pesan.push({
-      user_id: db.akun.id,
-      dari: "SORTIK Bot",
-      peran: "bot",
-      teks: `Pesanan baru ${kodePesanan(o)} — ${o.pembeli}, ${p.nama || "barang"} ×${o.jumlah}. `
-        + `${o.bayar === "Bayar di kasir" ? "Akan dibayar di kasir." : "Tunggu konfirmasi transfer."}`,
-      waktu: new Date().toISOString()
-    });
-  });
-  await simpan("pesan");
 
   keranjang.length = 0;
   simpanKeranjang();

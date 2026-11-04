@@ -1,13 +1,13 @@
 /* Akun — profil, foto, dan kata sandi. Dipakai pembeli, staff, dan admin
    (halaman akun.html di masing-masing folder; peran menentukan detail).
-   Perubahan hanya menyangkut AKUN PRIBADI: nama/telepon/alamat/ikon/avatar
-   disimpan ke baris akun di database lokal. */
+   Perubahan hanya menyangkut AKUN PRIBADI: nama/telepon/alamat/avatar
+   disimpan ke baris akun di database lokal. Avatar hanya dari foto. */
 
 const u = db.akun;
 let avatar = u.avatar || "";
 
 function renderAvatar() {
-  isi("a-avatar", avatar ? `<img src="${avatar}" alt="Foto profil">` : (u.ikon || "🧑"));
+  isi("a-avatar", avatar ? `<img src="${avatar}" alt="Foto profil">` : inisial(u.nama));
   el("a-hapusfoto").hidden = !avatar;
 }
 
@@ -15,7 +15,6 @@ el("a-nama").value = u.nama || "";
 el("a-email").value = u.email || "";
 el("a-telepon").value = u.telepon || "";
 el("a-alamat").value = u.alamat || "";
-el("a-ikon").value = u.ikon || "";
 renderAvatar();
 
 el("a-foto").onchange = async (e) => {
@@ -41,7 +40,6 @@ el("a-simpan").onclick = async () => {
     nama,
     telepon: el("a-telepon").value.trim(),
     alamat: el("a-alamat").value.trim(),
-    ikon: el("a-ikon").value.trim(),
     avatar
   };
 
@@ -55,6 +53,7 @@ el("a-simpan").onclick = async () => {
   if (!ok) return;
 
   Object.assign(u, perubahan);
+  renderAvatar();
   gambarSidebar();
   notif("Profil tersimpan");
 };
@@ -78,4 +77,4 @@ document.querySelectorAll(".sandi").forEach((kotak) => {
 });
 
 el("a-sandisimpan").onclick = () =>
-  notif("Mode lokal tidak memakai kata sandi — kolom ini diabaikan.");
+  notif("Kata sandi diatur oleh admin toko — hubungi admin untuk menggantinya.");

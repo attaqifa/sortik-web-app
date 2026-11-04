@@ -1,4 +1,4 @@
-/* Pesan & riwayat pesanan — dipakai pesan.html dan riwayat.html (body[data-status]). */
+/* Pesanan & riwayat — dipakai pesan.html dan riwayat.html (body[data-status]). */
 
 const AMBIL = { ambil: "Ambil di Tempat", antar: "Antar ke Alamat" };
 const mode = document.body.dataset.status || "";
@@ -14,7 +14,7 @@ const baris = (o) => {
     <div class="thumb">${fotoHTML(p)}</div>
     <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${o.jumlah} item · ${rp(nilaiPesanan(o))}${o.lunas ? "" : " · belum dibayar"}</span>
       <span class="langkah" title="Tahap ${n + 1} dari ${ALUR.length}: ${o.status}">${ALUR.map((s, i) => `<i${i <= n ? ' class="on"' : ""}></i>`).join("")}</span></div>
-    <em class="${STATUS[o.status] || ""}">${o.status}</em>
+    ${tagStatus(o.status)}
   </button>`;
 };
 
@@ -30,7 +30,7 @@ const rincian = (o) => {
       <b>${p.nama || "-"}</b>
       <span>${kodePesanan(o)} · ${tglID(o.tanggal)}</span>
       <span>${kat(p)} · ${o.jumlah} unit · Rak ${p.rak || "-"}</span>
-      <em class="${STATUS[o.status] || ""}">${o.status}</em>
+      ${tagStatus(o.status)}
     </div>
   </div>
   <div class="sum"><span>Subtotal</span><b>${rp(nilaiPesanan(o))}</b></div>
@@ -63,7 +63,10 @@ const rincian = (o) => {
 
 function daftar() {
   const hasil = pesanan().filter((o) => tampil(o) && (!status || o.status === status));
-  isi("list", hasil.length ? hasil.map(baris).join("") : pesanKosong("receipt", "Belum ada pesanan di sini.", ["cari.html", "Mulai belanja"]));
+  isi("list", hasil.length ? hasil.map(baris).join("")
+    : status
+      ? pesanKosong("receipt", `Belum ada pesanan berstatus ${status}.`)
+      : pesanKosong("receipt", "Belum ada pesanan di sini.", ["cari.html", "Mulai belanja"]));
 }
 
 function buka(id) {
@@ -126,8 +129,10 @@ function buka(id) {
 }
 
 if (el("chips")) {
-  const ada = [...new Set(pesananku().filter(tampil).map((o) => o.status))].sort((a, b) => ALUR.indexOf(a) - ALUR.indexOf(b));
-  chipSaring("chips", [["", "Semua"], ...ada.map((s) => [s, s])], (v) => { status = v; daftar(); });
+  /* semua tahap berjalan tampil walau sedang kosong, masing-masing dengan ikonnya */
+  const tahap = ALUR.filter((s) => s !== "Selesai");
+  chipSaring("chips", [["", "Semua"], ...tahap.map((s) => [s, `${ikonStatus(s)}${s}`])],
+    (v) => { status = v; daftar(); }, status);
 }
 
 el("list").addEventListener("click", (e) => {

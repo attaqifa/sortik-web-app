@@ -70,7 +70,7 @@ isi("pesanan", jalan.map((o) => {
   return `<div class="row">
     <div class="thumb">${fotoHTML(p)}</div>
     <div><b>${p.nama || "-"}</b><span>${o.jumlah} item · ${rp(nilaiPesanan(o))}</span>${tagBayar(o)}</div>
-    <em class="${STATUS[o.status] || ""}">${o.status}</em>
+    ${tagStatus(o.status)}
   </div>`;
 }).join("") || pesanKosong("shopping-cart", "Belum ada pesanan berjalan.", ["cari.html", "Mulai belanja"]));
 

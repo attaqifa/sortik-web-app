@@ -47,14 +47,14 @@ document.querySelectorAll("form").forEach((f) => {
         return galat("Kata sandi minimal 8 karakter.");
       if (data.password.value !== data.konfirmasi.value)
         return galat("Kata sandi belum sama — ulangi dengan benar.");
-      const { error } = daftarLokal(data.email.value.trim(), data.nama.value.trim());
+      const { error } = await daftarLokal(data.email.value.trim(), data.nama.value.trim(), data.password.value);
       if (error) return galat(error);
       location.href = TUJUAN.pembeli;
       return;
     }
 
     /* ---------- masuk: email dicek dari daftar pengguna lokal ---------- */
-    const { data: profil, error } = masukLokal(data.email.value.trim());
+    const { data: profil, error } = await masukLokal(data.email.value.trim(), data.password.value);
     if (error) return galat(error);
 
     const peranPilih = data.role ? data.role.value : profil.role;

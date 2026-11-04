@@ -30,7 +30,7 @@ const hargaJual = (p) => {
   const diskon = Math.max(0, Math.min(100, (p && p.diskon) || 0));
   return Math.round(((p && p.harga) || 0) * (1 - diskon / 100) / 100) * 100;
 };
-/* nilaiPesanan: pesanan baru menyimpan harga saat dipesan (o.harga) —
+/* nilaiPesanan: pesanan baru menyimpan harga saat pesanan dibuat (o.harga) —
    ubah diskon/harga tidak mengubah riwayat; pesanan lama pakai harga kini */
 const nilaiPesanan = (o) => (o.harga != null ? o.harga : hargaJual(produkById(o.produk))) * o.jumlah;
 /* total unit terjual satu produk (dari seluruh pesanan) — untuk badge/urutan Terlaris */
@@ -62,6 +62,10 @@ const kodePesanan = (o) => `BK-${o.tanggal.slice(0, 4)}-${String(o.id).padStart(
 const STATUS = { Menunggu: "wait", Diproses: "proc", Siap: "ok", Selesai: "done" };
 /* urutan status pesanan */
 const ALUR = ["Menunggu", "Diproses", "Siap", "Selesai"];
+/* ikon Lucide per status — penanda visual di daftar & chip */
+const IKON_STATUS = { Menunggu: "clock", Diproses: "loader", Siap: "package-check", Selesai: "circle-check" };
+const ikonStatus = (s) => `<span class="ikon" data-lucide="${IKON_STATUS[s] || "circle"}"></span>`;
+const tagStatus = (s) => `<em class="${STATUS[s] || ""}">${ikonStatus(s)}${s}</em>`;
 const tagBayar = (o) => (o.lunas
   ? `<span class="tag lunas">Lunas${o.staff ? " · " + o.staff : ""}</span>`
   : `<span class="tag belum">Belum dibayar</span>`);

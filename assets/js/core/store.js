@@ -38,7 +38,7 @@ async function muatData() {
       location.replace("../auth/login.html");
       return;
     }
-    db.akun = { id: null, nama: "Pengunjung", role: peran, email: "", telepon: "", alamat: "", avatar: "", ikon: "🧑" };
+    db.akun = { id: null, nama: "Pengunjung", role: peran, email: "", telepon: "", alamat: "", avatar: "" };
     return;
   }
   if (profil.status !== "aktif") {
@@ -64,36 +64,52 @@ const simpanKeranjang = () => {
 
 const labelPeran = (r) => PERAN[r] || r;
 const inisial = (nama) => String(nama || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-const avatarHTML = (u) => (u.avatar ? `<img src="${u.avatar}" alt="">` : (u.ikon || inisial(u.nama)));
+/* avatar hanya dari foto; tanpa foto tampil inisial nama */
+const avatarHTML = (u) => (u.avatar ? `<img src="${u.avatar}" alt="">` : inisial(u.nama));
 const pesananku = () => db.pesanan.filter((o) => o.pembeli_id === db.akun.id);
 const nTunggu = () => db.pesanan.filter((o) => o.status === "Menunggu").length;
 const nPesanBaru = () => 0;
 
+/* menu sidebar per peran, dikelompokkan menurut fungsinya */
 const MENU = {
   pembeli: [
-    ["house", "Beranda", "index.html", "", "Beranda"],
-    ["search", "Cari Produk & Rak", "cari.html", "", "Cari"],
-    ["shopping-cart", "Keranjang", "checkout.html", `<b class="badge" id="jml">${jmlKeranjang() || ""}</b>`, "Keranjang"],
-    ["clipboard-list", "Pesan & Booking", "pesan.html", `<b class="badge" id="jmlPesan"></b>`, "Pesan"],
-    ["history", "Riwayat", "riwayat.html", "", "Riwayat"]
+    ["Belanja", [
+      ["house", "Beranda", "index.html", "", "Beranda"],
+      ["search", "Cari Produk & Rak", "cari.html", "", "Cari"],
+      ["shopping-cart", "Keranjang", "checkout.html", `<b class="badge" id="jml">${jmlKeranjang() || ""}</b>`, "Keranjang"]
+    ]],
+    ["Pesanan", [
+      ["clipboard-list", "Pesanan Saya", "pesan.html", `<b class="badge" id="jmlPesan"></b>`, "Pesanan"],
+      ["history", "Riwayat", "riwayat.html", "", "Riwayat"]
+    ]]
   ],
   staff: [
-    ["house", "Beranda", "index.html", "", "Beranda"],
-    ["warehouse", "Tata Rak", "rak.html", "", "Rak"],
-    ["package", "Kelola Barang", "produk.html", "", "Barang"],
-    ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"],
-    ["message-square", "Pesan Grup", "pesan.html", "", "Pesan"],
-    ["wallet", "Keuangan", "keuangan.html", "", "Uang"]
+    ["Operasional", [
+      ["house", "Beranda", "index.html", "", "Beranda"],
+      ["warehouse", "Tata Rak", "rak.html", "", "Rak"],
+      ["package", "Kelola Barang", "produk.html", "", "Barang"]
+    ]],
+    ["Penjualan", [
+      ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"],
+      ["message-square", "Pesan Grup", "pesan.html", "", "Pesan"],
+      ["wallet", "Keuangan", "keuangan.html", "", "Uang"]
+    ]]
   ],
   admin: [
-    ["house", "Beranda", "index.html", "", "Beranda"],
-    ["warehouse", "Tata Rak", "rak.html", "", "Rak"],
-    ["package", "Kelola Barang", "produk.html", "", "Barang"],
-    ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"],
-    ["message-square", "Pesan Grup", "pesan.html", "", "Pesan"],
-    ["wallet", "Keuangan", "keuangan.html", "", "Uang"],
-    ["users", "Kelola Pengguna", "pengguna.html", "", "Pengguna"],
-    ["settings", "Pengaturan Toko", "pengaturan.html", "", "Toko"]
+    ["Operasional", [
+      ["house", "Beranda", "index.html", "", "Beranda"],
+      ["warehouse", "Tata Rak", "rak.html", "", "Rak"],
+      ["package", "Kelola Barang", "produk.html", "", "Barang"]
+    ]],
+    ["Penjualan", [
+      ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"],
+      ["message-square", "Pesan Grup", "pesan.html", "", "Pesan"],
+      ["wallet", "Keuangan", "keuangan.html", "", "Uang"]
+    ]],
+    ["Administrasi", [
+      ["users", "Kelola Pengguna", "pengguna.html", "", "Pengguna"],
+      ["settings", "Pengaturan Toko", "pengaturan.html", "", "Toko"]
+    ]]
   ]
 };
 
@@ -109,13 +125,13 @@ function gambarSidebar() {
   const side = el("side");
   if (!side) return;
   const berkas = location.pathname.split("/").pop() || "index.html";
-  const akun = db.akun || { nama: "Memuat…", role: peran, ikon: "🧑" };
+  const akun = db.akun || { nama: "Memuat…", role: peran };
   const tautanProfil = (html) => `<a class="profil" href="akun.html" title="Akun saya">${html}</a>`;
   isi("side", `<a class="logo" href="index.html">
   <img src="${db.toko.logo || "../assets/img/SortikLogo.jpeg"}" alt="Logo toko" width="34"><span class="namatoko"><b>${esc(db.toko.nama || "SORTIK")}</b><i>with SORTIK</i></span>
 </a>
-<nav>${MENU[peran].map(([ikon, label, href, ekstra = "", singkat = label]) =>
-    `<a${href === berkas ? ' class="on"' : ""} href="${href}"><span class="ikon" data-lucide="${ikon}"></span><span class="lengkap">${label}</span><span class="pendek">${singkat}</span> ${ekstra}</a>`).join("")}</nav>
+<nav>${MENU[peran].map(([grup, item]) => `<div class="navgrup"><span class="navjudul">${grup}</span>${item.map(([ikon, label, href, ekstra = "", singkat = label]) =>
+    `<a${href === berkas ? ' class="on"' : ""} href="${href}"><span class="ikon" data-lucide="${ikon}"></span><span class="lengkap">${label}</span><span class="pendek">${singkat}</span> ${ekstra}</a>`).join("")}</div>`).join("")}</nav>
 <div class="me">${tautanProfil(`<div class="avatar">${avatarHTML(akun)}</div><div class="siapa"><b>${esc(akun.nama)}</b><span>${labelPeran(akun.role)}</span></div>`)}
 <a class="keluar" href="../auth/login.html" title="Keluar"><span class="ikon" data-lucide="log-out"></span><span class="lengkap">Keluar</span></a></div>`);
   /* badge pesanan aktif milik akun ini (menu pembeli) */

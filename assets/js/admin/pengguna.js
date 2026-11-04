@@ -10,16 +10,38 @@ kelola({
   kolom: [
     ["nama", "Nama lengkap", "text"],
     ["email", "Email", "email"],
-    ["role", "Peran", "pilih", () => Object.entries(PERAN)],
+    ["sandi", "Kata sandi", "sandi"],
+    /* staff lebih dulu — akun baru buatan admin default-nya staff */
+    ["role", "Peran", "pilih", () => [["staff", "Staff Toko"], ["admin", "Admin Toko"], ["pembeli", "Pembeli"]]],
     ["status", "Status akun", "pilih", () => [["aktif", "Aktif"], ["nonaktif", "Nonaktif"]]]
   ],
+
+  /* sandi diisi = pasang sandi baru (disimpan sebagai hash), kosong = tetap */
+  siapkan: async (d) => {
+    if (!d.sandi) { delete d.sandi; return d; }
+    if (d.sandi.length < 8) { notif("Kata sandi minimal 8 karakter."); return null; }
+    return { ...d, sandi: await hashSandi(d.sandi) };
+  },
+
+  /* akun baru: wajib sandi, id unik (id lama berupa teks, bukan angka),
+     dan email tidak boleh ganda */
+  baru: (d) => {
+    if (!d.sandi) {
+      notif("Isi kata sandi (minimal 8 karakter) untuk akun baru.");
+      return null;
+    }
+    const email = String(d.email || "").toLowerCase();
+    if (db.pengguna.some((u) => String(u.email || "").toLowerCase() === email)) {
+      notif("Email sudah dipakai akun lain.");
+      return null;
+    }
+    return { ...d, id: "u" + Date.now().toString(36), avatar: "", telepon: "", alamat: "" };
+  },
 
   cari: (u) => `${u.nama} ${u.email} ${PERAN[u.role] || u.role}`,
   urut: (a, b) => a.nama.localeCompare(b.nama),
 
   baris: (u) => `<div class="thumb">${u.nama.charAt(0)}</div>
   <div><b>${u.nama}</b><span>${u.email} · ${PERAN[u.role] || u.role}</span>
-  <em class="${u.status === "aktif" ? "ok" : "done"}">${u.status === "aktif" ? "Aktif" : "Nonaktif"}</em></div>`,
-
-  cek: () => "Menghapus akun akan menghilangkan pesan & riwayat yang merujuk padanya."
+  <em class="${u.status === "aktif" ? "ok" : "done"}">${u.status === "aktif" ? "Aktif" : "Nonaktif"}</em></div>`
 });

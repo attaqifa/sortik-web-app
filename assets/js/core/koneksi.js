@@ -61,11 +61,11 @@ const DATA_AWAL = () => ({
     { id: 10, nama: "Powerbank 20000mAh", kategori: "smartphone", harga: 349000, diskon: 0, stok: 30, rak: "A1", ikon: "", foto: fotoUnsplash("photo-1609091839311-d5365f9ff1c5"), deskripsi: "Output 22.5W, isi ulang 3 perangkat sekaligus.", galeri: [fotoUnsplash("photo-1583863788434-e58a36330cf0")] }
   ],
   pengguna: [
-    { id: "u-admin", nama: "Admin Toko", role: "admin", status: "aktif", email: "admin@sortik.id", telepon: "6281234567891", alamat: "", avatar: "", ikon: "🛡️" },
-    { id: "u-staff", nama: "Staff Toko", role: "staff", status: "aktif", email: "staff@sortik.id", telepon: "6281234567892", alamat: "", avatar: "", ikon: "🧰" },
-    { id: "u-budi", nama: "Budi Pembeli", role: "pembeli", status: "aktif", email: "budi@sortik.id", telepon: "6281234567893", alamat: "Jl. Kenanga No. 5, Malang", avatar: "", ikon: "🧑" },
-    { id: "u-sari", nama: "Sari Pembeli", role: "pembeli", status: "aktif", email: "sari@sortik.id", telepon: "6281234567894", alamat: "Jl. Melati No. 9, Malang", avatar: "", ikon: "👩" },
-    { id: "u-lama", nama: "Akun Lama", role: "pembeli", status: "nonaktif", email: "lama@sortik.id", telepon: "", alamat: "", avatar: "", ikon: "🧑" }
+    { id: "u-admin", nama: "Admin Toko", role: "admin", status: "aktif", email: "admin@sortik.id", telepon: "6281234567891", alamat: "", avatar: "" },
+    { id: "u-staff", nama: "Staff Toko", role: "staff", status: "aktif", email: "staff@sortik.id", telepon: "6281234567892", alamat: "", avatar: "" },
+    { id: "u-budi", nama: "Budi Pembeli", role: "pembeli", status: "aktif", email: "budi@sortik.id", telepon: "6281234567893", alamat: "Jl. Kenanga No. 5, Malang", avatar: "" },
+    { id: "u-sari", nama: "Sari Pembeli", role: "pembeli", status: "aktif", email: "sari@sortik.id", telepon: "6281234567894", alamat: "Jl. Melati No. 9, Malang", avatar: "" },
+    { id: "u-lama", nama: "Akun Lama", role: "pembeli", status: "nonaktif", email: "lama@sortik.id", telepon: "", alamat: "", avatar: "" }
   ],
   pesanan: [
     { id: 1, produk: 6, pembeli_id: "u-budi", pembeli: "Budi Pembeli", jumlah: 2, status: "Selesai", tanggal: "2026-10-30", cara: "ambil", bayar: "Bayar di kasir", alamat: "", lunas: true, staff: "Staff Toko", harga: 239200, bukti: "", buktiPada: null },
@@ -74,10 +74,8 @@ const DATA_AWAL = () => ({
     { id: 4, produk: 7, pembeli_id: "u-sari", pembeli: "Sari Pembeli", jumlah: 1, status: "Menunggu", tanggal: "2026-11-02", cara: "antar", bayar: "Transfer ke admin", alamat: "Jl. Melati No. 9, Malang", lunas: false, staff: "", harga: 4500000, bukti: "", buktiPada: null }
   ],
   pesan: [
-    { id: 1, user_id: "u-budi", dari: "SORTIK Bot", peran: "bot", teks: "Pesanan baru BK-2026-001 — Budi Pembeli, TWS Earbuds Pro ×2. Akan dibayar di kasir.", waktu: "2026-10-30T09:15:00.000Z" },
-    { id: 2, user_id: "u-budi", dari: "SORTIK Bot", peran: "bot", teks: "Pesanan baru BK-2026-002 — Budi Pembeli, Sony WH-1000XM5 ×1. Tunggu konfirmasi transfer.", waktu: "2026-11-01T14:00:00.000Z" },
-    { id: 3, user_id: "u-sari", dari: "Sari Pembeli", peran: "pembeli", teks: "Halo, pesanan BK-2026-003 sudah siap diambil kapan saja?", waktu: "2026-11-02T08:30:00.000Z" },
-    { id: 4, user_id: "u-sari", dari: "Staff Toko", peran: "staff", teks: "Siap, sudah kami taruh di rak C2 — tunjukkan kode pesanan di kasir ya.", waktu: "2026-11-02T08:45:00.000Z" }
+    { id: 1, user_id: "u-sari", dari: "Sari Pembeli", peran: "pembeli", teks: "Halo, pesanan BK-2026-003 sudah siap diambil kapan saja?", waktu: "2026-11-02T08:30:00.000Z" },
+    { id: 2, user_id: "u-sari", dari: "Staff Toko", peran: "staff", teks: "Siap, sudah kami taruh di rak C2 — tunjukkan kode pesanan di kasir ya.", waktu: "2026-11-02T08:45:00.000Z" }
   ],
   keuangan: { pengeluaran: [
     { id: 1, tanggal: "2026-10-28", keterangan: "Listrik & internet toko", kategori: "Operasional", jumlah: 750000 },
@@ -95,6 +93,11 @@ const muatDB = () => {
   let d = null;
   try { d = JSON.parse(localStorage.getItem(KUNCI_DB)); } catch {}
   if (!d) { d = DATA_AWAL(); simpanDB(d); }
+  else if ((d.pesan || []).some((m) => m.peran === "bot")) {
+    /* sisa pesan SORTIK Bot dari versi lama dibuang sekali di sini */
+    d.pesan = d.pesan.filter((m) => m.peran !== "bot");
+    simpanDB(d);
+  }
   return d;
 };
 
@@ -102,25 +105,41 @@ const muatDB = () => {
 const bacaSesi = () => localStorage.getItem(KUNCI_SESI);
 const simpanSesi = (id) => id ? localStorage.setItem(KUNCI_SESI, id) : localStorage.removeItem(KUNCI_SESI);
 
-/* masuk: email harus terdaftar di db.pengguna; kata sandi tidak diperiksa */
-const masukLokal = (email) => {
+/* hash kata sandi mode lokal: SHA-256 bila origin aman, cadangan FNV-1a.
+   shortcut: hash di sisi browser, bukan pengaman server — cukup untuk data
+   localStorage satu browser; ganti dengan auth server saat ada backend. */
+async function hashSandi(sandi) {
+  const t = new TextEncoder().encode("sortik:" + sandi);
+  if (crypto.subtle) {
+    const b = await crypto.subtle.digest("SHA-256", t);
+    return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
+  }
+  let h = 2166136261;
+  for (const b of t) h = Math.imul(h ^ b, 16777619) >>> 0;
+  return "fnv" + h.toString(16);
+}
+
+/* masuk: email harus terdaftar; akun lama tanpa sandi menerima sandi apa pun
+   sampai admin memasang sandi baru dari Kelola Pengguna. */
+const masukLokal = async (email, sandi = "") => {
   const d = muatDB();
   const u = (d.pengguna || []).find((r) => String(r.email || "").toLowerCase() === String(email).toLowerCase());
   if (!u) return { data: null, error: "Email tidak terdaftar — daftar dulu atau pakai akun contoh." };
   if (u.status !== "aktif") return { data: u, error: "Akun ini nonaktif — hubungi admin toko." };
+  if (u.sandi && u.sandi !== await hashSandi(sandi)) return { data: null, error: "Kata sandi salah — coba lagi." };
   simpanSesi(u.id);
   return { data: u, error: null };
 };
 
 /* daftar: selalu peran pembeli; staff/admin dibuat lewat data awal */
-const daftarLokal = (email, nama) => {
+const daftarLokal = async (email, nama, sandi) => {
   const d = muatDB();
   if ((d.pengguna || []).some((r) => String(r.email || "").toLowerCase() === String(email).toLowerCase()))
     return { data: null, error: "Email sudah terdaftar — silakan masuk di halaman Masuk." };
   const u = {
     id: "u" + Date.now().toString(36), nama: nama || String(email).split("@")[0],
     role: "pembeli", status: "aktif", email,
-    telepon: "", alamat: "", avatar: "", ikon: "🧑"
+    sandi: await hashSandi(sandi), telepon: "", alamat: "", avatar: ""
   };
   d.pengguna.push(u);
   const g = simpanDB(d);
