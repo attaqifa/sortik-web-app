@@ -1,21 +1,23 @@
-/* Keuangan — ringkasan uang toko:
+/* Keuangan, ringkasan uang toko:
    pendapatan dihitung dari pesanan yang sudah lunas, piutang dari yang belum,
    dan pengeluaran dicatat manual oleh admin. Dipakai bersama
    staff/keuangan.html (hanya lihat) dan admin/keuangan.html (bisa mencatat). */
 
 const pengeluaran = () => db.keuangan.pengeluaran || [];
-const totalPendapatan = () => db.pesanan.filter((o) => o.lunas).reduce((n, o) => n + nilaiPesanan(o), 0);
-const totalPiutang = () => db.pesanan.filter((o) => !o.lunas).reduce((n, o) => n + nilaiPesanan(o), 0);
+/* pesanan dibatalkan bukan uang masuk maupun piutang */
+const bayaran = () => db.pesanan.filter((o) => o.lunas && bukanBatal(o));
+const totalPendapatan = () => bayaran().reduce((n, o) => n + nilaiPesanan(o), 0);
+const totalPiutang = () => db.pesanan.filter((o) => !o.lunas && bukanBatal(o)).reduce((n, o) => n + nilaiPesanan(o), 0);
 const totalKeluar = () => pengeluaran().reduce((n, x) => n + (+x.jumlah || 0), 0);
 const kategoriKeluar = () => [...new Set(pengeluaran().map((x) => x.kategori).filter(Boolean))];
 
-/* tanggal hari ini lokal (toISOString memakai UTC — beda zona bisa meleset) */
+/* tanggal hari ini lokal (toISOString memakai UTC, beda zona bisa meleset) */
 const hariIni = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-/* ---------- ringkasan (kartu statistik) ---------- */
+/* ringkasan (kartu statistik) */
 function gambarStats() {
   const keluar = totalKeluar();
   const laba = totalPendapatan() - keluar;
@@ -26,7 +28,7 @@ function gambarStats() {
     <div><span class="ikon" data-lucide="wallet"></span><b class="${laba < 0 ? "merah" : "hijau"}">${rp(laba)}</b><span>Laba bersih</span></div>`);
 }
 
-/* ---------- grafik batang 6 bulan terakhir ---------- */
+/* grafik batang 6 bulan terakhir */
 function gambarGrafik() {
   const kini = new Date();
   const dataBulan = [...Array(6)].map((_, i) => {
@@ -34,7 +36,7 @@ function gambarGrafik() {
     const kunci = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     return {
       label: bln[d.getMonth()],
-      p: db.pesanan.filter((o) => o.lunas && o.tanggal.startsWith(kunci)).reduce((n, o) => n + nilaiPesanan(o), 0),
+      p: bayaran().filter((o) => o.tanggal.startsWith(kunci)).reduce((n, o) => n + nilaiPesanan(o), 0),
       k: pengeluaran().filter((x) => String(x.tanggal).startsWith(kunci)).reduce((n, x) => n + (+x.jumlah || 0), 0)
     };
   });
@@ -46,7 +48,7 @@ function gambarGrafik() {
     </div><label>${b.label}</label></div>`).join(""));
 }
 
-/* ---------- arus kas terakhir + chip saring kategori pengeluaran ---------- */
+/* arus kas terakhir + chip saring kategori pengeluaran */
 let saringKat = "";
 
 function gambarChips() {
@@ -59,9 +61,9 @@ function gambarChips() {
 function gambarKas() {
   /* gabungkan uang masuk (pesanan lunas) & keluar (pengeluaran), urut dari terbaru */
   const acara = [
-    ...db.pesanan.filter((o) => o.lunas).map((o) => ({
+    ...bayaran().map((o) => ({
       tanggal: o.tanggal, masuk: true, kategori: "Pendapatan",
-      keterangan: `Pesanan ${kodePesanan(o)} — ${produkById(o.produk).nama || "barang"}`,
+      keterangan: `Pesanan ${kodePesanan(o)}, ${produkById(o.produk).nama || "barang"}`,
       jumlah: nilaiPesanan(o)
     })),
     ...pengeluaran().map((x) => ({
@@ -84,10 +86,10 @@ function gambarKas() {
   if (baris) isi("list", baris);
   else isi("list", pesanKosong("receipt", saringKat
     ? `Belum ada pengeluaran kategori "${esc(saringKat)}".`
-    : "Belum ada arus kas — catat pengeluaran atau tunggu pesanan lunas."));
+    : "Belum ada arus kas, catat pengeluaran atau tunggu pesanan lunas."));
 }
 
-/* ---------- formulir catat pengeluaran (khusus admin) ---------- */
+/* formulir catat pengeluaran (khusus admin) */
 if (db.akun.role === "admin") {
   const kartu = el("catat");
   kartu.hidden = false;
@@ -109,16 +111,16 @@ if (db.akun.role === "admin") {
     const tanggal = el("k-tanggal").value;
     const keterangan = el("k-ket").value.trim();
     const jumlah = +el("k-jumlah").value || 0;
-    if (!tanggal) return isi("k-info", "⚠ Isi tanggalnya dulu.");
-    if (!keterangan) return isi("k-info", "⚠ Isi keterangan pengeluarannya.");
-    if (jumlah <= 0) return isi("k-info", "⚠ Jumlah harus lebih dari 0.");
+    if (!tanggal) return isi("k-info", "Isi tanggalnya dulu.");
+    if (!keterangan) return isi("k-info", "Isi keterangan pengeluarannya.");
+    if (jumlah <= 0) return isi("k-info", "Jumlah harus lebih dari 0.");
     const id = pengeluaran().reduce((m, x) => Math.max(m, x.id || 0), 0) + 1;
     db.keuangan.pengeluaran = pengeluaran();
     db.keuangan.pengeluaran.push({ id, tanggal, kategori: el("k-kategori").value.trim() || "Lain-lain", keterangan, jumlah });
     simpan("keuangan");
     el("k-ket").value = "";
     el("k-jumlah").value = "";
-    el("k-info").textContent = "✓ Tercatat — langsung masuk ke ringkasan & grafik.";
+    el("k-info").textContent = "Tercatat, langsung masuk ke ringkasan & grafik.";
     saringKat = "";
     segarkan();
     notif("Pengeluaran tercatat.");
@@ -138,7 +140,7 @@ if (db.akun.role === "admin") {
   });
 }
 
-/* ---------- ekspor: unduh CSV & cetak (khusus admin) ---------- */
+/* ekspor: unduh CSV & cetak (khusus admin) */
 if (db.akun.role === "admin") {
   isi("eksport", `
     <button class="btn" type="button" id="unduhCsv"><span class="ikon" data-lucide="download"></span>Unduh CSV</button>
@@ -147,8 +149,8 @@ if (db.akun.role === "admin") {
   el("unduhCsv").onclick = () => {
     /* tabel: uang masuk (pesanan lunas) + uang keluar (pengeluaran), lalu ringkasan */
     const tabel = [["Tanggal", "Jenis", "Kategori", "Keterangan", "Jumlah (Rp)"]];
-    db.pesanan.filter((o) => o.lunas).forEach((o) =>
-      tabel.push([o.tanggal, "Masuk", "Pendapatan", `Pesanan ${kodePesanan(o)} — ${produkById(o.produk).nama || "barang"}`, nilaiPesanan(o)]));
+    bayaran().forEach((o) =>
+      tabel.push([o.tanggal, "Masuk", "Pendapatan", `Pesanan ${kodePesanan(o)}, ${produkById(o.produk).nama || "barang"}`, nilaiPesanan(o)]));
     pengeluaran().forEach((x) =>
       tabel.push([x.tanggal, "Keluar", x.kategori || "Lain-lain", x.keterangan, +x.jumlah || 0]));
     tabel.push([], ["", "Ringkasan", "", "Pendapatan", totalPendapatan()]);
@@ -172,7 +174,7 @@ if (db.akun.role === "admin") {
 
 /* pesanan lunas / pengeluaran berubah di tab lain → ikut segarkan */
 window.addEventListener("storage", (e) => {
-  if ([VERSI + "keuangan", VERSI + "pesanan"].includes(e.key)) segarkan();
+  if (e.key === KUNCI_DB) segarkan();
 });
 
 function segarkan() {

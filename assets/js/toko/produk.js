@@ -1,4 +1,4 @@
-/* Kelola barang (staff & admin) — form di sini, logika di mesin kelola. */
+/* Kelola barang (staff & admin), form di sini, logika di mesin kelola. */
 
 kelola({
   wadah: "kelola",
@@ -17,7 +17,7 @@ kelola({
     ["nama", "Nama barang", "text"],
     ["kategori", "Kategori", "pilih", () => db.kategori.map((k) => [k.id, k.nama])],
     ["harga", "Harga (Rp)", "angka"],
-    ["diskon", "Diskon (%) — 0 = tanpa promo", "angka"],
+    ["diskon", "Diskon (%), 0 = tanpa promo", "angka"],
     ["stok", "Stok", "angka"],
     ["rak", "Rak", "pilih", () => semuaRak().map((r) => [r, labelRak(r)])],
     ["foto", "Foto barang (tautan/unggah)", "foto"],
@@ -33,13 +33,13 @@ kelola({
       ? `<span class="tag habis">Stok habis</span>`
       : p.stok <= 3 ? `<span class="tag menipis">Stok menipis</span>` : ""}</div></div>`,
 
-  /* riwayat pesanan merujuk id produk — menghapusnya akan merusak riwayat */
+  /* riwayat pesanan merujuk id produk, menghapusnya akan merusak riwayat */
   cek: (p) => (db.pesanan.some((o) => o.produk === p.id)
     ? `"${p.nama}" sudah ada di riwayat pesanan. Kosongkan stoknya saja bila barang tidak dijual lagi.`
     : "")
 });
 
-/* kategori barang — id = slug nama, ganti nama tidak memutus barang */
+/* kategori barang, id = slug nama, ganti nama tidak memutus barang */
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 kelola({
@@ -61,7 +61,7 @@ kelola({
   },
 
   cek: (k) => (db.produk.some((p) => p.kategori === k.id)
-    ? `Kategori "${k.nama}" masih dipakai barang — pindahkan dulu barangnya ke kategori lain.`
+    ? `Kategori "${k.nama}" masih dipakai barang, pindahkan dulu barangnya ke kategori lain.`
     : ""),
 
   baris: (k) => `<div class="thumb">${ikonKategori(k)}</div>

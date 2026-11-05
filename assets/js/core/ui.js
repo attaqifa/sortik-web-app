@@ -1,6 +1,6 @@
-/* SORTIK — util & komponen tampilan bersama. */
+/* SORTIK, util & komponen tampilan bersama. */
 
-/* ---------- util singkat ---------- */
+/* util singkat */
 const el = (id) => document.getElementById(id);
 
 /* isi(): isi HTML + gambar ikon yang baru */
@@ -12,10 +12,10 @@ const isi = (id, html) => {
 };
 const rp = (n) => "Rp " + (+n || 0).toLocaleString("id-ID");
 const kat = (p) => (db.kategori.find((k) => k.id === p.kategori) || {}).nama || p.kategori || "-";
-/* ikon kategori Lucide; emoji jadi cadangan */
+/* ikon kategori Lucide; cadangan package bila nama ikon belum diatur */
 const ikonKategori = (k) => (k && k.lucide)
   ? `<span class="ikon" data-lucide="${k.lucide}"></span>`
-  : `<span class="emoji">${(k && k.ikon) || "📦"}</span>`;
+  : `<span class="ikon" data-lucide="${(k && k.ikon) || "package"}"></span>`;
 
 /* ubah <span data-lucide> jadi ikon; aman dipanggil kapan pun */
 function gambarIkon() {
@@ -24,18 +24,29 @@ function gambarIkon() {
   /* hapus penanda agar tidak diproses ulang */
   document.querySelectorAll("svg[data-lucide]").forEach((s) => s.removeAttribute("data-lucide"));
 }
-const produkById = (id) => db.produk.find((p) => p.id === id) || {};
+/* produk disimpan per toko dan id produk bisa sama di toko lain, jadi
+   pencarian produk butuh id tokonya; tanpa id, pakai toko aktif */
+const produkDi = (tokoId, id) => {
+  const t = tokoId && tokoId !== db.aktifToko ? semuaToko.find((x) => x.id === tokoId) : null;
+  return (((t || db).produk) || []).find((p) => p.id === id) || {};
+};
+const produkById = (id) => produkDi(db.aktifToko, id);
+const produkPesanan = (o) => produkDi(o.toko || db.aktifToko, o.produk);
 /* harga jual = harga − diskon% (0–100, dibulatkan ke ratusan agar rapi) */
 const hargaJual = (p) => {
   const diskon = Math.max(0, Math.min(100, (p && p.diskon) || 0));
   return Math.round(((p && p.harga) || 0) * (1 - diskon / 100) / 100) * 100;
 };
-/* nilaiPesanan: pesanan baru menyimpan harga saat pesanan dibuat (o.harga) —
-   ubah diskon/harga tidak mengubah riwayat; pesanan lama pakai harga kini */
-const nilaiPesanan = (o) => (o.harga != null ? o.harga : hargaJual(produkById(o.produk))) * o.jumlah;
-/* total unit terjual satu produk (dari seluruh pesanan) — untuk badge/urutan Terlaris */
-const jmlTerjual = (id) => db.pesanan.reduce((n, o) => n + (o.produk === id ? o.jumlah : 0), 0);
-/* ---------- lantai & rak ---------- */
+/* nilaiBarang = harga × jumlah; harga dikunci saat pesanan dibuat jadi ubah
+   diskon belakangan tidak mengubah riwayat. nilaiPesanan menambah ongkir. */
+const nilaiBarang = (o) => (o.harga != null ? o.harga : hargaJual(produkPesanan(o))) * o.jumlah;
+/* Ongkir satu pembelian dicatat sekali saja (baris pertama): tiap baris = satu barang,
+   bukan satu pesanan, jadi ongkir tidak boleh dikalikan jumlah baris.
+   shortcut: benar-benar rapi kalau satu pesanan bisa banyak barang (audit-002 nomor 01). */
+const nilaiPesanan = (o) => nilaiBarang(o) + (o.ongkir || 0);
+/* total unit terjual satu produk (dari seluruh pesanan), untuk badge/urutan Terlaris */
+const jmlTerjual = (id) => db.pesanan.reduce((n, o) => n + (bukanBatal(o) && o.produk === id ? o.jumlah : 0), 0);
+/* lantai & rak */
 /* denah kini bisa beberapa lantai: db.rak.lantai = [{ nama, lebar, tinggi,
    pintu: { sisi, pos }, daftar: [rak] }]; db.rak.aktif = lantai yang tampil */
 const lantaiIni = () => db.rak.lantai[Math.min(db.rak.aktif || 0, db.rak.lantai.length - 1)]
@@ -59,22 +70,48 @@ const tglID = (s) => { const [y, m, d] = String(s).split("-"); return `${d} ${bl
 const kodePesanan = (o) => `BK-${o.tanggal.slice(0, 4)}-${String(o.id).padStart(3, "0")}`;
 
 /* kelas warna status pesanan: Menunggu → wait, dst. */
-const STATUS = { Menunggu: "wait", Diproses: "proc", Siap: "ok", Selesai: "done" };
+const STATUS = { Menunggu: "wait", Diproses: "proc", Siap: "ok", Selesai: "done", Dibatalkan: "batal" };
 /* urutan status pesanan */
 const ALUR = ["Menunggu", "Diproses", "Siap", "Selesai"];
-/* ikon Lucide per status — penanda visual di daftar & chip */
-const IKON_STATUS = { Menunggu: "clock", Diproses: "loader", Siap: "package-check", Selesai: "circle-check" };
+/* status akhir: pesanan dibatalkan tidak dihapus, barisnya tetap jadi catatan */
+const BATAL = "Dibatalkan";
+const bukanBatal = (o) => o.status !== BATAL;
+/* pesanan yang masih perlu dipantau pembeli maupun staff */
+const pesananJalan = (o) => o.status !== "Selesai" && bukanBatal(o);
+/* ikon Lucide per status, penanda visual di daftar & chip */
+const IKON_STATUS = { Menunggu: "clock", Diproses: "loader", Siap: "package-check", Selesai: "circle-check", Dibatalkan: "ban" };
 const ikonStatus = (s) => `<span class="ikon" data-lucide="${IKON_STATUS[s] || "circle"}"></span>`;
 const tagStatus = (s) => `<em class="${STATUS[s] || ""}">${ikonStatus(s)}${s}</em>`;
 const tagBayar = (o) => (o.lunas
   ? `<span class="tag lunas">Lunas${o.staff ? " · " + o.staff : ""}</span>`
   : `<span class="tag belum">Belum dibayar</span>`);
 
+/* pindah status; stok hanya bergerak pada pesanan yang sudah lunas, jadi
+   pembatalan mengembalikan barang dan pengaktifan lagi mengambilnya kembali.
+   Hanya untuk toko aktif (pakai db.produk); mengembalikan true bila stok berubah. */
+function ubahStatus(o, baru) {
+  const dulu = o.status;
+  if (dulu === baru) return false;
+  o.status = baru;
+  const p = produkById(o.produk);
+  if (!p.id || !o.lunas) return false;
+  if (baru === BATAL) { p.stok += o.jumlah; return true; }
+  if (dulu === BATAL) { p.stok = Math.max(0, p.stok - o.jumlah); return true; }
+  return false;
+}
+
+/* periksa uang & status pesanan; hanya berbunyi kalau logikanya berubah */
+function ujiAlur() {
+  const contoh = { harga: 1000, jumlah: 2, ongkir: 500, status: "Menunggu" };
+  console.assert(nilaiBarang(contoh) === 2000 && nilaiPesanan(contoh) === 2500, "uang pesanan salah");
+  console.assert(!bukanBatal({ status: BATAL }) && !pesananJalan({ status: "Selesai" }) && pesananJalan(contoh), "status pesanan salah");
+}
+
 /* papan kosong; tombol = [href, label] */
 const pesanKosong = (ikon, teks, tombol) =>
   `<p class="kosong"><span class="ikon" data-lucide="${ikon}"></span>${teks}${tombol ? `<a class="btn" href="${tombol[0]}">${tombol[1]}</a>` : ""}</p>`;
 
-/* ---------- foto produk ---------- */
+/* foto produk */
 /* foto produk: utama dulu, lalu detail; bisa tautan atau unggahan */
 const galeriProduk = (p) => [p && p.foto, ...((p && p.galeri) || [])].filter(Boolean);
 
@@ -84,7 +121,7 @@ const ikonCadangan = (p) => {
   return `<span class="ikon foto-cadangan" data-lucide="${(k && k.lucide) || "package"}"></span>`;
 };
 
-/* ikon cadangan di belakang gambar — tampil bila onerror */
+/* ikon cadangan di belakang gambar, tampil bila onerror */
 const fotoHTML = (p) => {
   const utama = galeriProduk(p)[0];
   const alt = String((p && p.nama) || "Foto produk").replace(/"/g, "&quot;");
@@ -92,17 +129,20 @@ const fotoHTML = (p) => {
   return `${ikonCadangan(p)}<img src="${utama}" alt="${alt}" loading="lazy" onerror="this.remove()">`;
 };
 
-const kartu = (p) => `<a class="pcard${p.stok ? "" : " habis"}" href="produk.html?id=${p.id}">
-  <div class="pimg">${jmlTerjual(p.id) ? `<span class="ptanda laris">Terlaris</span>` : ""}${p.diskon ? `<span class="ptanda diskon">−${p.diskon}%</span>` : ""}${fotoHTML(p)}${p.stok ? `<span class="belicepat" data-beli="${p.id}" role="button" title="Tambah ke keranjang"><span class="ikon" data-lucide="shopping-cart"></span></span>` : ""}</div>
+/* kartu produk: satu tautan menutup seluruh kartu, tombol keranjang jadi
+   <button> di atasnya (tautan tidak boleh memuat kontrol interaktif) */
+const kartu = (p) => `<div class="pcard${p.stok ? "" : " habis"}">
+  <div class="pimg">${jmlTerjual(p.id) ? `<span class="ptanda laris">Terlaris</span>` : ""}${p.diskon ? `<span class="ptanda diskon">−${p.diskon}%</span>` : ""}${fotoHTML(p)}${p.stok ? `<button class="belicepat" type="button" data-beli="${p.id}" aria-label="Tambah ${esc(p.nama)} ke keranjang"><span class="ikon" data-lucide="shopping-cart"></span></button>` : ""}</div>
   <div class="pbody">
     <span class="pcat">${kat(p)}</span>
-    <h3>${p.nama}</h3>
+    <h3>${esc(p.nama)}</h3>
     <b>${rp(hargaJual(p))}${p.diskon ? `<s class="hargalama">${rp(p.harga)}</s>` : ""}</b>
-    <span class="pstok${p.stok ? "" : " habis"}">${p.stok ? `Stok ${p.stok} · Rak ${labelRak(p.rak)}` : "Stok habis"}</span>
+    <span class="pstok${p.stok ? "" : " habis"}">${p.stok ? `Stok ${p.stok} · <span class="koderak">${esc(labelRak(p.rak))}</span>` : "Stok habis"}</span>
   </div>
-</a>`;
+  <a class="plink" href="produk.html?id=${p.id}"><span class="sr">Lihat ${esc(p.nama)}</span></a>
+</div>`;
 
-/* tombol cepat "+ keranjang" di kartu — delegasi global agar berlaku di
+/* tombol cepat "+ keranjang" di kartu, delegasi global agar berlaku di
    semua halaman yang memakai kartu (beranda, cari, produk serupa) */
 document.addEventListener("click", (e) => {
   const b = e.target.closest("[data-beli]");
@@ -117,7 +157,7 @@ document.addEventListener("click", (e) => {
   notif(`${p.nama} masuk keranjang`, { href: "checkout.html", label: "Lihat Keranjang" });
 });
 
-/* ---------- notifikasi ---------- */
+/* notifikasi */
 /* satu elemen dipakai ulang */
 function notif(teks, aksi) {
   let t = el("notif");
@@ -128,14 +168,14 @@ function notif(teks, aksi) {
     t.onclick = () => { clearTimeout(notif.waktu); t.classList.remove("tampil"); };
     document.body.appendChild(t);
   }
-  /* aksi opsional: { href, label } — tautan di dalam notif, mis. ke keranjang */
+  /* aksi opsional: { href, label }, tautan di dalam notif, mis. ke keranjang */
   t.innerHTML = esc(String(teks)) + (aksi ? ` <a href="${aksi.href}">${esc(aksi.label)}</a>` : "");
   t.classList.add("tampil");
   clearTimeout(notif.waktu);
   notif.waktu = setTimeout(() => t.classList.remove("tampil"), 2600);
 }
 
-/* ---------- dialog konfirmasi (pengganti confirm) ---------- */
+/* dialog konfirmasi (pengganti confirm) */
 /* dipakai: if (!await konfirmasi(...)) return; */
 function konfirmasi(judul, teks, labelYa = "Ya, Hapus") {
   return new Promise((jawab) => {
@@ -160,7 +200,7 @@ function konfirmasi(judul, teks, labelYa = "Ya, Hapus") {
   });
 }
 
-/* ---------- baca & lihat gambar ---------- */
+/* baca & lihat gambar */
 /* berkas gambar → data URL yang diperkecil (untuk localStorage) */
 function bacaGambar(berkas, maks = 800) {
   return new Promise((selesai, gagal) => {
@@ -196,7 +236,7 @@ function lihatGambar(sumber, judul = "Bukti transfer") {
     kotak.className = "lightbox";
     kotak.hidden = true;
     kotak.innerHTML = `<figure>
-  <figcaption><b></b><button type="button" aria-label="Tutup">✕</button></figcaption>
+  <figcaption><b></b><button type="button" aria-label="Tutup">×</button></figcaption>
   <img alt="">
 </figure>`;
     kotak.addEventListener("click", (e) => {
@@ -211,7 +251,7 @@ function lihatGambar(sumber, judul = "Bukti transfer") {
   kotak.hidden = false;
 }
 
-/* ---------- widget daftar ---------- */
+/* widget daftar */
 /* denah toko: kotak grid jadi alas, tiap rak digambar sesuai posisi & ukurannya.
    jumlah = { kode: n } untuk rak yang berisi barang; aktif = kode rak tersorot;
    piksel = ukuran satu kotak grid (kecilkan untuk denah mini);
@@ -227,13 +267,13 @@ function denahToko(wadah, jumlah = {}, { klik = true, aktif = "", aktifArea = ""
   /* pintu masuk: garis tebal di tepi lantai sesuai sisi & posisinya */
   const { gaya, sisi } = gayaPintu(L, g);
   const pintu = `<span class="ppintu${sunting ? " bisa" : ""}" data-pintu style="${gaya}"
-    title="Pintu masuk sisi ${sisi}${sunting ? " — tarik untuk memindah" : ""}"></span>`;
+    title="Pintu masuk sisi ${sisi}${sunting ? ", tarik untuk memindah" : ""}"></span>`;
   /* tab pilih lantai untuk halaman lihat (beranda & cari) */
   const tabs = tab && db.rak.lantai.length > 1
     ? `<div class="pilihlantai">${db.rak.lantai.map((l, i) =>
       `<button type="button" data-lantai="${i}" class="${i === db.rak.aktif ? "on" : ""}">${esc(l.nama)}</button>`).join("")}</div>`
     : "";
-  /* jumlah boleh angka (model lama) atau { n, kategori } — kategori menentukan warna rak */
+  /* jumlah boleh angka (model lama) atau { n, kategori }, kategori menentukan warna rak */
   const infoRak = (kode) => {
     const v = jumlah[kode];
     return typeof v === "object" && v ? { n: v.n || 0, kategori: v.kategori || "" } : { n: +v || 0, kategori: "" };
@@ -242,7 +282,7 @@ function denahToko(wadah, jumlah = {}, { klik = true, aktif = "", aktifArea = ""
     ${pintu}${(L.area || []).map((a) => `
     <${sel} class="parea${a.id === aktifArea ? " on" : ""}" data-area="${a.id}"
       style="left:${a.x * g}px;top:${a.y * g}px;width:${a.w * g}px;height:${a.h * g}px"
-      title="Blok ${esc(a.nama) || "(tanpa nama)"} — rak tidak boleh di sini"${klik ? ' type="button"' : ""}>
+      title="Blok ${esc(a.nama) || "(tanpa nama)"}, rak tidak boleh di sini"${klik ? ' type="button"' : ""}>
       ${a.nama ? `<b>${esc(a.nama)}</b>` : ""}${sunting ? `<span class="ukur" data-ukur="${a.id}" title="Tarik untuk mengubah ukuran"></span>` : ""}</${sel}>`).join("")}${daftar.map((r) => {
     const { n, kategori } = infoRak(r.kode);
     const iKat = kategori ? db.kategori.findIndex((k) => k.id === kategori) : -1;
@@ -250,14 +290,14 @@ function denahToko(wadah, jumlah = {}, { klik = true, aktif = "", aktifArea = ""
     const label = n ? `${n} unit` : "kosong";
     return `<${sel} class="prak${n ? " ada" : ""}${warna}${r.kode === aktif ? " on" : ""}" data-rak="${r.kode}"
       style="left:${r.x * g}px;top:${r.y * g}px;width:${r.w * g}px;height:${r.h * g}px"
-      title="Rak ${r.kode} — ${label}"${klik ? ' type="button"' : ""}>
+      title="Rak ${r.kode}, ${label}"${klik ? ' type="button"' : ""}>
       <b>${r.kode}</b><i>${label}</i>${sunting ? `<span class="ukur" data-ukur="${r.kode}" title="Tarik untuk mengubah ukuran"></span>` : ""}</${sel}>`;
   }).join("")}${sunting ? `<span class="ukur-lantai" title="Tarik untuk memperluas / mempersempit lantai"></span>` : ""}</div>`);
   /* klik tab = pindah lantai lalu gambar ulang denah ini */
   if (tabs) el(wadah).querySelector(".pilihlantai").addEventListener("click", (e) => {
     const b = e.target.closest("button[data-lantai]");
     if (!b || +b.dataset.lantai === db.rak.aktif) return;
-    db.rak.aktif = +b.dataset.lantai;   /* pindah tampilan lantai — bukan perubahan data */
+    db.rak.aktif = +b.dataset.lantai;   /* pindah tampilan lantai, bukan perubahan data */
     denahToko(wadah, jumlah, { klik, aktif, piksel, sunting, tab });
   });
 }
@@ -279,10 +319,10 @@ function gayaPintu(L, g) {
   return { gaya, sisi, pos };
 }
 
-/* chip filter — opsi = [[nilai, label]]; awal = nilai terpilih */
+/* chip filter, opsi = [[nilai, label]]; awal = nilai terpilih */
 function chipSaring(wadah, opsi, terapkan, awal = "") {
   let pilih = awal;
-  isi(wadah, opsi.map(([nilai, label]) => `<button type="button" data-nilai="${nilai}">${label}</button>`).join(""));
+  isi(wadah, opsi.map(([nilai, label]) => `<button type="button" data-nilai="${esc(nilai)}">${label}</button>`).join(""));
   const tandai = () => el(wadah).querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.nilai === pilih));
   el(wadah).addEventListener("click", (e) => {
     const b = e.target.closest("button");

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/jpeg" href="../assets/img/SortikLogo.jpeg">
+  <title>Jelajah Toko · SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="side" id="side"></aside>
+
+  <main>
+    <header class="head">
+      <h1>Jelajah Toko</h1>
+      <p>Pilih toko elektronik yang ingin Anda kunjungi</p>
+    </header>
+
+    <section class="hello">
+      <div>
+        <p>Belanja dari toko mana hari ini?</p>
+        <h2>Temukan toko pilihan Anda</h2>
+      </div>
+      <div class="acts">
+        <a href="index.html">Beranda</a>
+        <a href="../auth/buka-toko.html">Punya Toko?</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="toolbar">
+        <input type="search" id="q" class="grow" placeholder="Cari nama, alamat, atau kategori toko..." autocomplete="off">
+      </div>
+      <div class="chips" id="kota"></div>
+      <div class="barishasil">
+        <p class="hasil" id="hasil"></p>
+        <select id="urut" class="chartsaring" aria-label="Urutkan daftar toko">
+          <option value="">Paling Relevan</option>
+          <option value="laris">Paling Laris</option>
+          <option value="kota">Kota A–Z</option>
+          <option value="murah">Ongkir Termurah</option>
+          <option value="lengkap">Barang Terlengkap</option>
+        </select>
+      </div>
+      <div class="jelajah" id="toko"></div>
+    </section>
+  </main>
+
+</div>
+<script src="../assets/js/core/koneksi.js"></script>
+<script src="../assets/js/core/data.js"></script>
+<script src="../assets/js/core/ui.js"></script>
+<script src="../assets/js/core/store.js"></script>
+<script src="../assets/js/core/kelola.js"></script>
+<script>mulaiAplikasi(() => { const halaman = document.createElement('script'); halaman.src = '../assets/js/user/jelajah.js'; document.body.append(halaman); });</script>
+</body>
+</html>

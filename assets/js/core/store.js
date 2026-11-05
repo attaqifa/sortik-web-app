@@ -1,80 +1,154 @@
-/* SORTIK — sesi lokal, data permanen (localStorage), dan sidebar. */
+/* SORTIK, sesi lokal, data permanen (localStorage), dan sidebar. */
 const VERSI = "sortik2:";
 const PERAN = { pembeli: "Pembeli", staff: "Staff Toko", admin: "Admin Toko" };
 const FOLDER = { user: "pembeli", staff: "staff", admin: "admin" };
 const TUJUAN_PERAN = { pembeli: "../user/index.html", staff: "../staff/index.html", admin: "../admin/index.html" };
 const peran = FOLDER[(location.pathname.match(/\/(user|staff|admin)\//) || [])[1]] || "pembeli";
+/* semua toko (untuk jelajah pembeli); db.toko tetap toko yang sedang aktif */
+let semuaToko = [];
 
-/* ---------- penyimpanan: seluruh db ditulis ke localStorage ----------
-   Halaman tetap memakai pola lama: ubah db[k] di memori, lalu simpan(k). */
-const simpan = (k) => {
-  const g = simpanDB({ ...db, akun: undefined });
-  if (g) { notif("Gagal menyimpan — " + g.message); return Promise.resolve(false); }
+/* penyimpanan: seluruh db ditulis ke localStorage ----------
+   Halaman tetap memakai pola lama: ubah db[k] di memori, lalu simpan(k).
+   db.toko menyimpan satu toko aktif; sebelum ditulis, toko itu dikembalikan
+   ke koleksi db asli agar perubahan toko lain tidak hilang. */
+const simpan = (k) => tulis();
+
+/* tulis db ke penyimpanan; perbaikan(asli) boleh mengubah toko lain lebih dulu */
+function tulis(perbaikan) {
+  const asli = muatDB();
+  asli.pengguna = db.pengguna;
+  if (db.aktifToko != null) {
+    const i = asli.toko.findIndex((t) => t.id === db.aktifToko);
+    if (i >= 0) asli.toko[i] = {
+      ...asli.toko[i], ...db.toko,
+      kategori: db.kategori, rak: db.rak, produk: db.produk,
+      pesanan: db.pesanan, pesan: db.pesan, keuangan: db.keuangan
+    };
+  }
+  if (perbaikan) perbaikan(asli);
+  const g = simpanDB({ ...asli, akun: undefined, aktifToko: undefined });
+  if (g) { notif("Gagal menyimpan, " + g.message); return Promise.resolve(false); }
   return Promise.resolve(true);
-};
+}
+
+/* simpan satu pesanan milik toko yang sedang tidak aktif (halaman Pesanan
+   pembeli menampilkan pesanan dari semua toko) */
+const simpanPesanan = (o) => tulis((asli) => {
+  const t = asli.toko.find((x) => x.id === (o.toko || db.aktifToko));
+  const i = t && (t.pesanan || []).findIndex((x) => x.id === o.id);
+  if (i >= 0) t.pesanan[i] = o;
+});
 /* localStorage juga memuat keranjang belanja (status sementara per browser). */
-const baca = (k, nilaiKosong = []) => {
-  if (k !== "keranjang") return nilaiKosong;
-  try { return JSON.parse(localStorage.getItem(VERSI + k)) ?? nilaiKosong; } catch { return nilaiKosong; }
-};
+
+/* toko aktif: admin memilih di antara toko miliknya (pemilik), staff dikunci
+   ke akun.toko, pembeli memilih sendiri, null = belum punya/memilih toko */
+function tokoAktif(profil, data) {
+  if (profil.role === "admin") {
+    const punya = data.toko.filter((t) => t.pemilik === profil.id);
+    const pilih = tokoDari(data, bacaToko());
+    return (pilih && punya.includes(pilih) && pilih) || punya[0] || null;
+  }
+  if (profil.role === "staff") return tokoDari(data, profil.toko);
+  return tokoDari(data, bacaToko());
+}
 
 async function muatData() {
   const data = muatDB();
-  db.kategori = data.kategori || [];
-  /* toko disimpan satu objek — cadangan untuk data lama bentuk array */
-  db.toko = (Array.isArray(data.toko) ? data.toko[0] : data.toko)
-    || { id: 1, nama: "", alamat: "", jam: "", wa: "", ongkir: 0, rekening: [], logo: "" };
-  db.rak = data.rak || { grid: 28, aktif: 0, lantai: [] };
-  db.produk = (data.produk || []).map((p) => ({ ...p, kategori: p.kategori || "", galeri: Array.isArray(p.galeri) ? p.galeri : [] }));
-  db.pesanan = data.pesanan || [];
+  semuaToko = data.toko;
   db.pengguna = data.pengguna || [];
-  db.pesan = data.pesan || [];
-  db.keuangan = data.keuangan || { pengeluaran: [] };
 
   const profil = db.pengguna.find((u) => u.id === bacaSesi());
   if (!profil) {
     simpanSesi(null);
     if (peran !== "pembeli") {
       location.replace("../auth/login.html");
-      return;
+      return false;
     }
     db.akun = { id: null, nama: "Pengunjung", role: peran, email: "", telepon: "", alamat: "", avatar: "" };
-    return;
-  }
-  if (profil.status !== "aktif") {
+  } else if (profil.status !== "aktif") {
     simpanSesi(null);
     location.replace("../auth/login.html");
-    throw new Error("Akun dinonaktifkan.");
-  }
-  if (profil.role !== peran) {
+    return false;
+  } else if (profil.role !== peran) {
     location.replace(TUJUAN_PERAN[profil.role] || TUJUAN_PERAN.pembeli);
-    throw new Error("Peran akun tidak sesuai halaman.");
+    return false;
+  } else {
+    db.akun = { ...profil, peran };
   }
-  db.akun = { ...profil, peran };
+
+  /* tanpa toko: pembeli → Jelajah, staff → Pilih Toko, admin → Kelola Toko.
+     Fitur di dalam toko tidak bisa dibuka sebelum toko dipilih/ditambahkan. */
+  const toko = tokoAktif(db.akun, data);
+  if (!toko) {
+    const halaman = location.pathname.split("/").pop();
+    const tuju = { pembeli: "jelajah.html", staff: "toko.html", admin: "toko.html" }[peran];
+    if (tuju && halaman !== tuju) {
+      location.replace(tuju);
+      return false;
+    }
+    db.aktifToko = null;
+    db.toko = { id: "", nama: "SORTIK", alamat: "", jam: "", wa: "", ongkir: 0, rekening: [], logo: "", foto: "" };
+    db.kategori = []; db.rak = { grid: 28, aktif: 0, lantai: [] };
+    db.produk = []; db.pesanan = []; db.pesan = []; db.keuangan = { pengeluaran: [] };
+    return;
+  }
+  db.aktifToko = toko.id;
+  db.toko = toko;
+  db.kategori = toko.kategori || [];
+  db.rak = toko.rak || { grid: 28, aktif: 0, lantai: [] };
+  db.produk = toko.produk || [];
+  db.pesanan = toko.pesanan || [];
+  db.pesan = toko.pesan || [];
+  db.keuangan = toko.keuangan || { pengeluaran: [] };
 }
 
-/* { produk: id, jumlah } hanya keranjang sementara, bukan sumber data bisnis. */
-const keranjang = baca("keranjang", []);
-const jmlKeranjang = () => keranjang.reduce((n, i) => n + i.jumlah, 0);
-const simpanKeranjang = () => {
-  try { localStorage.setItem(VERSI + "keranjang", JSON.stringify(keranjang)); } catch {}
-  const badge = el("jml");
-  if (badge) badge.textContent = jmlKeranjang() || "";
+/* { produk: id, jumlah } hanya keranjang sementara, bukan sumber data bisnis.
+   Keranjang disimpan per toko: id produk bisa sama di toko berbeda, dan
+   isinya tetap ada walau tokonya sedang tidak dibuka. */
+const kunciKeranjang = (id) => VERSI + "keranjang" + (id ? ":" + id : "");
+const keranjang = [];
+const bacaKeranjang = (tokoId) => {
+  try { return JSON.parse(localStorage.getItem(kunciKeranjang(tokoId))) || []; } catch { return []; }
 };
+function muatKeranjang() {
+  keranjang.length = 0;
+  if (db.aktifToko) keranjang.push(...bacaKeranjang(db.aktifToko));
+}
+const jmlKeranjang = () => keranjang.reduce((n, i) => n + i.jumlah, 0);
+const jmlKeranjangToko = (tokoId) => bacaKeranjang(tokoId).reduce((n, i) => n + (+i.jumlah || 0), 0);
+const badgeKeranjang = () => { const b = el("jml"); if (b) b.textContent = jmlKeranjang() || ""; };
+const simpanKeranjang = () => {
+  try { localStorage.setItem(kunciKeranjang(db.aktifToko), JSON.stringify(keranjang)); } catch {}
+  badgeKeranjang();
+};
+
+/* taruh barang di keranjang toko lain, dipakai "Beli Lagi" dari pesanan lintas toko */
+function tambahKeranjangToko(tokoId, produkId, jumlah) {
+  const daftar = bacaKeranjang(tokoId);
+  const i = daftar.find((x) => x.produk === produkId);
+  if (i) i.jumlah += jumlah; else daftar.push({ produk: produkId, jumlah });
+  try { localStorage.setItem(kunciKeranjang(tokoId), JSON.stringify(daftar)); } catch {}
+}
 
 const labelPeran = (r) => PERAN[r] || r;
 const inisial = (nama) => String(nama || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 /* avatar hanya dari foto; tanpa foto tampil inisial nama */
 const avatarHTML = (u) => (u.avatar ? `<img src="${u.avatar}" alt="">` : inisial(u.nama));
-const pesananku = () => db.pesanan.filter((o) => o.pembeli_id === db.akun.id);
+const tokoById = (id) => semuaToko.find((t) => t.id === id) || {};
+const labelToko = (id) => tokoById(id).nama || "toko";
+/* satu akun bisa belanja di banyak toko: daftar pesannya gabungan semua toko */
+const pesananku = () => semuaToko.flatMap((t) => (t.pesanan || []).filter((o) => o.pembeli_id === db.akun.id));
 const nTunggu = () => db.pesanan.filter((o) => o.status === "Menunggu").length;
 const nPesanBaru = () => 0;
 
 /* menu sidebar per peran, dikelompokkan menurut fungsinya */
 const MENU = {
   pembeli: [
+    ["Toko", [
+      ["store", "Jelajah Toko", "jelajah.html", "", "Toko"],
+      ["house", "Beranda", "index.html", "", "Beranda"]
+    ]],
     ["Belanja", [
-      ["house", "Beranda", "index.html", "", "Beranda"],
       ["search", "Cari Produk & Rak", "cari.html", "", "Cari"],
       ["shopping-cart", "Keranjang", "checkout.html", `<b class="badge" id="jml">${jmlKeranjang() || ""}</b>`, "Keranjang"]
     ]],
@@ -107,13 +181,14 @@ const MENU = {
       ["wallet", "Keuangan", "keuangan.html", "", "Uang"]
     ]],
     ["Administrasi", [
-      ["users", "Kelola Pengguna", "pengguna.html", "", "Pengguna"],
+      ["store", "Kelola Toko", "toko.html", "", "Kelola"],
+      ["users", "Tim Staff", "pengguna.html", "", "Staff"],
       ["settings", "Pengaturan Toko", "pengaturan.html", "", "Toko"]
     ]]
   ]
 };
 
-const LUCIDE = "https://unpkg.com/lucide@latest/dist/umd/lucide.min.js";
+const LUCIDE = "../assets/vendor/lucide.min.js";
 function muatLucide() {
   if (window.lucide) return gambarIkon();
   const s = document.createElement("script");
@@ -127,23 +202,28 @@ function gambarSidebar() {
   const berkas = location.pathname.split("/").pop() || "index.html";
   const akun = db.akun || { nama: "Memuat…", role: peran };
   const tautanProfil = (html) => `<a class="profil" href="akun.html" title="Akun saya">${html}</a>`;
+  const logo = db.toko.logo || "../assets/img/SortikLogo.jpeg";
+  const namaToko = `<span class="namatoko"${peran === "pembeli" ? ' title="Ganti toko lewat menu Jelajah Toko"' : ""}><b>${esc(db.toko.nama || "SORTIK")}</b></span>`;
   isi("side", `<a class="logo" href="index.html">
-  <img src="${db.toko.logo || "../assets/img/SortikLogo.jpeg"}" alt="Logo toko" width="34"><span class="namatoko"><b>${esc(db.toko.nama || "SORTIK")}</b><i>with SORTIK</i></span>
+  <img src="${logo}" alt="Logo toko" width="34">${namaToko}
 </a>
 <nav>${MENU[peran].map(([grup, item]) => `<div class="navgrup"><span class="navjudul">${grup}</span>${item.map(([ikon, label, href, ekstra = "", singkat = label]) =>
     `<a${href === berkas ? ' class="on"' : ""} href="${href}"><span class="ikon" data-lucide="${ikon}"></span><span class="lengkap">${label}</span><span class="pendek">${singkat}</span> ${ekstra}</a>`).join("")}</div>`).join("")}</nav>
 <div class="me">${tautanProfil(`<div class="avatar">${avatarHTML(akun)}</div><div class="siapa"><b>${esc(akun.nama)}</b><span>${labelPeran(akun.role)}</span></div>`)}
 <a class="keluar" href="../auth/login.html" title="Keluar"><span class="ikon" data-lucide="log-out"></span><span class="lengkap">Keluar</span></a></div>`);
-  /* badge pesanan aktif milik akun ini (menu pembeli) */
+  /* badge keranjang & pesanan dimuat ulang: MENU dibuat sekali, sebelum keranjang terisi */
+  badgeKeranjang();
   const jmlPesan = el("jmlPesan");
-  if (jmlPesan) jmlPesan.textContent = pesananku().filter((o) => o.status !== "Selesai").length || "";
+  if (jmlPesan) jmlPesan.textContent = pesananku().filter(pesananJalan).length || "";
 }
 
 async function mulaiAplikasi(mulai) {
   gambarSidebar();
   muatLucide();
+  ujiAlur();
   try {
-    await muatData();
+    if (await muatData() === false) return;
+    muatKeranjang();
     gambarSidebar();
     mulai();
   } catch (error) {

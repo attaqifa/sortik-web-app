@@ -1,8 +1,8 @@
-/* SORTIK — mesin kelola: daftar + form tambah/ubah + hapus.
+/* SORTIK, mesin kelola: daftar + form tambah/ubah + hapus.
    kolom = [[field, label, jenis, opsi]]; jenis: text|angka|email|pilih|area|foto|galeri.
    baru(data) boleh null untuk menolak; cek(item) mengembalikan pesan penolakan. */
 
-function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari...", cari, urut, baru, cek, chips, siapkan }) {
+function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari...", cari, urut, baru, cek, chips, siapkan, hanya }) {
   el(wadah).innerHTML = `<div class="formblok" id="${wadah}-blok" hidden>
   <h2 id="${wadah}-judul"></h2>
   <form class="form" id="${wadah}-form"></form>
@@ -28,7 +28,7 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
     const kontrol = jenis === "pilih"
       ? `<select id="${id}" data-f="${f}">${pilihan.map(([v, t]) => `<option value="${v}">${t}</option>`).join("")}</select>`
       : jenis === "area" ? `<textarea id="${id}" data-f="${f}" rows="3"></textarea>`
-      : jenis === "sandi" ? `<input id="${id}" data-f="${f}" type="password" minlength="8" autocomplete="new-password" placeholder="Ketik sandi baru — kosongkan jika tetap">`
+      : jenis === "sandi" ? `<input id="${id}" data-f="${f}" type="password" minlength="8" autocomplete="new-password" placeholder="Ketik sandi baru, kosongkan jika tetap">`
         : jenis === "foto" ? `<div class="medanfoto">
         <div class="pratinjau" id="${id}-pratinjau"></div>
         <div class="pilihfoto">
@@ -70,7 +70,7 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
     kotak.innerHTML = daftar.length
       ? daftar.map((s, i) => `<div class="minifoto">
         <img src="${s}" alt="Foto detail ${i + 1}">
-        <button type="button" class="x" data-hapusgaleri="${f}" data-i="${i}" title="Hapus foto">✕</button>
+        <button type="button" class="x" data-hapusgaleri="${f}" data-i="${i}" title="Hapus foto">×</button>
       </div>`).join("")
       : `<span class="petunjuk">Belum ada foto detail.</span>`;
   }
@@ -158,16 +158,17 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
 
   function gambar() {
     const kata = el(`${wadah}-q`).value.trim().toLowerCase();
-    tampil = db[kunci].filter((x) => String(cari ? cari(x) : Object.values(x).join(" ")).toLowerCase().includes(kata));
+    const sumber = hanya ? db[kunci].filter(hanya) : db[kunci];
+    tampil = sumber.filter((x) => String(cari ? cari(x) : Object.values(x).join(" ")).toLowerCase().includes(kata));
     if (saring && chips) tampil = tampil.filter((x) => chips.terapkan(x, saring));
     if (urut) tampil.sort(urut);
-    isi(`${wadah}-hasil`, `${tampil.length} dari ${db[kunci].length} ${nama.toLowerCase()}`);
+    isi(`${wadah}-hasil`, `${tampil.length} dari ${sumber.length} ${nama.toLowerCase()}`);
     isi(`${wadah}-list`, tampil.length ? tampil.map((x, i) => `<div class="row">${baris(x, i)}
   <div class="btns">
     <button class="btn" type="button" data-ubah="${i}">Ubah</button>
     <button class="btn danger" type="button" data-hapus="${i}">Hapus</button>
   </div>
-</div>`).join("") : pesanKosong("search-x", `Belum ada ${nama.toLowerCase()} yang cocok — ubah kata kunci atau tambah baru.`));
+</div>`).join("") : pesanKosong("search-x", `Belum ada ${nama.toLowerCase()} yang cocok, ubah kata kunci atau tambah baru.`));
   }
 
   el(wadah).addEventListener("click", (e) => {

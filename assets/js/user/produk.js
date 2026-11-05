@@ -1,4 +1,4 @@
-/* Deskripsi produk — produk.html?id=<id>. */
+/* Deskripsi produk, produk.html?id=<id>. */
 
 const p = produkById(+new URLSearchParams(location.search).get("id"));
 
@@ -29,12 +29,12 @@ function gambar(p) {
     isi("galeri", `<div class="galeri-utama">${ikonCadangan(p)}</div>`);
   }
 
-  isi("info", `<h2>${p.nama}</h2>
+  isi("info", `<h1>${esc(p.nama)}</h1>
   <b class="harga">${rp(hargaJual(p))}${p.diskon ? `<s class="hargalama">${rp(p.harga)}</s>` : ""}</b>
 
   <div class="chipstat">
-    <span class="stok${habis ? " habis" : tipis ? " menipis" : ""}"><span class="ikon" data-lucide="${habis ? "triangle-alert" : tipis ? "triangle-alert" : "package"}"></span>${habis ? "Stok habis" : tipis ? `Stok menipis — ${p.stok} unit` : `Stok ${p.stok} unit`}</span>
-    ${p.diskon ? `<span class="promo"><span class="ikon" data-lucide="tag"></span>Diskon ${p.diskon}% — hemat ${rp(p.harga - hargaJual(p))}</span>` : ""}
+    <span class="stok${habis ? " habis" : tipis ? " menipis" : ""}"><span class="ikon" data-lucide="${habis ? "triangle-alert" : tipis ? "triangle-alert" : "package"}"></span>${habis ? "Stok habis" : tipis ? `Stok menipis, ${p.stok} unit` : `Stok ${p.stok} unit`}</span>
+    ${p.diskon ? `<span class="promo"><span class="ikon" data-lucide="tag"></span>Diskon ${p.diskon}%, hemat ${rp(p.harga - hargaJual(p))}</span>` : ""}
     <a href="cari.html?rak=${encodeURIComponent(p.rak)}" title="Lihat produk di rak ini"><span class="ikon" data-lucide="warehouse"></span>Rak ${p.rak}</a>
     <a href="cari.html?kat=${p.kategori}" title="Lihat kategori ini"><span class="ikon" data-lucide="layout-grid"></span>${kat(p)}</a>
   </div>
@@ -77,7 +77,7 @@ function gambar(p) {
 
   el("kurang").onclick = () => { n = batas(n - 1); tampil(); };
   el("tambah").onclick = () => { n = batas(n + 1); tampil(); };
-  el("keranjang").onclick = () => { masuk(); el("keranjang").textContent = "✓ Masuk keranjang"; };
+  el("keranjang").onclick = () => { masuk(); el("keranjang").textContent = "Masuk keranjang"; };
   el("beli").onclick = () => { masuk(); location.href = "checkout.html"; };
 
   const serupa = db.produk.filter((x) => x.kategori === p.kategori && x.id !== p.id).slice(0, 4);
@@ -86,7 +86,7 @@ function gambar(p) {
 }
 
 if (p.id) {
-  document.title = p.nama + " — SORTIK";
+  document.title = p.nama + " · SORTIK";
   isi("remah", `<a href="index.html">Beranda</a><span>/</span><a href="cari.html?kat=${p.kategori}">${kat(p)}</a><span>/</span><b>${p.nama}</b>`);
   gambar(p);
 } else {

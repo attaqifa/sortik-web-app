@@ -1,30 +1,31 @@
-/* Pesan Grup — admin & staff berkomunikasi dalam satu grup "Grup Toko".
+/* Pesan Grup, admin & staff berkomunikasi dalam satu grup "Grup Toko".
    Berkas ini dipakai bersama halaman staff/pesan.html dan admin/pesan.html.
    Data tersimpan di db.pesan (database lokal); admin bisa menghapus pesan. */
 
 /* stempel waktu terakhir dibaca per peran → badge di sidebar */
 const tandaiBaca = () => { try { localStorage.setItem(VERSI + "pesanBaca-" + peran, Date.now()); } catch {} };
 tandaiBaca();
-gambarSidebar(); /* segarkan badge — pesan yang baru dibuka dianggap sudah dibaca */
+gambarSidebar(); /* segarkan badge, pesan yang baru dibuka dianggap sudah dibaca */
 
 const jamObrolan = (d) => String(d.getHours()).padStart(2, "0") + "." + String(d.getMinutes()).padStart(2, "0");
 const hariObrolan = (d) => `${d.getDate()} ${bln[d.getMonth()]} ${d.getFullYear()}`;
 
 /* bubble obrolan; diakhiri penanda pembaca */
 function gambar() {
-  const anggota = db.pengguna.filter((u) => ["staff", "admin"].includes(u.role) && u.status === "aktif");
+  const anggota = db.pengguna.filter((u) => ["staff", "admin"].includes(u.role) && u.status === "aktif" && u.toko === db.aktifToko);
   isi("anggota", `${anggota.length} anggota aktif`);
 
   let hari = "";
-  const html = db.pesan.map((m) => {
+  /* grup hanya berisi percakapan admin & staff, pesan pembeli tidak pernah tampil */
+  const html = db.pesan.filter((m) => ["staff", "admin"].includes(m.peran)).map((m) => {
     const d = new Date(m.waktu);
     const pemisah = hariObrolan(d) !== hari ? (hari = hariObrolan(d), `<div class="hari">${hari}</div>`) : "";
     const aku = m.dari === db.akun.nama;
     return `${pemisah}<div class="bubble${aku ? " aku" : ""}" data-id="${m.id}">
-      ${aku ? "" : `<div class="siapa">${esc(m.dari)}<i>${esc(labelPeran(m.peran))}</i></div>`}
+      ${aku ? "" : `<div class="siapa">${esc(m.dari)}${labelPeran(m.peran) !== m.dari ? `<i>${esc(labelPeran(m.peran))}</i>` : ""}</div>`}
       <p>${esc(m.teks)}</p>
       <time>${jamObrolan(d)}</time>
-      ${db.akun.role === "admin" ? `<button type="button" class="hapus" title="Hapus pesan ini">✕</button>` : ""}
+      ${db.akun.role === "admin" ? `<button type="button" class="hapus" title="Hapus pesan ini">×</button>` : ""}
     </div>`;
   }).join("");
 
@@ -46,7 +47,7 @@ el("formKirim").addEventListener("submit", (e) => {
   gambar();
 });
 
-/* hapus pesan (khusus admin — moderasi grup) */
+/* hapus pesan (khusus admin, moderasi grup) */
 el("dinding").addEventListener("click", async (e) => {
   const b = e.target.closest(".hapus");
   if (!b) return;
@@ -60,7 +61,7 @@ el("dinding").addEventListener("click", async (e) => {
 
 /* tab staff/admin lain mengirim pesan → ikut memperbarui tanpa muat ulang */
 window.addEventListener("storage", (e) => {
-  if (e.key === VERSI + "pesan") { tandaiBaca(); gambar(); }
+  if (e.key === KUNCI_DB) { tandaiBaca(); gambar(); }
 });
 
 el("teksPesan").focus();

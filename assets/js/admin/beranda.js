@@ -1,9 +1,9 @@
-/* Beranda admin — ringkasan penjualan dan pengawasan data toko. */
+/* Beranda admin, ringkasan penjualan dan pengawasan data toko. */
 
 isi("nama", db.akun.nama);
 el("sapa").innerHTML = avatarHTML(db.akun);
 
-/* sambutan bisa ditutup dengan × — disembunyikan sampai besok */
+/* sambutan bisa ditutup dengan ×, disembunyikan sampai besok */
 const sapa = document.querySelector(".hello");
 const hariSapa = new Date().toISOString().slice(0, 10);
 if (localStorage.getItem(VERSI + "sapa") === hariSapa) sapa.hidden = true;
@@ -12,9 +12,11 @@ el("sapTutup").onclick = () => {
   try { localStorage.setItem(VERSI + "sapa", hariSapa); } catch {}
 };
 
-const lunas = db.pesanan.filter((o) => o.lunas);
-const belum = db.pesanan.filter((o) => !o.lunas);
-const nilaiSemua = db.pesanan.reduce((n, o) => n + nilaiPesanan(o), 0);
+/* pesanan dibatalkan dikeluarkan dari semua hitungan uang & unit */
+const aktif = db.pesanan.filter(bukanBatal);
+const lunas = aktif.filter((o) => o.lunas);
+const belum = aktif.filter((o) => !o.lunas);
+const nilaiSemua = aktif.reduce((n, o) => n + nilaiPesanan(o), 0);
 const pendapatan = lunas.reduce((n, o) => n + nilaiPesanan(o), 0);
 const menipis = (p) => p.stok > 0 && p.stok <= 3;
 
@@ -27,7 +29,7 @@ isi("stats", [
   ["clipboard-check", "Pesanan menunggu", nTunggu()],
   ["triangle-alert", "Stok menipis (≤ 3)", db.produk.filter(menipis).length],
   ["message-square", "Pesan grup belum dibaca", nPesanBaru()],
-  ["user-round", "Pengguna aktif", db.pengguna.filter((u) => u.status === "aktif").length],
+  ["user-round", "Staff aktif", db.pengguna.filter((u) => u.toko === db.aktifToko && u.role === "staff" && u.status === "aktif").length],
   ["package", "Barang terdaftar", db.produk.length]
 ].map(([ikon, label, nilai, kecil]) =>
   `<div><span class="ikon" data-lucide="${ikon}"></span><b${kecil ? ' class="kecil"' : ""}>${nilai}</b><span>${label}</span></div>`).join(""));
@@ -36,19 +38,19 @@ isi("stats", [
 const itemTindakan = [
   ["clipboard-check", "Pesanan menunggu dikonfirmasi", db.pesanan.filter((o) => o.status === "Menunggu").length, "pesanan.html?status=Menunggu"],
   ["credit-card", "Pesanan belum dibayar", belum.length, "pesanan.html?status=belum"],
-  ["triangle-alert", "Stok menipis (≤ 3) — lengkapi di Kelola Barang", db.produk.filter(menipis).length, "produk.html"],
-  ["triangle-alert", "Stok habis — lengkapi di Kelola Barang", db.produk.filter((p) => p.stok < 1).length, "produk.html"]
+  ["triangle-alert", "Stok menipis (≤ 3), lengkapi di Kelola Barang", db.produk.filter(menipis).length, "produk.html"],
+  ["triangle-alert", "Stok habis, lengkapi di Kelola Barang", db.produk.filter((p) => p.stok < 1).length, "produk.html"]
 ];
 const darurat = itemTindakan.filter(([, , n]) => n > 0);
 isi("tindakan", darurat.length
   ? darurat.map(([ikon, label, n, href]) =>
     `<a class="tindakanitem" href="${href}"><span class="ikon" data-lucide="${ikon}"></span><b>${n}</b><span>${label}</span><i>›</i></a>`).join("")
-  : `<p class="kosong"><span class="ikon" data-lucide="clipboard-check"></span>Semua beres — tidak ada yang perlu ditindak.</p>`);
+  : `<p class="kosong"><span class="ikon" data-lucide="clipboard-check"></span>Semua beres, tidak ada yang perlu ditindak.</p>`);
 
 /* rak tersibuk satu bulan */
 function rakSibuk(b) {
   const hitung = {};
-  db.pesanan.filter((o) => o.tanggal.startsWith(b)).forEach((o) => {
+  db.pesanan.filter((o) => bukanBatal(o) && o.tanggal.startsWith(b)).forEach((o) => {
     const r = produkById(o.produk).rak;
     if (r) hitung[r] = (hitung[r] || 0) + o.jumlah;
   });
@@ -56,7 +58,7 @@ function rakSibuk(b) {
 }
 
 const bulan = {};
-db.pesanan.forEach((o) => {
+aktif.forEach((o) => {
   const b = o.tanggal.slice(0, 7);
   bulan[b] = bulan[b] || { nilai: 0, lunas: 0, belum: 0, unit: 0, pesanan: 0 };
   const v = nilaiPesanan(o);
@@ -68,7 +70,7 @@ db.pesanan.forEach((o) => {
 
 const nmBulan = "Januari Februari Maret April Mei Juni Juli Agustus September Oktober November Desember".split(" ");
 
-/* 6 bulan terakhir selalu lengkap (bulan kosong = 0) — grafik & laporan satuan sumber */
+/* 6 bulan terakhir selalu lengkap (bulan kosong = 0), grafik & laporan satuan sumber */
 const rekap = [...Array(6)].map((_, i) => {
   const d = new Date();
   d.setDate(1);
@@ -78,7 +80,7 @@ const rekap = [...Array(6)].map((_, i) => {
 });
 const puncak = Math.max(1, ...rekap.map((v) => v.nilai));
 
-/* ---------- grafik batang (komponen sama dengan halaman Keuangan) ----------
+/* grafik batang (komponen sama dengan halaman Keuangan) ----------
    biru = sudah dibayar, kuning = belum dibayar */
 (function gambarGrafik() {
   const maks = Math.max(1, ...rekap.map((v) => v.lunas + v.belum));
@@ -88,8 +90,7 @@ const puncak = Math.max(1, ...rekap.map((v) => v.nilai));
       <i class="b" style="height:${Math.max(2, Math.round((v.belum / maks) * 100))}%"></i>
     </div><label>${v.label.slice(0, 3)}</label></div>`).join(""));
 
-  const lunas = rekap.reduce((n, v) => n + v.lunas, 0);
-  isi("total", `${db.pesanan.length} pesanan · ${rp(lunas)} sudah dibayar · ${rp(nilaiSemua - lunas)} belum`);
+  isi("total", `${aktif.length} pesanan · ${rp(pendapatan)} sudah dibayar · ${rp(nilaiSemua - pendapatan)} belum`);
 })();
 
 /* laporan: hanya bulan yang benar-benar ada pesanan, terbaru dulu */
@@ -106,7 +107,7 @@ isi("lapor", (() => {
 })());
 
 const terjual = {};
-db.pesanan.forEach((o) => (terjual[o.produk] = (terjual[o.produk] || 0) + o.jumlah));
+aktif.forEach((o) => (terjual[o.produk] = (terjual[o.produk] || 0) + o.jumlah));
 
 isi("laris", Object.entries(terjual).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, unit]) => {
   const p = produkById(+id);

@@ -1,4 +1,4 @@
-/* Akun — profil, foto, dan kata sandi. Dipakai pembeli, staff, dan admin
+/* Akun, profil, foto, dan kata sandi. Dipakai pembeli, staff, dan admin
    (halaman akun.html di masing-masing folder; peran menentukan detail).
    Perubahan hanya menyangkut AKUN PRIBADI: nama/telepon/alamat/avatar
    disimpan ke baris akun di database lokal. Avatar hanya dari foto. */
@@ -58,6 +58,26 @@ el("a-simpan").onclick = async () => {
   notif("Profil tersimpan");
 };
 
+/* halaman staff: info toko + keluar dari toko (akun tetap aktif) */
+if (el("a-keluardari")) {
+  const namaToko = db.toko.nama || "toko ini";
+  el("a-tokonama").textContent = `Akun ini terhubung ke ${namaToko}.`;
+  el("a-keluardari").onclick = async () => {
+    const yakin = await konfirmasi(
+      "Keluar dari toko ini?",
+      `Akun ${esc(u.nama)} tetap aktif, tetapi akses ke barang, rak, dan pesanan ${esc(namaToko)} dicabut.`,
+      "Ya, keluar"
+    );
+    if (!yakin) return;
+    const baris = db.pengguna.find((p) => p.id === u.id);
+    if (!baris) return notif("Akun tidak ditemukan di database lokal.");
+    baris.toko = "";
+    if (!await simpan("pengguna")) return;
+    simpanToko(null);
+    location.replace("toko.html");
+  };
+}
+
 /* toggle sandi + catatan Caps Lock */
 document.querySelectorAll(".sandi").forEach((kotak) => {
   const input = kotak.querySelector("input");
@@ -77,4 +97,4 @@ document.querySelectorAll(".sandi").forEach((kotak) => {
 });
 
 el("a-sandisimpan").onclick = () =>
-  notif("Kata sandi diatur oleh admin toko — hubungi admin untuk menggantinya.");
+  notif("Kata sandi diatur oleh admin toko, hubungi admin untuk menggantinya.");

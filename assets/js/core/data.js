@@ -1,7 +1,10 @@
-/* SORTIK — wadah data kosong; core/store.js mengisinya dari database lokal. */
+/* SORTIK, wadah data kosong; core/store.js mengisinya dari database lokal.
+   db.toko selalu toko yang sedang aktif; seluruh koleksi di bawahnya milik
+   toko itu (bukan gabungan semua toko). */
 const db = {
+  aktifToko: null,
   kategori: [],
-  toko: { id: 1, nama: "", alamat: "", jam: "", wa: "", ongkir: 0, rekening: [], logo: "" },
+  toko: { id: "", nama: "", alamat: "", jam: "", wa: "", ongkir: 0, rekening: [], logo: "" },
   rak: { grid: 28, aktif: 0, lantai: [] },
   produk: [],
   pesanan: [],

@@ -21,7 +21,7 @@ const item = (i) => {
     <div><b>${p.nama}</b><span>${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""} · Rak ${p.rak}${penuh ? ` · <b class="maks">Maks ${p.stok} unit</b>` : ""}</span><b class="subbaris">${rp(hargaJual(p) * i.jumlah)}</b></div>
     <div class="qty">
       <button type="button" data-kurang="${p.id}" aria-label="Kurangi jumlah">−</button><b>${i.jumlah}</b><button type="button" data-tambah="${p.id}" aria-label="Tambah jumlah"${penuh ? " disabled" : ""}>＋</button>
-      <button type="button" class="x" data-hapus="${p.id}" title="Hapus" aria-label="Hapus dari keranjang">✕</button>
+      <button type="button" class="x" data-hapus="${p.id}" title="Hapus" aria-label="Hapus dari keranjang">×</button>
     </div>
   </div>`;
 };
@@ -29,7 +29,7 @@ const item = (i) => {
 function render() {
   const kosong = !keranjang.length;
   isi("items", kosong
-    ? pesanKosong("shopping-cart", "Keranjang masih kosong — pilih barang dulu.", ["cari.html", "Cari Produk"])
+    ? pesanKosong("shopping-cart", "Keranjang masih kosong, pilih barang dulu.", ["cari.html", "Cari Produk"])
     : keranjang.map(item).join(""));
 
   const ong = state.cara === "antar" ? ongkir : 0;
@@ -48,7 +48,7 @@ isi("jam", db.toko.jam);
 isi("infoOngkir", rp(ongkir) + " dalam kota");
 el("wa").href = "https://wa.me/" + db.toko.wa;
 el("wa").textContent = "+" + db.toko.wa;
-isi("toko", `${db.toko.nama} — ${db.toko.alamat}`);
+isi("toko", `${db.toko.nama}, ${db.toko.alamat}`);
 isi("rek", db.toko.rekening.map((r) => `<li><b>${r.bank}</b><span>${r.nomor}</span><span>a.n. ${r.atasNama}</span></li>`).join(""));
 isi("kasirToko", `<li><b>Kasir ${db.toko.nama}</b><span>${db.toko.alamat}</span><span>${db.toko.jam}</span></li>`);
 
@@ -66,6 +66,43 @@ el("items").addEventListener("click", (e) => {
   simpanKeranjang();
   render();
 });
+
+/* keranjang toko lain tetap tersimpan: kabari, supaya barang di dalamnya tidak terasa hilang */
+function kabarTokoLain() {
+  const lain = semuaToko.filter((t) => t.id !== db.aktifToko && jmlKeranjangToko(t.id));
+  el("tokoLain").hidden = !lain.length;
+  isi("tokoLain", lain.map((t) => `${t.nama}: ${jmlKeranjangToko(t.id)} barang di keranjang
+    <button class="btn" type="button" data-tokolain="${esc(t.id)}">Buka toko ini</button>`).join("<br>"));
+}
+el("tokoLain").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-tokolain]");
+  if (!b) return;
+  pilihToko(b.dataset.tokolain);
+  location.href = "checkout.html";
+});
+kabarTokoLain();
+
+/* stok bisa berubah sejak halaman dibuka: sesuaikan dulu, baru konfirmasi */
+function sesuaikanStok() {
+  const kurang = [];
+  keranjang.forEach((i) => {
+    const p = produkById(i.produk);
+    const stok = p.stok || 0;
+    if (i.jumlah > stok) {
+      kurang.push(`${p.nama || "barang"} ${stok ? "tinggal " + stok : "habis"}`);
+      i.jumlah = stok;
+    }
+  });
+  if (!kurang.length) return true;
+  keranjang.splice(0, keranjang.length, ...keranjang.filter((i) => i.jumlah > 0));
+  simpanKeranjang();
+  render();
+  kabarTokoLain();
+  notif(`Jumlah disesuaikan dengan stok: ${kurang.join(", ")}.`);
+  /* shortcut: stok dicek saat submit, tidak dikunci; dua pembeli tetap bisa
+     memesan unit terakhir yang sama dan staff yang menolak lewat Kelola Pesanan. */
+  return false;
+}
 
 document.querySelectorAll('input[name="cara"], input[name="bayar"]').forEach((r) => (r.onchange = () => {
   state[r.name] = r.value;
@@ -91,21 +128,30 @@ el("buat").onclick = async () => {
     return;
   }
 
+  /* jumlah dihitung ulang dari stok terkini sebelum buyer mengonfirmasi */
+  if (!sesuaikanStok()) return;
+
+  const ong = state.cara === "antar" ? ongkir : 0;
+
   /* konfirmasi sebelum pesanan benar-benar dibuat */
   const yakin = await konfirmasi("Buat pesanan ini?",
-    `${keranjang.reduce((n, i) => n + i.jumlah, 0)} item — total ${rp(subtotal() + (state.cara === "antar" ? ongkir : 0))}`
-    + (state.cara === "antar" ? " (termasuk ongkir)." : "."), "Ya, Buat Pesanan");
+    `${keranjang.reduce((n, i) => n + i.jumlah, 0)} item, total ${rp(subtotal() + ong)}`
+    + (ong ? " (termasuk ongkir)." : "."), "Ya, Buat Pesanan");
   if (!yakin) return;
 
-  const mulai = Math.max(0, ...db.pesanan.map((o) => o.id)) + 1;
+  /* id pesanan dibuat unik antar toko: satu pembeli bisa punya pesanan di banyak toko */
+  const mulai = Math.max(0, ...semuaToko.flatMap((t) => t.pesanan || []).map((o) => o.id)) + 1;
   const dibuat = keranjang.map((i, n) => ({
     id: mulai + n,
+    toko: db.aktifToko,
     produk: i.produk,
     pembeli_id: db.akun.id,
     pembeli: db.akun.nama,
     jumlah: i.jumlah,
-    /* harga jual dikunci saat pesanan dibuat — diskon belakangan tidak mengubah riwayat */
+    /* harga jual dikunci saat pesanan dibuat, diskon belakangan tidak mengubah riwayat */
     harga: hargaJual(produkById(i.produk)),
+    /* ongkir satu pembelian dicatat sekali, di baris pertama (lihat nilaiPesanan) */
+    ongkir: n === 0 ? ong : 0,
     status: "Menunggu",
     tanggal: new Date().toISOString().slice(0, 10),
     cara: state.cara,
