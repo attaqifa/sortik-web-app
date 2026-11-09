@@ -25,6 +25,23 @@ kelola({
     ["deskripsi", "Deskripsi", "area"]
   ],
 
+  siapkan: (d, lama) => {
+    if (!Number.isInteger(d.stok) || d.stok < 0 || d.harga < 0 || d.diskon < 0 || d.diskon > 100) {
+      notif("Stok harus bilangan bulat nonnegatif, harga tidak negatif, dan diskon 0–100%.");
+      return null;
+    }
+    if (lama && d.stok < lama.stok && d.stok < stokDipesan(lama.id)) {
+      notif(`Stok tidak boleh kurang dari ${stokDipesan(lama.id)} unit yang masih dipesan.`);
+      return null;
+    }
+    if (lama && lama.stok !== d.stok) {
+      const alasan = prompt("Tuliskan alasan perubahan stok:");
+      if (!alasan || !alasan.trim()) { notif("Alasan perubahan stok wajib diisi."); return null; }
+      alasanMutasiStok = alasan.trim();
+    }
+    return d;
+  },
+
   cari: (p) => `${p.nama} ${kat(p)} ${p.rak}`,
   urut: (a, b) => a.nama.localeCompare(b.nama),
   baris: (p) => `<div class="thumb">${p.diskon ? `<span class="ptanda">−${p.diskon}%</span>` : ""}${fotoHTML(p)}</div>
@@ -38,6 +55,17 @@ kelola({
     ? `"${p.nama}" sudah ada di riwayat pesanan. Kosongkan stoknya saja bila barang tidak dijual lagi.`
     : "")
 });
+
+const riwayatStok = document.createElement("section");
+riwayatStok.className = "card";
+riwayatStok.innerHTML = `<h2>Riwayat perubahan stok</h2><div id="riwayatStok"></div>`;
+el("kelola").after(riwayatStok);
+function gambarRiwayatStok() {
+  const riwayat = (db.toko.mutasiStok || []).slice().reverse();
+  isi("riwayatStok", riwayat.length ? riwayat.slice(0, 50).map((m) => `<div class="row"><div><b>${esc(m.nama)}</b><span>${esc(m.waktu)} · ${esc(m.pelaku)} · ${esc(m.alasan || "Tidak tercatat")}</span></div><b>${m.sebelum} → ${m.sesudah}</b></div>`).join("") : "Belum ada perubahan stok tercatat.");
+}
+gambarRiwayatStok();
+el("kelola").addEventListener("submit", () => setTimeout(gambarRiwayatStok, 0));
 
 /* kategori barang, id = slug nama, ganti nama tidak memutus barang */
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");

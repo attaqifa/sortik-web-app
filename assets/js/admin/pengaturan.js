@@ -1,6 +1,49 @@
 /* Pengaturan toko, profil toko satu form; kategori dikelola di halaman Kelola Barang. */
 
 const t = db.toko;
+el("cadangUnduh").onclick = () => {
+  const raw = localStorage.getItem(KUNCI_DB);
+  if (!raw) return notif("Tidak ada data untuk dicadangkan.");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([raw], { type: "application/json" }));
+  a.download = "sortik-cadangan.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+el("cadangPulih").onclick = async () => {
+  const file = el("cadangFile").files[0];
+  if (!file) return notif("Pilih berkas cadangan terlebih dahulu.");
+  let data;
+  try { data = JSON.parse(await file.text()); } catch { return notif("Berkas cadangan tidak dapat dibaca."); }
+  const unik = (daftar) => new Set(daftar.map((x) => x.id)).size === daftar.length;
+  const angka = (n) => Number.isFinite(n) && n >= 0;
+  const valid = data && Array.isArray(data.toko) && Array.isArray(data.pengguna)
+    && data.pengguna.every((u) => u && typeof u.id === "string" && typeof u.nama === "string"
+      && ["pembeli", "staff", "admin"].includes(u.role) && ["aktif", "nonaktif"].includes(u.status))
+    && unik(data.pengguna) && data.toko.every((x) => x && typeof x.id === "string" && typeof x.nama === "string"
+      && [x.alamat, x.jam, x.wa].every((v) => typeof v === "string") && angka(x.ongkir)
+      && Array.isArray(x.produk) && x.produk.every((p) => p && Number.isInteger(p.id) && typeof p.nama === "string"
+        && Number.isInteger(p.stok) && angka(p.stok) && angka(p.harga) && angka(p.diskon) && p.diskon <= 100
+        && (p.galeri == null || (Array.isArray(p.galeri) && p.galeri.every((g) => typeof g === "string")))) && unik(x.produk)
+      && Array.isArray(x.pesanan) && x.pesanan.every((o) => o && Number.isInteger(o.id) && Number.isInteger(o.produk)
+        && Number.isInteger(o.jumlah) && o.jumlah > 0 && typeof o.tanggal === "string"
+        && ["Menunggu", "Diproses", "Siap", "Selesai", "Dibatalkan"].includes(o.status)
+        && typeof o.lunas === "boolean" && (o.harga == null || angka(o.harga)) && (o.ongkir == null || angka(o.ongkir))) && unik(x.pesanan)
+      && Array.isArray(x.kategori) && x.kategori.every((k) => k && typeof k.id === "string" && typeof k.nama === "string") && unik(x.kategori)
+      && x.rak && Array.isArray(x.rak.lantai) && x.rak.lantai.length > 0
+      && x.rak.lantai.every((l) => l && typeof l.nama === "string" && Array.isArray(l.daftar) && (l.area == null || Array.isArray(l.area)))
+      && Array.isArray(x.pesan) && x.pesan.every((m) => m && typeof m.teks === "string")
+      && x.keuangan && Array.isArray(x.keuangan.pengeluaran)
+      && x.keuangan.pengeluaran.every((p) => p && Number.isInteger(p.id) && angka(p.jumlah) && typeof p.tanggal === "string")
+      && Array.isArray(x.rekening) && x.rekening.every((r) => r && [r.bank, r.nomor, r.atasNama].every((v) => typeof v === "string"))) && unik(data.toko);
+  if (!valid) return notif("Format cadangan tidak valid atau tidak lengkap.");
+  if (!await konfirmasi("Pulihkan cadangan?", "Seluruh data pada browser ini akan diganti. Unduh cadangan data saat ini terlebih dahulu.", "Ya, pulihkan")) return;
+  if (versiData !== localStorage.getItem(KUNCI_DB)) return notif("Data berubah di tab lain. Muat ulang sebelum memulihkan cadangan.");
+  const gagal = simpanDB(data);
+  if (gagal) return notif("Gagal memulihkan: " + gagal.message);
+  simpanSesi(null);
+  location.href = "../auth/login.html";
+};
 el("t-nama").value = t.nama;
 el("t-alamat").value = t.alamat;
 el("t-jam").value = t.jam;

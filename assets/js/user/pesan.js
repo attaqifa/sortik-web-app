@@ -3,6 +3,7 @@
 const AMBIL = { ambil: "Ambil di Tempat", antar: "Antar ke Alamat" };
 const mode = document.body.dataset.status || "";
 let status = "";
+let pesananTerbuka = null;
 
 /* Riwayat = yang sudah tidak berjalan (selesai atau dibatalkan) */
 const tampil = (o) => (mode === "Selesai" ? !pesananJalan(o) : pesananJalan(o));
@@ -13,7 +14,7 @@ const baris = (o) => {
   const n = ALUR.indexOf(o.status);
   /* nama toko hanya perlu bila pesanan itu bukan dari toko yang sedang dibuka */
   const dari = o.toko === db.aktifToko ? "" : esc(labelToko(o.toko)) + " · ";
-  return `<button class="row" data-id="${o.id}">
+  return `<button class="row" data-id="${o.id}" data-toko="${esc(o.toko)}">
     <div class="thumb">${fotoHTML(p)}</div>
     <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${dari}${tglID(o.tanggal)} · ${o.jumlah} item · ${rp(nilaiPesanan(o))}${o.lunas ? "" : " · belum dibayar"}</span>
       <span class="langkah" title="Tahap ${n + 1} dari ${ALUR.length}: ${o.status}">${ALUR.map((s, i) => `<i${i <= n ? ' class="on"' : ""}></i>`).join("")}</span></div>
@@ -57,7 +58,7 @@ const rincian = (o) => {
     </div>`}
   </div>` : ""}
   <div class="aksipesan">
-    ${(p.stok || 0) > 0
+    ${stokTersedia(p, t.pesanan || []) > 0
       ? `<button class="primary garis" id="beliLagi" type="button">Beli Lagi${o.toko !== db.aktifToko ? " di " + esc(t.nama || "toko ini") : ""}</button>`
       : `<button class="primary" id="beliLagi" type="button" disabled>Beli Lagi, stok habis</button>`}
     ${o.status === "Menunggu" && o.lunas !== true ? `<button class="btn danger" id="batalkan" type="button">Batalkan Pesanan</button>` : ""}
@@ -75,9 +76,10 @@ function daftar() {
       : pesanKosong("receipt", "Belum ada pesanan di sini.", ["cari.html", "Mulai belanja"]));
 }
 
-function buka(id) {
-  const o = pesanan().find((x) => x.id === id);
+function buka(id, tokoId) {
+  const o = pesanan().find((x) => x.id === id && (!tokoId || x.toko === tokoId));
   if (!o) return;
+  pesananTerbuka = o;
   el("daftar").hidden = true;
   el("detail").hidden = false;
   isi("detail", rincian(o));
@@ -91,14 +93,16 @@ function buka(id) {
       return el("buktiFile").focus();
     }
     kirim.disabled = true;
+    const buktiLama = o.bukti, waktuLama = o.buktiPada;
     try {
       o.bukti = await bacaGambar(berkas, 1000);
       o.buktiPada = new Date().toISOString();
-      simpanPesanan(o);
+      if (!await simpanPesanan(o)) { o.bukti = buktiLama; o.buktiPada = waktuLama; kirim.disabled = false; return; }
       notif("Bukti transfer terkirim, menunggu konfirmasi");
-      buka(o.id);
+      buka(o.id, o.toko);
     } catch {
-      notif("Gagal membaca gambar. Coba file JPG atau PNG.");
+      o.bukti = buktiLama; o.buktiPada = waktuLama;
+      notif("Bukti belum tersimpan. Periksa gambar atau muat ulang halaman jika data berubah.");
       kirim.disabled = false;
     }
   };
@@ -108,8 +112,9 @@ function buka(id) {
   const lagi = el("beliLagi");
   if (lagi) lagi.onclick = () => {
     const pr = produkPesanan(o);
-    if ((pr.stok || 0) < 1) return notif("Stok produk ini habis.");
-    const n = Math.min(pr.stok, o.jumlah);
+    const stok = stokTersedia(pr, (tokoById(o.toko).pesanan || []));
+    if (stok < 1) return notif("Stok produk ini habis.");
+    const n = Math.min(stok, o.jumlah);
     if (o.toko && o.toko !== db.aktifToko) {
       tambahKeranjangToko(o.toko, o.produk, n);
       pilihToko(o.toko);
@@ -117,7 +122,7 @@ function buka(id) {
       return;
     }
     const item = keranjang.find((i) => i.produk === o.produk);
-    if (item) item.jumlah = Math.min(pr.stok, item.jumlah + n);
+    if (item) item.jumlah = Math.min(stok, item.jumlah + n);
     else keranjang.push({ produk: o.produk, jumlah: n });
     simpanKeranjang();
     notif("Ditambahkan ke keranjang");
@@ -133,7 +138,9 @@ function buka(id) {
       "Ya, Batalkan");
     if (!yakin) return;
     o.status = BATAL;
-    simpanPesanan(o);
+    let tersimpan = false;
+    try { tersimpan = await simpanPesanan(o); } catch {}
+    if (!tersimpan) { o.status = "Menunggu"; return; }
     gambarSidebar();
     notif("Pesanan dibatalkan");
     el("detail").hidden = true;
@@ -151,12 +158,12 @@ if (el("chips")) {
 
 el("list").addEventListener("click", (e) => {
   const b = e.target.closest(".row");
-  if (b) buka(+b.dataset.id);
+  if (b) buka(+b.dataset.id, b.dataset.toko);
 });
 el("detail").addEventListener("click", (e) => {
   const foto = e.target.closest("[data-fotoproduk]");
   if (foto) {
-    const o = pesanan().find((x) => x.id === +foto.dataset.fotoproduk);
+    const o = pesananTerbuka;
     const pr = o ? produkPesanan(o) : {};
     const sumber = galeriProduk(pr)[0];
     if (sumber) lihatGambar(sumber, pr.nama);
@@ -165,7 +172,7 @@ el("detail").addEventListener("click", (e) => {
   }
   const lihat = e.target.closest("[data-lihatbukti]");
   if (lihat) {
-    const o = pesanan().find((x) => x.id === +lihat.dataset.lihatbukti);
+    const o = pesananTerbuka;
     if (o && o.bukti) lihatGambar(o.bukti, `Bukti transfer ${kodePesanan(o)}`);
     return;
   }
@@ -182,9 +189,10 @@ daftar();
 const saring = new URLSearchParams(location.search);
 const masuk = +saring.get("id");
 if (masuk) {
-  const o = pesananku().find((x) => x.id === masuk);
+  const tokoId = saring.get("toko") || db.aktifToko;
+  const o = pesananku().find((x) => x.id === masuk && x.toko === tokoId);
   if (o) {
-    buka(masuk);
+    buka(masuk, o.toko);
     if (saring.get("baru")) notif(`Pesanan ${kodePesanan(o)} dibuat, unggah bukti bila transfer`);
   }
 }

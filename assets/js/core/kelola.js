@@ -124,7 +124,10 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
       if (!baris) return;
       db[kunci].push(baris);
     }
-    if (!await simpan(kunci)) {
+    let tersimpan = false;
+    try { tersimpan = await simpan(kunci); } catch {}
+    if (!tersimpan) {
+      if (kunci === "produk") alasanMutasiStok = "";
       if (sebelumnya) Object.assign(baris, sebelumnya);
       else db[kunci].splice(db[kunci].indexOf(baris), 1);
       gambar();
@@ -145,8 +148,11 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
     );
     if (!yakin) return;
     if (x === ubah) el(`${wadah}-blok`).hidden = true;
-    db[kunci].splice(db[kunci].indexOf(x), 1);
-    simpan(kunci);
+    const posisi = db[kunci].indexOf(x);
+    db[kunci].splice(posisi, 1);
+    let tersimpan = false;
+    try { tersimpan = await simpan(kunci); } catch {}
+    if (!tersimpan) { db[kunci].splice(posisi, 0, x); gambar(); return; }
     notif(`${nama} dihapus`);
     gambar();
   }

@@ -22,13 +22,12 @@ const menipis = (p) => p.stok > 0 && p.stok <= 3;
 
 /* kartu angka kunci: bulan ini, yang menunggu, dan yang perlu perhatian */
 const kunciBulan = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
-const pendapatanBulanIni = lunas.filter((o) => o.tanggal.startsWith(kunciBulan)).reduce((n, o) => n + nilaiPesanan(o), 0);
+const pendapatanBulanIni = lunas.filter((o) => (o.dibayarPada || o.tanggal).startsWith(kunciBulan)).reduce((n, o) => n + nilaiPesanan(o), 0);
 
 isi("stats", [
   ["trending-up", "Pendapatan bulan ini", rp(pendapatanBulanIni), true],
   ["clipboard-check", "Pesanan menunggu", nTunggu()],
   ["triangle-alert", "Stok menipis (≤ 3)", db.produk.filter(menipis).length],
-  ["message-square", "Pesan grup belum dibaca", nPesanBaru()],
   ["user-round", "Staff aktif", db.pengguna.filter((u) => u.toko === db.aktifToko && u.role === "staff" && u.status === "aktif").length],
   ["package", "Barang terdaftar", db.produk.length]
 ].map(([ikon, label, nilai, kecil]) =>
@@ -106,13 +105,13 @@ isi("lapor", (() => {
 })());
 
 const terjual = {};
-aktif.forEach((o) => (terjual[o.produk] = (terjual[o.produk] || 0) + o.jumlah));
+aktif.filter((o) => o.lunas && o.status === "Selesai").forEach((o) => (terjual[o.produk] = (terjual[o.produk] || 0) + o.jumlah));
 
 isi("laris", Object.entries(terjual).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, unit]) => {
   const p = produkById(+id);
   return `<div class="row">
     <div class="thumb">${fotoHTML(p)}</div>
-    <div><b>${p.nama || "-"}</b><span>${kat(p)} · rak ${p.rak || "-"} · ${rp(hargaJual(p) * unit)}</span></div>
+    <div><b>${p.nama || "-"}</b><span>${kat(p)} · rak ${p.rak || "-"}</span></div>
     <em class="proc">${unit} unit</em>
   </div>`;
 }).join("") || pesanKosong("wallet", "Belum ada penjualan."));

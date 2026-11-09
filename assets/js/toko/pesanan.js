@@ -9,7 +9,7 @@ const jmlStatus = (s) => db.pesanan.filter((o) => (s === "belum" ? !o.lunas && b
 const baris = (o) => {
   const p = produkById(o.produk);
   /* cek stok: kurang dari jumlah yang diminta = merah (jangan dipromes) */
-  const kurang = p.stok != null && p.stok < o.jumlah;
+  const kurang = !o.lunas && p.stok != null && p.stok < o.jumlah;
   const batal = o.status === BATAL;
   return `<div class="row">
     <button class="thumb" type="button" data-foto="${o.id}" title="Perbesar foto barang">${fotoHTML(p)}</button>
@@ -29,6 +29,7 @@ const baris = (o) => {
     </div>
     <div class="btns">
       ${o.lunas || batal ? "" : `<button class="btn" type="button" data-lunas="${o.id}">${o.bayar === "Bayar di kasir" ? "Tandai Dibayar" : "Konfirmasi Transfer"}</button>`}
+      ${o.lunas && !batal && o.status !== "Selesai" && db.akun.role === "admin" ? `<button class="btn danger" type="button" data-refund="${o.id}">Catat pengembalian dana</button>` : ""}
       <select class="statuspilih" data-status="${o.id}" title="Ubah status pesanan" aria-label="Ubah status pesanan">
         ${[...ALUR, BATAL].map((s) => `<option value="${s}"${s === o.status ? " selected" : ""}>${s}</option>`).join("")}
       </select>
@@ -63,7 +64,7 @@ function segarChip() {
 
 chipSaring("chips", OPSI_CHIP(), (v) => { status = v; daftar(); }, status);
 
-el("list").addEventListener("click", (e) => {
+el("list").addEventListener("click", async (e) => {
   const b = e.target.closest("button");
   if (!b) return;
   if (b.dataset.foto) {
@@ -79,23 +80,44 @@ el("list").addEventListener("click", (e) => {
     if (o && o.bukti) lihatGambar(o.bukti, `Bukti transfer ${kodePesanan(o)}`);
     return;
   }
+  if (b.dataset.refund) {
+    const o = db.pesanan.find((x) => x.id === +b.dataset.refund);
+    if (!o || !o.lunas || !bukanBatal(o) || o.status === "Selesai" || db.akun.role !== "admin") return;
+    if (!await konfirmasi("Dana sudah dikembalikan?", `Catat pengembalian ${rp(nilaiPesanan(o))} dan batalkan pesanan. Periksa kondisi barang dan sesuaikan stok secara manual.`, "Ya, sudah dikembalikan")) return;
+    const lama = { ...o };
+    const pengeluaran = db.keuangan.pengeluaran || (db.keuangan.pengeluaran = []);
+    const id = Math.max(0, ...pengeluaran.map((x) => x.id || 0)) + 1;
+    const tanggal = new Date().toISOString().slice(0, 10);
+    pengeluaran.push({ id, tanggal, kategori: "Pengembalian dana", keterangan: `Pengembalian ${kodePesanan(o)}`, jumlah: nilaiPesanan(o), refundPesanan: o.id });
+    o.status = BATAL;
+    o.refundPada = new Date().toISOString();
+    try {
+      if (!await simpan("pesanan")) { pengeluaran.pop(); Object.assign(o, lama); delete o.refundPada; return; }
+    } catch { pengeluaran.pop(); Object.assign(o, lama); delete o.refundPada; return; }
+    notif("Pengembalian dana dicatat. Periksa dan sesuaikan stok bila barang dapat dijual kembali.");
+    return daftar();
+  }
   if (!b.dataset.lunas) return;
   const o = db.pesanan.find((x) => x.id === +b.dataset.lunas);
-  if (!o) return;
+  if (!o || o.lunas || !pesananJalan(o)) return;
   const p = produkById(o.produk);
   if (!p.id || p.stok < o.jumlah) return notif("Stok tidak cukup untuk mengonfirmasi pembayaran.");
+  const sebelumnya = { ...o };
+  const stokSebelum = p.stok;
   o.lunas = true;
   o.staff = db.akun.nama;
+  o.dibayarPada = new Date().toISOString();
   if (o.status === "Menunggu") o.status = "Diproses";
-  /* stok keluar saat pembayaran sah; pembatalan pesanan lunas mengembalikannya */
-  if (p.id) { p.stok = Math.max(0, p.stok - o.jumlah); simpan("produk"); }
-  simpan("pesanan");
+  p.stok -= o.jumlah;
+  try {
+    if (!await simpan("pesanan")) { Object.assign(o, sebelumnya); delete o.dibayarPada; p.stok = stokSebelum; return; }
+  } catch (error) { Object.assign(o, sebelumnya); delete o.dibayarPada; p.stok = stokSebelum; return; }
   notif(`Pembayaran dikonfirmasi, stok ${p.nama || "barang"} −${o.jumlah}`);
   daftar();
 });
 
 /* status diubah lewat pilihan */
-el("list").addEventListener("change", (e) => {
+el("list").addEventListener("change", async (e) => {
   const pilih = e.target.closest("select[data-status]");
   if (!pilih) return;
   const o = db.pesanan.find((x) => x.id === +pilih.dataset.status);
@@ -113,9 +135,11 @@ el("list").addEventListener("change", (e) => {
     notif("Ikuti urutan status dan pastikan pembayaran lunas sebelum menyelesaikan pesanan.");
     return daftar();
   }
+  const lama = o.status;
   const stokBerubah = ubahStatus(o, baru);
-  if (stokBerubah) simpan("produk");
-  simpan("pesanan");
+  let tersimpan = false;
+  try { tersimpan = await simpan("pesanan"); } catch {}
+  if (!tersimpan) { o.status = lama; return daftar(); }
   notif(`${kodePesanan(o)} → ${baru}${stokBerubah ? ", stok disesuaikan" : ""}`);
   daftar();
 });
