@@ -1,6 +1,4 @@
-/* SORTIK, wadah data kosong; core/store.js mengisinya dari database lokal.
-   db.toko selalu toko yang sedang aktif; seluruh koleksi di bawahnya milik
-   toko itu (bukan gabungan semua toko). */
+/* Wadah data kosong; store.js mengisinya dari database lokal. */
 const db = {
   aktifToko: null,
   kategori: [],

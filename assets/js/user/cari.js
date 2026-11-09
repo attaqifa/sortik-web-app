@@ -43,8 +43,7 @@ function render() {
   });
   /* rak hasil cari mungkin di lantai lain, tampilkan lantai tempat rak terpilih */
   if (state.rak) { const i = lantaiDari(state.rak); if (i >= 0) db.rak.aktif = i; }
-  /* denah mini: kotak grid lebih kecil, rak berisi hasil cari ikut tersorot,
-     ada tab lantai bila tokonya beberapa lantai */
+  /* Denah mini: kotak lebih kecil, hasil cari tersorot, plus tab lantai. */
   denahToko("denah", jumlah, { aktif: state.rak, piksel: 20, tab: true });
 }
 

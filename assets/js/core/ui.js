@@ -1,6 +1,5 @@
-/* SORTIK, util & komponen tampilan bersama. */
+/* Util & komponen tampilan bersama. */
 
-/* util singkat */
 const el = (id) => document.getElementById(id);
 
 /* isi(): isi HTML + gambar ikon yang baru */
@@ -24,8 +23,7 @@ function gambarIkon() {
   /* hapus penanda agar tidak diproses ulang */
   document.querySelectorAll("svg[data-lucide]").forEach((s) => s.removeAttribute("data-lucide"));
 }
-/* produk disimpan per toko dan id produk bisa sama di toko lain, jadi
-   pencarian produk butuh id tokonya; tanpa id, pakai toko aktif */
+/* Id produk bisa sama antar toko, jadi cari produk dengan id toko. */
 const produkDi = (tokoId, id) => {
   const t = tokoId && tokoId !== db.aktifToko ? semuaToko.find((x) => x.id === tokoId) : null;
   return (((t || db).produk) || []).find((p) => p.id === id) || {};
@@ -37,18 +35,14 @@ const hargaJual = (p) => {
   const diskon = Math.max(0, Math.min(100, (p && p.diskon) || 0));
   return Math.round(((p && p.harga) || 0) * (1 - diskon / 100) / 100) * 100;
 };
-/* nilaiBarang = harga × jumlah; harga dikunci saat pesanan dibuat jadi ubah
-   diskon belakangan tidak mengubah riwayat. nilaiPesanan menambah ongkir. */
+/* Harga dikunci saat pesanan dibuat; nilaiPesanan menambah ongkir. */
 const nilaiBarang = (o) => (o.harga != null ? o.harga : hargaJual(produkPesanan(o))) * o.jumlah;
-/* Ongkir satu pembelian dicatat sekali saja (baris pertama): tiap baris = satu barang,
-   bukan satu pesanan, jadi ongkir tidak boleh dikalikan jumlah baris.
-   shortcut: benar-benar rapi kalau satu pesanan bisa banyak barang (audit-002 nomor 01). */
+/* shortcut: ongkir hanya di baris pertama; rapikan saat satu pesanan bisa banyak barang. */
 const nilaiPesanan = (o) => nilaiBarang(o) + (o.ongkir || 0);
 /* total unit terjual satu produk (dari seluruh pesanan), untuk badge/urutan Terlaris */
 const jmlTerjual = (id) => db.pesanan.reduce((n, o) => n + (bukanBatal(o) && o.produk === id ? o.jumlah : 0), 0);
 /* lantai & rak */
-/* denah kini bisa beberapa lantai: db.rak.lantai = [{ nama, lebar, tinggi,
-   pintu: { sisi, pos }, daftar: [rak] }]; db.rak.aktif = lantai yang tampil */
+/* Denah multi-lantai: db.rak.lantai berisi lantai, db.rak.aktif lantai tampil. */
 const lantaiIni = () => db.rak.lantai[Math.min(db.rak.aktif || 0, db.rak.lantai.length - 1)]
   || { nama: "Lantai 1", lebar: 24, tinggi: 18, pintu: { sisi: "bawah", pos: 7 }, daftar: [] };
 const daftarRak = () => lantaiIni().daftar || [];
@@ -86,9 +80,7 @@ const tagBayar = (o) => (o.lunas
   ? `<span class="tag lunas">Lunas${o.staff ? " · " + o.staff : ""}</span>`
   : `<span class="tag belum">Belum dibayar</span>`);
 
-/* pindah status; stok hanya bergerak pada pesanan yang sudah lunas, jadi
-   pembatalan mengembalikan barang dan pengaktifan lagi mengambilnya kembali.
-   Hanya untuk toko aktif (pakai db.produk); mengembalikan true bila stok berubah. */
+/* Pindah status; stok ikut berubah hanya untuk pesanan lunas. */
 function ubahStatus(o, baru) {
   const dulu = o.status;
   if (dulu === baru) return false;
@@ -111,11 +103,10 @@ function ujiAlur() {
 const pesanKosong = (ikon, teks, tombol) =>
   `<p class="kosong"><span class="ikon" data-lucide="${ikon}"></span>${teks}${tombol ? `<a class="btn" href="${tombol[0]}">${tombol[1]}</a>` : ""}</p>`;
 
-/* foto produk */
-/* foto produk: utama dulu, lalu detail; bisa tautan atau unggahan */
+/* Foto produk: utama dulu, lalu detail. */
 const galeriProduk = (p) => [p && p.foto, ...((p && p.galeri) || [])].filter(Boolean);
 
-/* ikon cadangan saat foto kosong/gagal */
+/* Ikon cadangan saat foto kosong atau gagal. */
 const ikonCadangan = (p) => {
   const k = db.kategori.find((x) => x.id === (p && p.kategori));
   return `<span class="ikon foto-cadangan" data-lucide="${(k && k.lucide) || "package"}"></span>`;
@@ -129,8 +120,7 @@ const fotoHTML = (p) => {
   return `${ikonCadangan(p)}<img src="${utama}" alt="${alt}" loading="lazy" onerror="this.remove()">`;
 };
 
-/* kartu produk: satu tautan menutup seluruh kartu, tombol keranjang jadi
-   <button> di atasnya (tautan tidak boleh memuat kontrol interaktif) */
+/* Kartu produk: satu tautan menutup kartu, tombol keranjang di atasnya. */
 const kartu = (p) => `<div class="pcard${p.stok ? "" : " habis"}">
   <div class="pimg">${jmlTerjual(p.id) ? `<span class="ptanda laris">Terlaris</span>` : ""}${p.diskon ? `<span class="ptanda diskon">−${p.diskon}%</span>` : ""}${fotoHTML(p)}${p.stok ? `<button class="belicepat" type="button" data-beli="${p.id}" aria-label="Tambah ${esc(p.nama)} ke keranjang"><span class="ikon" data-lucide="shopping-cart"></span></button>` : ""}</div>
   <div class="pbody">
@@ -142,8 +132,7 @@ const kartu = (p) => `<div class="pcard${p.stok ? "" : " habis"}">
   <a class="plink" href="produk.html?id=${p.id}"><span class="sr">Lihat ${esc(p.nama)}</span></a>
 </div>`;
 
-/* tombol cepat "+ keranjang" di kartu, delegasi global agar berlaku di
-   semua halaman yang memakai kartu (beranda, cari, produk serupa) */
+/* Delegasi klik tombol keranjang untuk semua halaman. */
 document.addEventListener("click", (e) => {
   const b = e.target.closest("[data-beli]");
   if (!b) return;
@@ -157,8 +146,7 @@ document.addEventListener("click", (e) => {
   notif(`${p.nama} masuk keranjang`, { href: "checkout.html", label: "Lihat Keranjang" });
 });
 
-/* notifikasi */
-/* satu elemen dipakai ulang */
+/* Notifikasi memakai ulang satu elemen. */
 function notif(teks, aksi) {
   let t = el("notif");
   if (!t) {
@@ -175,8 +163,7 @@ function notif(teks, aksi) {
   notif.waktu = setTimeout(() => t.classList.remove("tampil"), 2600);
 }
 
-/* dialog konfirmasi (pengganti confirm) */
-/* dipakai: if (!await konfirmasi(...)) return; */
+/* Dialog konfirmasi pengganti confirm. */
 function konfirmasi(judul, teks, labelYa = "Ya, Hapus") {
   return new Promise((jawab) => {
     const kotak = document.createElement("div");
@@ -200,8 +187,7 @@ function konfirmasi(judul, teks, labelYa = "Ya, Hapus") {
   });
 }
 
-/* baca & lihat gambar */
-/* berkas gambar → data URL yang diperkecil (untuk localStorage) */
+/* Berkas gambar jadi data URL kecil untuk localStorage. */
 function bacaGambar(berkas, maks = 800) {
   return new Promise((selesai, gagal) => {
     if (!berkas || !berkas.type.startsWith("image/")) return gagal(new Error("Bukan gambar"));
@@ -251,11 +237,7 @@ function lihatGambar(sumber, judul = "Bukti transfer") {
   kotak.hidden = false;
 }
 
-/* widget daftar */
-/* denah toko: kotak grid jadi alas, tiap rak digambar sesuai posisi & ukurannya.
-   jumlah = { kode: n } untuk rak yang berisi barang; aktif = kode rak tersorot;
-   piksel = ukuran satu kotak grid (kecilkan untuk denah mini);
-   sunting = true menambahkan titik ubah ukuran (dipakai halaman Tata Rak). */
+/* Gambar denah: jumlah per rak, rak aktif, ukuran kotak, dan mode sunting. */
 function denahToko(wadah, jumlah = {}, { klik = true, aktif = "", aktifArea = "", piksel = db.rak.grid, sunting = false, tab = false } = {}) {
   const g = Math.max(8, Math.round(+piksel || db.rak.grid));
   const L = lantaiIni();

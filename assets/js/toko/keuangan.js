@@ -1,7 +1,4 @@
-/* Keuangan, ringkasan uang toko:
-   pendapatan dihitung dari pesanan yang sudah lunas, piutang dari yang belum,
-   dan pengeluaran dicatat manual oleh admin. Dipakai bersama
-   staff/keuangan.html (hanya lihat) dan admin/keuangan.html (bisa mencatat). */
+/* Keuangan: pendapatan lunas, piutang belum, pengeluaran manual admin. */
 
 const pengeluaran = () => db.keuangan.pengeluaran || [];
 /* pesanan dibatalkan bukan uang masuk maupun piutang */
@@ -25,7 +22,7 @@ function gambarStats() {
     <div><span class="ikon" data-lucide="trending-up"></span><b class="hijau">${rp(totalPendapatan())}</b><span>Pendapatan (pesanan lunas)</span></div>
     <div><span class="ikon" data-lucide="clock"></span><b>${rp(totalPiutang())}</b><span>Piutang (belum lunas)</span></div>
     <div><span class="ikon" data-lucide="trending-down"></span><b>${rp(keluar)}</b><span>Pengeluaran tercatat</span></div>
-    <div><span class="ikon" data-lucide="wallet"></span><b class="${laba < 0 ? "merah" : "hijau"}">${rp(laba)}</b><span>Laba bersih</span></div>`);
+    <div><span class="ikon" data-lucide="wallet"></span><b class="${laba < 0 ? "merah" : "hijau"}">${rp(laba)}</b><span>Selisih pemasukan dan pengeluaran tercatat</span></div>`);
 }
 
 /* grafik batang 6 bulan terakhir */
@@ -155,7 +152,7 @@ if (db.akun.role === "admin") {
       tabel.push([x.tanggal, "Keluar", x.kategori || "Lain-lain", x.keterangan, +x.jumlah || 0]));
     tabel.push([], ["", "Ringkasan", "", "Pendapatan", totalPendapatan()]);
     tabel.push(["", "Ringkasan", "", "Pengeluaran", totalKeluar()]);
-    tabel.push(["", "Ringkasan", "", "Laba bersih", totalPendapatan() - totalKeluar()]);
+    tabel.push(["", "Ringkasan", "", "Selisih pemasukan dan pengeluaran tercatat", totalPendapatan() - totalKeluar()]);
 
     /* pemisah ";" (Excel id-ID) + BOM agar karakter pembaca langsung benar */
     const csv = "\ufeff" + tabel

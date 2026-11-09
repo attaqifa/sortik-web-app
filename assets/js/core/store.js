@@ -7,10 +7,7 @@ const peran = FOLDER[(location.pathname.match(/\/(user|staff|admin)\//) || [])[1
 /* semua toko (untuk jelajah pembeli); db.toko tetap toko yang sedang aktif */
 let semuaToko = [];
 
-/* penyimpanan: seluruh db ditulis ke localStorage ----------
-   Halaman tetap memakai pola lama: ubah db[k] di memori, lalu simpan(k).
-   db.toko menyimpan satu toko aktif; sebelum ditulis, toko itu dikembalikan
-   ke koleksi db asli agar perubahan toko lain tidak hilang. */
+/* Simpan seluruh db ke localStorage; toko aktif dikembalikan ke koleksi asli dulu. */
 const simpan = (k) => tulis();
 
 /* tulis db ke penyimpanan; perbaikan(asli) boleh mengubah toko lain lebih dulu */
@@ -31,8 +28,7 @@ function tulis(perbaikan) {
   return Promise.resolve(true);
 }
 
-/* simpan satu pesanan milik toko yang sedang tidak aktif (halaman Pesanan
-   pembeli menampilkan pesanan dari semua toko) */
+/* Simpan pesanan milik toko yang sedang tidak aktif. */
 const simpanPesanan = (o) => tulis((asli) => {
   const t = asli.toko.find((x) => x.id === (o.toko || db.aktifToko));
   const i = t && (t.pesanan || []).findIndex((x) => x.id === o.id);
@@ -40,8 +36,7 @@ const simpanPesanan = (o) => tulis((asli) => {
 });
 /* localStorage juga memuat keranjang belanja (status sementara per browser). */
 
-/* toko aktif: admin memilih di antara toko miliknya (pemilik), staff dikunci
-   ke akun.toko, pembeli memilih sendiri, null = belum punya/memilih toko */
+/* Toko aktif: admin pemilik, staff terkunci, pembeli pilih sendiri. */
 function tokoAktif(profil, data) {
   if (profil.role === "admin") {
     const punya = data.toko.filter((t) => t.pemilik === profil.id);
@@ -76,8 +71,7 @@ async function muatData() {
     db.akun = { ...profil, peran };
   }
 
-  /* tanpa toko: pembeli → Jelajah, staff → Pilih Toko, admin → Kelola Toko.
-     Fitur di dalam toko tidak bisa dibuka sebelum toko dipilih/ditambahkan. */
+  /* Tanpa toko: pembeli ke Jelajah, staff ke Pilih Toko, admin ke Kelola Toko. */
   const toko = tokoAktif(db.akun, data);
   if (!toko) {
     const halaman = location.pathname.split("/").pop();
@@ -102,9 +96,7 @@ async function muatData() {
   db.keuangan = toko.keuangan || { pengeluaran: [] };
 }
 
-/* { produk: id, jumlah } hanya keranjang sementara, bukan sumber data bisnis.
-   Keranjang disimpan per toko: id produk bisa sama di toko berbeda, dan
-   isinya tetap ada walau tokonya sedang tidak dibuka. */
+/* Keranjang sementara per toko, bukan sumber data bisnis. */
 const kunciKeranjang = (id) => VERSI + "keranjang" + (id ? ":" + id : "");
 const keranjang = [];
 const bacaKeranjang = (tokoId) => {

@@ -1,6 +1,4 @@
-/* SORTIK, mesin kelola: daftar + form tambah/ubah + hapus.
-   kolom = [[field, label, jenis, opsi]]; jenis: text|angka|email|pilih|area|foto|galeri.
-   baru(data) boleh null untuk menolak; cek(item) mengembalikan pesan penolakan. */
+/* Mesin daftar + form tambah/ubah/hapus. */
 
 function kelola({ wadah, kunci, nama, kolom, baris, kode = "", petunjuk = "Cari...", cari, urut, baru, cek, chips, siapkan, hanya }) {
   el(wadah).innerHTML = `<div class="formblok" id="${wadah}-blok" hidden>
@@ -37,7 +35,6 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
             <input id="${id}" data-foto="${f}" type="file" accept="image/*">
             <button class="btn danger" type="button" data-hapusfoto="${f}" hidden>Hapus foto</button>
           </div>
-          <span class="petunjuk">Tempel tautan gambar dari internet, atau unggah berkas JPG/PNG (otomatis diperkecil).</span>
         </div>
       </div>`
         : jenis === "galeri" ? `<div class="medangaleri">
@@ -48,7 +45,6 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
             <button class="btn" type="button" data-tambahgaleri="${f}">+ Tambah dari tautan</button>
             <input id="${id}" data-galeri="${f}" type="file" accept="image/*" multiple>
           </div>
-          <span class="petunjuk">Boleh beberapa foto: tempel tautan lalu klik tambah, atau pilih beberapa berkas sekaligus.</span>
         </div>
       </div>`
           : `<input id="${id}" data-f="${f}" type="${TIPE[jenis] || "text"}">`;
@@ -117,8 +113,7 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
     });
     const pertama = el(`${wadah}-${kolom[0][0]}`);
     if (!data[kolom[0][0]]) return pertama.focus();
-    /* hook siapkan(data, lama): ubah isi sebelum disimpan (mis. hash sandi);
-       kembalikan null untuk membatalkan simpan */
+    /* hook siapkan: ubah data sebelum simpan; null membatalkan. */
     const siap = siapkan ? await siapkan(data, ubah) : data;
     if (!siap) return;
     let baris = ubah;

@@ -1,10 +1,4 @@
-/* Tata rak (staff & admin), atur denah toko multi-lantai & pindahkan barang antar rak.
-   Lantai bisa ditambah / dihapus / dinamai ulang; luasnya diubah lewat kotak isian
-   atau dengan menarik titik di pojok kanan bawah papan; arah pintu masuk tiap
-   lantai diputar lewat daftar pilihan atau digeser langsung di tepi papan.
-   Ada mode atur (rak bisa diseret) dan mode lihat (denah beku, rak bisa diklik),
-   zoom (tombol maupun Ctrl+gulir) serta geser papan dengan menarik area kosong.
-   Rak selalu menempel ke grid, tidak keluar lantai, dan tidak boleh saling menimpa. */
+/* Tata rak: denah multi-lantai, geser/ubah rak, pintu, zoom, dan urungkan. */
 
 let sel = "";      /* kode rak terpilih */
 let selArea = "";  /* id blok/halangan terpilih */
@@ -51,11 +45,9 @@ function gambar() {
     <label>Luas <input type="number" id="lebarLantai" value="${L.lebar}" min="${lebarMin(L)}" max="200" ${atur ? "" : "disabled"}> ×
     <input type="number" id="tinggiLantai" value="${L.tinggi}" min="${tinggiMin(L)}" max="200" ${atur ? "" : "disabled"}> kotak</label>
     <label>Pintu masuk <select id="sisiPintu" ${atur ? "" : "disabled"}>${["bawah", "atas", "kiri", "kanan"].map((s) =>
-    `<option${L.pintu.sisi === s ? " selected" : ""}>${s}</option>`).join("")}</select></label>
-    <span class="petunjuk">Pintu juga bisa digeser langsung di tepi papan.</span>`);
+    `<option${L.pintu.sisi === s ? " selected" : ""}>${s}</option>`).join("")}</select></label>`);
 
-  isi("info", `${db.produk.length} barang · ${L.daftar.length} rak & ${(L.area || []).length} blok di ${esc(L.nama)} · ${db.rak.lantai.length} lantai · zoom ${Math.round(zum * 100)}%.
-    ${atur ? "Tarik rak/blok untuk menatanya; klik untuk mengaturnya." : "Mode lihat, klik rak untuk melihat isinya."}`);
+  isi("info", `${db.produk.length} barang · ${L.daftar.length} rak & ${(L.area || []).length} blok di ${esc(L.nama)} · ${db.rak.lantai.length} lantai · zoom ${Math.round(zum * 100)}%.`);
 
   el("modeAtur").textContent = atur ? "Mode atur" : "Mode lihat";
   el("modeAtur").classList.toggle("on", atur);
@@ -76,8 +68,7 @@ function gambar() {
     isi("panelIsi", `<label class="barisnama">Nama blok
       <input type="text" data-namaarea value="${esc(a.nama)}" maxlength="24" list="contohBlok"
         placeholder="mis. Bagian kasir, Lift, Tembok"></label>
-      <datalist id="contohBlok">${CONTOH_BLOK.map((n) => `<option value="${n}">`).join("")}</datalist>
-      <p class="petunjuk">Rak tidak boleh ditaruh menimpa blok ini. Nama boleh dikosongkan, bloknya tetap terlihat sebagai halangan.</p>`);
+      <datalist id="contohBlok">${CONTOH_BLOK.map((n) => `<option value="${n}">`).join("")}</datalist>`);
     return;
   }
 
@@ -124,10 +115,7 @@ el("panel").addEventListener("change", (e) => {
   }
 });
 
-/* urungkan ----------
-   Sebelum denah berubah, keadaan lamanya disimpan dulu (maks. 50 langkah).
-   Urungkan memasang kembali keadaan yang paling baru tersimpan, termasuk
-   perubahan lantai: tambah/hapus/nama/luas/posisi pintu. */
+/* Urungkan: simpan keadaan lama sebelum denah berubah (maks. 50 langkah). */
 const riwayat = [];
 const potret = () => JSON.stringify({ grid: db.rak.grid, aktif: db.rak.aktif, lantai: db.rak.lantai });
 const dorong = (s) => { riwayat.push(s); if (riwayat.length > 50) riwayat.shift(); el("urungkan").disabled = false; };
@@ -337,8 +325,7 @@ el("denah").addEventListener("pointercancel", () => {
   gambar();
 });
 
-/* tempat kosong (dipakai rak & blok) ----------
-   Tidak boleh menimpa rak, blok/halangan, dan tidak keluar lantai. */
+/* Tempat kosong dipakai rak dan blok; tidak boleh menimpa atau keluar lantai. */
 function tempatKosong(w, h) {
   const L = lantaiIni();
   const ambil = (x, y) => ({ x, y, w, h });
@@ -365,8 +352,7 @@ el("modeAtur").onclick = () => {
     : "Mode lihat: denah beku, rak hanya bisa diklik untuk dilihat.");
 };
 
-/* zoom ----------
-   mengubah ukuran kotak di layar saja; susunan rak (satuan kotak) tidak tersentuh */
+/* Zoom hanya mengubah ukuran layar, bukan susunan rak. */
 function zumKe(i) {
   const iBaru = Math.max(0, Math.min(DAFTAR_ZUM.length - 1, i));
   if (iBaru === zumI) return;

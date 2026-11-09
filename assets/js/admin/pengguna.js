@@ -1,5 +1,4 @@
-/* Tim Staff, admin mengelola staff toko yang sedang aktif.
-   Hanya akun berperan staff milik toko ini yang tampil. */
+/* Tim Staff: kelola staff milik toko aktif. */
 
 kelola({
   wadah: "kelola",

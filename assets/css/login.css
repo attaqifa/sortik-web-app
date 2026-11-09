@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap");
 
 /* SORTIK, gaya halaman masuk (flat, tanpa gradasi) */
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -18,7 +18,7 @@
 }
 
 body {
-  font-family: "Inter", system-ui, "Segoe UI", Arial, sans-serif;
+  font-family: "Roboto", system-ui, "Segoe UI", Arial, sans-serif;
   font-size: 15px;
   color: var(--tinta);
   background: #f5f7fb;
@@ -36,13 +36,11 @@ button:disabled, [aria-disabled="true"], select:disabled { cursor: not-allowed; 
   flex: 0 0 37%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   gap: 32px;
   padding: 40px 44px;
   color: #fff;
   text-align: center;
-  /* foto toko + lapisan biru tua agar teks putih tetap terbaca
-     (login.css ada di assets/css/ → jalur gambar relatif: ../img/) */
+  /* Lapisan biru tua agar teks putih tetap terbaca di atas foto. */
   background:
     linear-gradient(rgba(17, 42, 108, .68), rgba(17, 42, 108, .68)),
     url("../img/LoginBackground.png") center / cover no-repeat var(--biru);
@@ -53,18 +51,14 @@ button:disabled, [aria-disabled="true"], select:disabled { cursor: not-allowed; 
 .brand .brandlogo { display: block; width: 56px; height: 56px; object-fit: contain; margin: 0 auto 14px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.25)); }
 .brand p { margin-top: 8px; font-size: 13px; letter-spacing: .6px; opacity: .8; }
 
-/* pesan galat & kotak akun demo */
+/* pesan galat */
 .galat { margin-top: 4px; padding: 10px 14px; font-size: 13px; color: #b91c1c; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; }
-.demo { margin-top: 16px; font-size: 12.5px; color: var(--tinta-3); }
-.demo summary { cursor: pointer; font-weight: 600; color: var(--tinta-2); user-select: none; }
-.demo summary:hover { color: var(--biru-tua); }
-.demo ul { margin: 8px 0 0 18px; display: grid; gap: 4px; }
 
+/* brand di atas; pesan utama di tengah sisa ruang (margin auto = 0 saat panel setinggi isi di HP) */
+.hero { margin: auto 0; }
 .hero h2 { font-size: clamp(30px, 3vw, 42px); margin-bottom: 18px; }
 .hero h2 span { color: #bfdbfe; }
 .hero p { max-width: 320px; margin: 0 auto; font-weight: 600; line-height: 1.55; opacity: .92; }
-
-.promo footer { font-size: 13px; opacity: .65; }
 
 .promo {
   position: sticky;
@@ -83,7 +77,7 @@ button:disabled, [aria-disabled="true"], select:disabled { cursor: not-allowed; 
 }
 
 .form > * { max-width: 515px; width: 100%; margin-inline: auto; }
-.form h2 { font-size: 27px; }
+.form h2 { font-size: 27px; margin-bottom: 20px; }
 .form > p { color: var(--tinta-3); margin-block: 8px 20px; }
 
 /* kartu pilihan peran */
@@ -116,8 +110,7 @@ button:disabled, [aria-disabled="true"], select:disabled { cursor: not-allowed; 
 .roles input:checked + label span { color: var(--biru-tua); }
 .roles input:focus-visible + label, .roles label:has(input:focus-visible) { outline: 2px solid var(--biru); outline-offset: 2px; }
 
-/* field + tombol; tautan masuk <-> daftar
-   (input sandi dibungkus .sandi, pakai selektor keturunan, bukan anak langsung) */
+/* Input sandi dibungkus .sandi, jadi pakai selektor keturunan. */
 .form form > label { display: block; margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--tinta-3); }
 .form form input {
   width: 100%;
@@ -199,9 +192,6 @@ button:disabled, [aria-disabled="true"], select:disabled { cursor: not-allowed; 
 
 /* dua kartu peran (admin & staff) */
 .roles.dua { grid-template-columns: repeat(2, 1fr); }
-
-/* catatan di bawah formulir daftar */
-.demo b { color: var(--tinta-2); }
 
 /* responsif */
 @media (max-width: 900px) {

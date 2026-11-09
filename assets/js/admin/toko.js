@@ -1,5 +1,4 @@
-/* Kelola Toko, daftar toko milik admin dan tambah toko.
-   Toko aktif pindah lewat tombol "Pindah ke toko ini" (disimpan di sesi). */
+/* Kelola Toko: daftar toko admin dan tambah toko. */
 
 const milikSaya = () => semuaToko.filter((t) => t.pemilik === db.akun.id);
 const jumlahStaff = (id) => db.pengguna.filter((u) => u.role === "staff" && u.toko === id).length;

@@ -1,7 +1,4 @@
-/* Akun, profil, foto, dan kata sandi. Dipakai pembeli, staff, dan admin
-   (halaman akun.html di masing-masing folder; peran menentukan detail).
-   Perubahan hanya menyangkut AKUN PRIBADI: nama/telepon/alamat/avatar
-   disimpan ke baris akun di database lokal. Avatar hanya dari foto. */
+/* Profil akun pribadi; avatar hanya dari foto. */
 
 const u = db.akun;
 let avatar = u.avatar || "";
