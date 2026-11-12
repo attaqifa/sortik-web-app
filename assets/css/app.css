@@ -1,6 +1,7 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
-/* Gaya aplikasi: flat, kartu bergaris, bayangan hanya untuk elemen melayang. */
+/* SORTIK, gaya aplikasi. Flat & ringan: kartu ber-garis,
+   bayangan hanya untuk elemen melayang. */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 /* token desain */
@@ -41,7 +42,7 @@
 }
 
 body {
-  font-family: "Roboto", system-ui, "Segoe UI", Arial, sans-serif;
+  font-family: "Inter", system-ui, "Segoe UI", Arial, sans-serif;
   font-size: 15px;
   color: var(--tinta);
   background: var(--latar);
@@ -110,8 +111,10 @@ main::-webkit-scrollbar-thumb { background: #d3dbe8; background-clip: content-bo
 main > * { max-width: 1180px; margin-left: auto; margin-right: auto; }
 
 .head h1 { font-size: 27px; letter-spacing: -.3px; }
+.head p { margin-top: 3px; font-size: 14px; color: var(--tinta-3); }
 
-/* Panel sambutan harian; bisa ditutup sampai besok. */
+/* panel sambutan, satu baris ringkas: sapaan di kiri, aksi di kanan;
+   bisa ditutup dengan tombol × (sambutan harian, tampil lagi besok) */
 .hello {
   position: relative;
   display: flex;
@@ -353,7 +356,8 @@ button.prak:focus-visible { outline: 2px solid var(--biru); outline-offset: 2px;
 span.prak { cursor: default; }
 span.prak:hover { background: var(--sorot); border-color: #e2e6ee; }
 
-/* Mode sunting: touch-action hanya di rak, papan tetap bisa digulir. */
+/* mode sunting (halaman Tata Rak): rak bisa diseret tetikus & sentuhan.
+   touch-action: none hanya di rak, area kosong papan tetap bisa digulir. */
 .papan.sunting { user-select: none; }
 .papan.sunting .prak { cursor: grab; touch-action: none; }
 
@@ -464,7 +468,8 @@ span.parea { cursor: default; }
 .parea.geser, .parea.tabrak { transition: none; }
 .parea.tabrak { color: var(--merah); border-color: #fca5a5; background: repeating-linear-gradient(45deg, var(--merah-muda) 0 7px, #fecaca 7px 14px); }
 
-/* Warna rak per kategori; 3 kelas agar menang atas hover span.prak. */
+/* warna rak per kategori barangnya (8 warna, berputar).
+   3 kelas (.prak.ada.katN) → menang atas span.prak:hover di halaman pengunjung */
 .prak.ada.kat0 { background: #ffedd5; border: 1px solid #fdba74; color: #9a3412; }
 .prak.ada.kat1 { background: var(--hijau-muda); border: 1px solid #86efac; color: var(--hijau); }
 .prak.ada.kat2 { background: #f3e8ff; border: 1px solid #d8b4fe; color: #6b21a8; }
@@ -965,6 +970,7 @@ input[type="file"]::file-selector-button:hover { background: #e2ecff; border-col
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
+/* improvement tampilan pembeli */
 /* notif bisa memuat tautan aksi (mis. "Lihat Keranjang") */
 #notif a { margin-left: 4px; padding-left: 10px; color: #93c5fd; border-left: 1px solid rgba(255,255,255,.3); }
 

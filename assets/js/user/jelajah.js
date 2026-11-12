@@ -1,6 +1,7 @@
 /* Jelajah toko, pembeli memilih toko yang akan dikunjungi. */
 
-/* Kota diambil dari alamat setelah koma terakhir. */
+/* kota diambil dari bagian alamat setelah koma terakhir; tanpa itu tidak ada
+   yang bisa diurutkan, jadi tokonya masuk satu kelompok "kota belum diisi" */
 const kotaToko = (t) => (t.alamat || "").split(",").pop().trim() || "Kota belum diisi";
 /* sama dengan terlaris produk: pesanan batal tidak dihitung */
 const unitToko = (t) => (t.pesanan || []).reduce((n, o) => n + (bukanBatal(o) ? o.jumlah : 0), 0);

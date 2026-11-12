@@ -80,7 +80,8 @@ const rekap = [...Array(6)].map((_, i) => {
 });
 const puncak = Math.max(1, ...rekap.map((v) => v.nilai));
 
-/* Grafik batang: biru sudah dibayar, kuning belum. */
+/* grafik batang (komponen sama dengan halaman Keuangan) ----------
+   biru = sudah dibayar, kuning = belum dibayar */
 (function gambarGrafik() {
   const maks = Math.max(1, ...rekap.map((v) => v.lunas + v.belum));
   isi("grafik", rekap.map((v) => `<div class="kolom">

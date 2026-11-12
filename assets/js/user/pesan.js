@@ -1,4 +1,6 @@
-/* Pesanan dan riwayat dari semua toko. */
+/* Pesanan & riwayat, dipakai pesan.html dan riwayat.html (body[data-status]).
+   Daftar ini gabungan semua toko, jadi satu pembeli tetap melihat seluruh
+   pesannya walau sedang membuka toko lain. */
 
 const AMBIL = { ambil: "Ambil di Tempat", antar: "Antar ke Alamat" };
 const mode = document.body.dataset.status || "";
@@ -27,7 +29,9 @@ const rincian = (o) => {
   const n = ALUR.indexOf(o.status);
   const transfer = o.bayar === "Transfer ke admin";
   return `<a class="back" href="#">← Kembali ke daftar</a>
-  ${o.status === BATAL ? "" : `<ol class="steps">${ALUR.map((s, i) => `<li data-n="${i + 1}"${i <= n ? ' class="on"' : ""}>${s}</li>`).join("")}</ol>`}
+  ${o.status === BATAL
+    ? `<p class="note"><b>Pesanan ini dibatalkan.</b> Barisnya tidak dihapus, hanya statusnya yang berubah.</p>`
+    : `<ol class="steps">${ALUR.map((s, i) => `<li data-n="${i + 1}"${i <= n ? ' class="on"' : ""}>${s}</li>`).join("")}</ol>`}
   <div class="produk-ringkas">
     <button class="foto" type="button" data-fotoproduk="${o.id}" title="Perbesar foto produk">${fotoHTML(p)}</button>
     <div class="ket">

@@ -1,4 +1,5 @@
-/* Kelola pesanan staff dan admin. */
+/* Kelola pesanan, konfirmasi bayar, lihat bukti transfer, ubah status.
+   Bersama: dipakai staff/pesanan.html dan admin/pesanan.html. */
 
 /* ?status= preset filter (dipakai kartu Perlu Tindakan) */
 let status = new URLSearchParams(location.search).get("status") || "";
@@ -82,12 +83,11 @@ el("list").addEventListener("click", (e) => {
   if (!b.dataset.lunas) return;
   const o = db.pesanan.find((x) => x.id === +b.dataset.lunas);
   if (!o) return;
-  const p = produkById(o.produk);
-  if (!p.id || p.stok < o.jumlah) return notif("Stok tidak cukup untuk mengonfirmasi pembayaran.");
   o.lunas = true;
   o.staff = db.akun.nama;
   if (o.status === "Menunggu") o.status = "Diproses";
   /* stok keluar saat pembayaran sah; pembatalan pesanan lunas mengembalikannya */
+  const p = produkById(o.produk);
   if (p.id) { p.stok = Math.max(0, p.stok - o.jumlah); simpan("produk"); }
   simpan("pesanan");
   notif(`Pembayaran dikonfirmasi, stok ${p.nama || "barang"} −${o.jumlah}`);
@@ -101,18 +101,6 @@ el("list").addEventListener("change", (e) => {
   const o = db.pesanan.find((x) => x.id === +pilih.dataset.status);
   if (!o) return;
   const baru = pilih.value;
-  if (o.status === BATAL || o.status === "Selesai") {
-    notif("Pesanan yang sudah selesai atau dibatalkan tidak dapat diubah.");
-    return daftar();
-  }
-  if (baru === BATAL && o.lunas) {
-    notif("Pesanan lunas tidak dapat dibatalkan sebelum pengembalian dana ditangani.");
-    return daftar();
-  }
-  if (baru !== BATAL && (ALUR.indexOf(baru) !== ALUR.indexOf(o.status) + 1 || (baru === "Selesai" && !o.lunas))) {
-    notif("Ikuti urutan status dan pastikan pembayaran lunas sebelum menyelesaikan pesanan.");
-    return daftar();
-  }
   const stokBerubah = ubahStatus(o, baru);
   if (stokBerubah) simpan("produk");
   simpan("pesanan");

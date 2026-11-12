@@ -99,7 +99,8 @@ function sesuaikanStok() {
   render();
   kabarTokoLain();
   notif(`Jumlah disesuaikan dengan stok: ${kurang.join(", ")}.`);
-  /* shortcut: stok dicek saat submit, tidak dikunci; staff menolak lewat Kelola Pesanan. */
+  /* shortcut: stok dicek saat submit, tidak dikunci; dua pembeli tetap bisa
+     memesan unit terakhir yang sama dan staff yang menolak lewat Kelola Pesanan. */
   return false;
 }
 

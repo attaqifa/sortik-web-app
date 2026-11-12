@@ -15,6 +15,7 @@
   <main>
     <header class="head">
       <h1>Kelola Toko</h1>
+      <p>Toko milik Anda: profil, staff, dan pesanan</p>
     </header>
 
     <section class="card">
@@ -24,6 +25,7 @@
 
     <section class="card" id="kartuBukaToko">
       <h2>Buka toko baru</h2>
+      <p class="petunjuk">Nama toko wajib diisi. Logo, foto, dan rekening boleh dikosongkan lalu dilengkapi kapan saja lewat Pengaturan Toko.</p>
       <form class="form" id="formToko">
         <div><label class="lbl" for="n-nama">Nama toko</label><input type="text" id="n-nama" required placeholder="Contoh: Elektronik Maju Jaya"></div>
         <div><label class="lbl" for="n-jam">Jam operasional</label><input type="text" id="n-jam" placeholder="Senin–Sabtu, 09.00–20.00"></div>
@@ -36,6 +38,7 @@
             <div class="pratinjau-logo" id="n-logoPratinjau"></div>
             <div class="pilihfoto">
               <input type="file" id="n-logo" accept="image/*">
+              <span class="petunjuk">Tampil di sidebar admin dan staff. Tanpa logo, dipakai logo SORTIK.</span>
               <button class="btn" id="n-logoHapus" type="button" hidden>Hapus logo</button>
             </div>
           </div>
@@ -47,6 +50,7 @@
             <div class="pilihfoto">
               <input type="file" id="n-foto" accept="image/*">
               <input type="text" id="n-fotoUrl" placeholder="atau tempel tautan gambar https://...">
+              <span class="petunjuk">Sampul kartu toko di halaman Jelajah Toko yang dilihat pembeli.</span>
               <button class="btn" id="n-fotoHapus" type="button" hidden>Hapus foto</button>
             </div>
           </div>

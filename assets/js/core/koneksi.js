@@ -1,8 +1,17 @@
-/* Database lokal di localStorage; reset dan akun contoh ada di CATATAN-DEV.md. */
+/* SORTIK, database lokal.
+   Seluruh data (kategori, toko, rak, produk, pesanan, pengguna, pesan,
+   keuangan) disimpan di localStorage browser, tidak ada server sama sekali.
+   Perubahan bertahan antar muat halaman; data hanya ada di browser ini.
+
+   Reset data awal: jalankan localStorage.removeItem("sortik-db") di Console,
+   lalu muat ulang halaman.
+   Masuk: email salah satu akun contoh di DATA_AWAL (kata sandi bebas,
+   tidak dipakai di mode lokal). */
 
 const KUNCI_DB = "sortik-db";
 const KUNCI_SESI = "sortik-sesi";
-/* Toko aktif: pembeli pilih sendiri, admin pilih miliknya, staff terkunci. */
+/* toko yang sedang dikunjungi/dikelola (pembeli pilih sendiri, admin pilih
+   di antara toko miliknya, staff dikunci oleh akun.toko) */
 const KUNCI_TOKO = "sortik2:toko";
 
 /* foto contoh: tautan Unsplash, stabil, https, bebas hotlink */
@@ -35,7 +44,8 @@ const RAK_AWAL = () => ({
 });
 
 /* data awal (dipakai saat pertama kali / setelah reset) */
-/* Setiap toko punya koleksi sendiri; admin/staff terikat lewat u.toko. */
+/* Setiap toko punya kategori, rak, produk, pesanan, pesan, dan keuangannya
+   sendiri; pengguna admin/staff terikat ke satu toko lewat u.toko. */
 const DATA_AWAL = () => ({
   toko: [
     {
@@ -150,7 +160,8 @@ const rapikanDB = (d) => {
     t.kategori = t.kategori || KATEGORI_AWAL();
     t.rak = t.rak || RAK_AWAL();
     t.produk = (t.produk || []).map((p) => ({ ...p, galeri: Array.isArray(p.galeri) ? p.galeri : [] }));
-    /* Simpan asal toko dan ongkir untuk pesanan lama. */
+    /* pesanan: toko asalnya (id produk & pesanan bisa sama di toko lain) dan
+       ongkir yang dulu tidak pernah disimpan untuk pengiriman antar */
     t.pesanan = (t.pesanan || []).map((o) => ({
       ...o, toko: t.id,
       ongkir: o.ongkir != null ? o.ongkir : (o.cara === "antar" ? +t.ongkir || 0 : 0)
@@ -195,7 +206,9 @@ const bacaToko = () => localStorage.getItem(KUNCI_TOKO);
 const simpanToko = (id) => id ? localStorage.setItem(KUNCI_TOKO, id) : localStorage.removeItem(KUNCI_TOKO);
 const tokoDari = (d, id) => (d.toko || []).find((t) => t.id === id) || null;
 
-/* shortcut: hash browser bukan pengaman server; ganti saat ada backend. */
+/* hash kata sandi mode lokal: SHA-256 bila origin aman, cadangan FNV-1a.
+   shortcut: hash di sisi browser, bukan pengaman server, cukup untuk data
+   localStorage satu browser; ganti dengan auth server saat ada backend. */
 async function hashSandi(sandi) {
   const t = new TextEncoder().encode("sortik:" + sandi);
   if (crypto.subtle) {
@@ -207,7 +220,8 @@ async function hashSandi(sandi) {
   return "fnv" + h.toString(16);
 }
 
-/* Akun lama tanpa sandi menerima sandi apa pun. */
+/* masuk: email harus terdaftar; akun lama tanpa sandi menerima sandi apa pun
+   sampai admin memasang sandi baru dari Kelola Pengguna. */
 const masukLokal = async (email, sandi = "") => {
   const d = muatDB();
   const u = (d.pengguna || []).find((r) => String(r.email || "").toLowerCase() === String(email).toLowerCase());
@@ -220,7 +234,8 @@ const masukLokal = async (email, sandi = "") => {
   return { data: u, error: null };
 };
 
-/* Daftar hanya untuk pembeli/admin; akun staff dibuat admin. */
+/* daftar: peran pembeli, staff, atau admin, semua tanpa toko dulu
+   (admin membuka tokonya dari halaman Kelola Toko; staff memilih toko sendiri) */
 const daftarLokal = async (email, nama, sandi, peran = "pembeli") => {
   const d = muatDB();
   email = String(email || "").toLowerCase();
@@ -241,7 +256,8 @@ const daftarLokal = async (email, nama, sandi, peran = "pembeli") => {
   return { data: u, error: null };
 };
 
-/* Tambah toko oleh admin, langsung jadi toko aktif. */
+/* tambah toko baru, hanya admin yang sedang masuk; pemilik = akun itu,
+   langsung dijadikan toko aktif (dipakai halaman Kelola Toko) */
 const tambahToko = async ({ nama, alamat, jam, wa, ongkir, logo = "", foto = "", rekening = [] }) => {
   const d = muatDB();
   if (!String(nama || "").trim()) return { data: null, error: "Nama toko wajib diisi." };
