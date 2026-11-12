@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/jpeg" href="../assets/img/SortikLogo.jpeg">
-  <title>Masuk · SORTIK</title>
+  <title>Masuk — SORTIK</title>
   <link rel="stylesheet" href="../assets/css/login.css">
 </head>
 <body>
@@ -12,9 +12,8 @@
 
   <aside class="promo">
     <div class="brand">
-      <img class="brandlogo" src="../assets/img/SortikLogo.jpeg" alt="Logo SORTIK">
       <h1>SORTIK</h1>
-      <p>Sistem Sortir &amp; Katalog Elektronik untuk Toko</p>
+      <p>Sistem Sortir &amp; Katalog Elektronik</p>
     </div>
 
     <div class="hero">
@@ -22,16 +21,25 @@
       <p>Temukan produk lebih cepat, kelola rak lebih rapi, dan pantau operasional toko dalam satu sistem terpadu.</p>
     </div>
 
-    <footer>
-      <b>Tim Rak</b> · Development
-    </footer>
+    <footer><b>Tim Rak</b><br>Development</footer>
   </aside>
 
   <section class="form">
     <h2>Masuk ke akun</h2>
-    <p>Masukkan email dan kata sandi Anda.</p>
+    <p>Pilih role lalu masukkan kredensial Anda.</p>
 
     <form method="post" action="#">
+      <div class="roles">
+        <input type="radio" name="role" id="pembeli" value="pembeli" checked>
+        <label for="pembeli"><span class="ikon" data-lucide="user-round"></span><span>Pembeli</span></label>
+
+        <input type="radio" name="role" id="staff" value="staff">
+        <label for="staff"><span class="ikon" data-lucide="package"></span><span>Staff Toko</span></label>
+
+        <input type="radio" name="role" id="admin" value="admin">
+        <label for="admin"><span class="ikon" data-lucide="shield-check"></span><span>Admin Toko</span></label>
+      </div>
+
       <label for="email">Email</label>
       <input type="email" id="email" name="email" required placeholder="Masukkan email...">
 
@@ -47,13 +55,11 @@
 
     </form>
 
-    <p class="demo">Isi halaman ini adalah data contoh mode lokal, bukan data nyata. Akun contoh: <b>admin@sortik.id</b>, <b>staff@sortik.id</b>, <b>budi@sortik.id</b>. Kata sandi bebas untuk akun contoh yang belum punya sandi.</p>
-
-    <p class="switch">Belum punya akun? <a href="daftar.html">Daftar</a> · <a href="buka-toko.html">Punya toko?</a></p>
+    <p class="switch">Belum punya akun? <a href="daftar.html">Daftar</a></p>
   </section>
 
 </main>
-<script src="../assets/vendor/lucide.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script src="../assets/js/core/koneksi.js"></script>
 <script src="../assets/js/core/data.js"></script>
 <script src="../assets/js/login.js"></script>

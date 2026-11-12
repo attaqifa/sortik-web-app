@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/jpeg" href="../assets/img/SortikLogo.jpeg">
-  <title>Pengaturan Toko · SORTIK</title>
+  <title>Pengaturan Toko — SORTIK</title>
   <link rel="stylesheet" href="../assets/css/app.css">
 </head>
 <body>
@@ -15,7 +15,7 @@
   <main>
     <header class="head">
       <h1>Pengaturan Toko</h1>
-      <p>Data toko dan rekening pembayaran, ubah langsung dari sini</p>
+      <p>Data toko dan rekening pembayaran — ubah langsung dari sini</p>
     </header>
 
     <!-- profil toko: dipakai halaman checkout & deskripsi produk pembeli -->
@@ -23,12 +23,12 @@
       <h2>Profil &amp; Pembayaran</h2>
       <div class="form">
         <div class="full">
-          <label class="lbl" for="t-logo">Logo perusahaan</label>
+          <label class="lbl">Logo perusahaan</label>
           <div class="branding">
             <div class="pratinjau-logo" id="logoPratinjau"></div>
             <div class="pilihfoto">
               <input type="file" id="t-logo" accept="image/*">
-              <span class="petunjuk">Tampil di sidebar admin &amp; staff, tanpa logo, memakai logo SORTIK</span>
+              <span class="petunjuk">Tampil di sidebar admin &amp; staff, diganti "with SORTIK" di sebelah nama perusahaan</span>
               <button class="btn" id="t-logoHapus" type="button">Hapus logo</button>
             </div>
           </div>
@@ -39,21 +39,9 @@
         <div><label class="lbl" for="t-ongkir">Ongkir dalam kota (Rp)</label><input type="number" id="t-ongkir" min="0" step="1000"></div>
         <div class="full"><label class="lbl" for="t-alamat">Alamat</label><input type="text" id="t-alamat"></div>
         <div class="full">
-          <label class="lbl" for="t-foto">Foto toko</label>
-          <div class="branding">
-            <div class="pratinjau-logo" id="fotoPratinjau"></div>
-            <div class="pilihfoto">
-              <input type="file" id="t-foto" accept="image/*">
-              <input type="text" id="t-fotoUrl" placeholder="…atau tempel tautan gambar https://…">
-              <span class="petunjuk">Sampul di kartu toko pada halaman Jelajah Toko, yang dilihat pembeli saat memilih toko.</span>
-              <button class="btn" id="t-fotoHapus" type="button">Hapus foto</button>
-            </div>
-          </div>
-        </div>
-        <div class="full">
           <label class="lbl" for="t-rek">Rekening pembayaran</label>
           <textarea id="t-rek" rows="3"></textarea>
-          <span class="petunjuk">Satu rekening per baris, format: Bank | Nomor | Atas Nama</span>
+          <span class="petunjuk">Satu rekening per baris — format: Bank | Nomor | Atas Nama</span>
         </div>
         <div class="btns full">
           <button class="primary" id="t-simpan" type="button">Simpan Pengaturan</button>

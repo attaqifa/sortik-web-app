@@ -1,4 +1,4 @@
-/* Cari produk & rak, filter kata kunci, kategori, dan denah rak. */
+/* Cari produk & rak — filter kata kunci, kategori, dan denah rak. */
 
 const state = {
   q: "",
@@ -25,13 +25,13 @@ function render() {
   isi("hasil", `${hasil.length} dari ${db.produk.length} produk${state.rak ? ` di rak ${labelRak(state.rak)}` : ""}`);
   isi("produk", daftar.length ? daftar.map(kartu).join("") : pesanKosong("search-x", "Produk tidak ditemukan. Coba kata kunci, kategori, atau rak lain.", ["index.html", "Kembali ke Beranda"]));
 
-  /* baris filter aktif: × melepas satu, Reset semua */
+  /* baris filter aktif: ✕ melepas satu, Reset semua */
   const nameKat = state.kat === "promo" ? "Sedang Diskon"
     : (db.kategori.find((k) => k.id === state.kat) || {}).nama || state.kat;
   isi("filter", (state.kat || state.rak)
     ? `<span>Filter aktif:</span>
-      ${state.kat ? `<button type="button" class="chipx" data-lepas="kat">${nameKat} <b>×</b></button>` : ""}
-      ${state.rak ? `<button type="button" class="chipx" data-lepas="rak">Rak ${state.rak} <b>×</b></button>` : ""}
+      ${state.kat ? `<button type="button" class="chipx" data-lepas="kat">${nameKat} <b>✕</b></button>` : ""}
+      ${state.rak ? `<button type="button" class="chipx" data-lepas="rak">Rak ${state.rak} <b>✕</b></button>` : ""}
       <button type="button" class="btn" data-reset>Reset</button>`
     : "");
 
@@ -41,7 +41,7 @@ function render() {
     const h = jumlah[p.rak] = jumlah[p.rak] || { n: 0, kategori: p.kategori };
     h.n++;
   });
-  /* rak hasil cari mungkin di lantai lain, tampilkan lantai tempat rak terpilih */
+  /* rak hasil cari mungkin di lantai lain — tampilkan lantai tempat rak terpilih */
   if (state.rak) { const i = lantaiDari(state.rak); if (i >= 0) db.rak.aktif = i; }
   /* denah mini: kotak grid lebih kecil, rak berisi hasil cari ikut tersorot,
      ada tab lantai bila tokonya beberapa lantai */
@@ -51,7 +51,7 @@ function render() {
 el("filter").addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
-  /* atribut kosong itu falsy, bandingkan dengan != null */
+  /* atribut kosong itu falsy — bandingkan dengan != null */
   if (b.dataset.reset != null) { state.kat = ""; state.rak = ""; }
   else if (b.dataset.lepas) state[b.dataset.lepas] = "";
   else return;

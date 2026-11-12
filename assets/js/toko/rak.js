@@ -1,4 +1,4 @@
-/* Tata rak (staff & admin), atur denah toko multi-lantai & pindahkan barang antar rak.
+/* Tata rak (staff & admin) — atur denah toko multi-lantai & pindahkan barang antar rak.
    Lantai bisa ditambah / dihapus / dinamai ulang; luasnya diubah lewat kotak isian
    atau dengan menarik titik di pojok kanan bawah papan; arah pintu masuk tiap
    lantai diputar lewat daftar pilihan atau digeser langsung di tepi papan.
@@ -43,7 +43,7 @@ function gambar() {
   /* tab lantai milik editor: pindah lantai, hapus, dan tambah */
   isi("lantaiTab", db.rak.lantai.map((l, i) => `<span class="tab${i === db.rak.aktif ? " on" : ""}">
       <button type="button" data-ke="${i}" title="Tampilkan ${esc(l.nama)}">${esc(l.nama)}</button>
-      ${db.rak.lantai.length > 1 ? `<button type="button" class="x" data-hapuslantai="${i}" title="Hapus ${esc(l.nama)}">×</button>` : ""}
+      ${db.rak.lantai.length > 1 ? `<button type="button" class="x" data-hapuslantai="${i}" title="Hapus ${esc(l.nama)}">✕</button>` : ""}
     </span>`).join("") + `<button type="button" class="tab tambah" data-tambahlantai title="Tambah lantai baru">＋ Lantai</button>`);
 
   /* pengaturan lantai aktif: nama, luas, arah pintu masuk */
@@ -55,9 +55,9 @@ function gambar() {
     <span class="petunjuk">Pintu juga bisa digeser langsung di tepi papan.</span>`);
 
   isi("info", `${db.produk.length} barang · ${L.daftar.length} rak & ${(L.area || []).length} blok di ${esc(L.nama)} · ${db.rak.lantai.length} lantai · zoom ${Math.round(zum * 100)}%.
-    ${atur ? "Tarik rak/blok untuk menatanya; klik untuk mengaturnya." : "Mode lihat, klik rak untuk melihat isinya."}`);
+    ${atur ? "Tarik rak/blok untuk menatanya; klik untuk mengaturnya." : "Mode lihat — klik rak untuk melihat isinya."}`);
 
-  el("modeAtur").textContent = atur ? "Mode atur" : "Mode lihat";
+  el("modeAtur").textContent = atur ? "✏ Mode atur" : "👁 Mode lihat";
   el("modeAtur").classList.toggle("on", atur);
   el("zumNilai").textContent = Math.round(zum * 100) + "%";
 
@@ -72,18 +72,18 @@ function gambar() {
   if (selArea) {
     const a = (L.area || []).find((x) => x.id === selArea);
     if (!a) { selArea = ""; return; }
-    isi("panelJudul", `Blok ${a.nama ? ": " + esc(a.nama) : "(tanpa nama)"}`);
+    isi("panelJudul", `Blok ${a.nama ? "— " + esc(a.nama) : "(tanpa nama)"}`);
     isi("panelIsi", `<label class="barisnama">Nama blok
       <input type="text" data-namaarea value="${esc(a.nama)}" maxlength="24" list="contohBlok"
         placeholder="mis. Bagian kasir, Lift, Tembok"></label>
       <datalist id="contohBlok">${CONTOH_BLOK.map((n) => `<option value="${n}">`).join("")}</datalist>
-      <p class="petunjuk">Rak tidak boleh ditaruh menimpa blok ini. Nama boleh dikosongkan, bloknya tetap terlihat sebagai halangan.</p>`);
+      <p class="petunjuk">Rak tidak boleh ditaruh menimpa blok ini. Nama boleh dikosongkan — bloknya tetap terlihat sebagai halangan.</p>`);
     return;
   }
 
   if (!sel) return;
   const daftar = peta[sel] || [];
-  isi("panelJudul", `Rak ${sel}, ${daftar.length} barang`);
+  isi("panelJudul", `Rak ${sel} — ${daftar.length} barang`);
   isi("panelIsi", daftar.length ? daftar.map((p) => `<div class="row">
     <div class="thumb">${fotoHTML(p)}</div>
     <div><b>${p.nama}</b><span>${kat(p)} · ${rp(p.harga)} · stok ${p.stok}</span></div>
@@ -124,9 +124,9 @@ el("panel").addEventListener("change", (e) => {
   }
 });
 
-/* urungkan ----------
+/* ---------- urungkan ----------
    Sebelum denah berubah, keadaan lamanya disimpan dulu (maks. 50 langkah).
-   Urungkan memasang kembali keadaan yang paling baru tersimpan, termasuk
+   Urungkan memasang kembali keadaan yang paling baru tersimpan — termasuk
    perubahan lantai: tambah/hapus/nama/luas/posisi pintu. */
 const riwayat = [];
 const potret = () => JSON.stringify({ grid: db.rak.grid, aktif: db.rak.aktif, lantai: db.rak.lantai });
@@ -155,7 +155,7 @@ document.addEventListener("keydown", (e) => {
   if ((e.key === "Delete" || e.key === "Backspace") && (sel || selArea) && atur) { e.preventDefault(); el("hapusRak").click(); }
 });
 
-/* geser & ubah ukuran rak / blok */
+/* ---------- geser & ubah ukuran rak / blok ---------- */
 /* dua kotak saling menimpa? (kotak itu sendiri tidak dihitung) */
 const tumbuk = (a, b) => a !== b && a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 /* rak menimpa rak lain ATAU blok/halangan */
@@ -182,7 +182,7 @@ function tempat(elKotak, r, jenis) {
 let tarik = null; /* seretan yang sedang berjalan: rak / pintu / luas / papan */
 
 el("denah").addEventListener("pointerdown", (e) => {
-  /* mode lihat: tidak ada seretan, papan tetap bisa digulir seperti biasa */
+  /* mode lihat: tidak ada seretan — papan tetap bisa digulir seperti biasa */
   if (!atur) return;
 
   const elPintu = e.target.closest(".ppintu");
@@ -222,8 +222,8 @@ el("denah").addEventListener("pointerdown", (e) => {
     jenis, r, elKotak,
     papan: elKotak.parentElement,
     ukur: !!e.target.closest(".ukur"), /* pegang titik pojok = ubah ukuran */
-    asal: { ...r },   /* posisi awal, dipasang kembali bila hasilnya menimpa */
-    potret: pot,      /* denah sebelum berubah, untuk urungkan */
+    asal: { ...r },   /* posisi awal — dipasang kembali bila hasilnya menimpa */
+    potret: pot,      /* denah sebelum berubah — untuk urungkan */
     geser: false,
     ofsX: e.clientX - kot.left, /* titik pegang: kotak mengikuti dari titik ini */
     ofsY: e.clientY - kot.top
@@ -301,7 +301,7 @@ el("denah").addEventListener("pointerup", () => {
 
   /* rak / blok */
   t.elKotak.classList.remove("geser");
-  if (!t.geser) return; /* klik biasa, dikerjakan listener click */
+  if (!t.geser) return; /* klik biasa — dikerjakan listener click */
   baruGeser = true;
   setTimeout(() => (baruGeser = false)); /* click menyusul sebelum timer ini */
   const { jenis, r, asal } = t;
@@ -311,8 +311,8 @@ el("denah").addEventListener("pointerup", () => {
     Object.assign(r, asal);
     gambar();
     notif(jenis === "area"
-      ? "Blok tidak boleh menimpa rak atau blok lain, posisi dikembalikan."
-      : "Rak tidak boleh menimpa rak atau blok, posisi dikembalikan.");
+      ? "Blok tidak boleh menimpa rak atau blok lain — posisi dikembalikan."
+      : "Rak tidak boleh menimpa rak atau blok — posisi dikembalikan.");
   } else if (berubah) {
     dorong(t.potret);
     simpan("rak");
@@ -320,7 +320,7 @@ el("denah").addEventListener("pointerup", () => {
   }
 });
 
-/* seretan batal di tengah jalan (mis. notifikasi HP masuk), kembalikan keadaan awal */
+/* seretan batal di tengah jalan (mis. notifikasi HP masuk) — kembalikan keadaan awal */
 el("denah").addEventListener("pointercancel", () => {
   if (!tarik) return;
   const t = tarik;
@@ -337,7 +337,7 @@ el("denah").addEventListener("pointercancel", () => {
   gambar();
 });
 
-/* tempat kosong (dipakai rak & blok) ----------
+/* ---------- tempat kosong (dipakai rak & blok) ----------
    Tidak boleh menimpa rak, blok/halangan, dan tidak keluar lantai. */
 function tempatKosong(w, h) {
   const L = lantaiIni();
@@ -356,21 +356,21 @@ function idBlokBaru(L) {
   return "b" + i;
 }
 
-/* mode atur / lihat */
+/* ---------- mode atur / lihat ---------- */
 el("modeAtur").onclick = () => {
   atur = !atur;
   gambar();
   notif(atur
     ? "Mode atur: rak bisa digeser, luas & pintu lantai bisa diubah."
-    : "Mode lihat: denah beku, rak hanya bisa diklik untuk dilihat.");
+    : "Mode lihat: denah beku — rak hanya bisa diklik untuk dilihat.");
 };
 
-/* zoom ----------
+/* ---------- zoom ----------
    mengubah ukuran kotak di layar saja; susunan rak (satuan kotak) tidak tersentuh */
 function zumKe(i) {
   const iBaru = Math.max(0, Math.min(DAFTAR_ZUM.length - 1, i));
   if (iBaru === zumI) return;
-  const lama = zum; /* zoom lama, untuk mengunci titik tengah layar */
+  const lama = zum; /* zoom lama — untuk mengunci titik tengah layar */
   zum = DAFTAR_ZUM[iBaru];
   zumI = iBaru;
   /* pertahankan titik tengah layar setelah denah digambar ulang */
@@ -402,12 +402,12 @@ el("denah").addEventListener("wheel", (e) => {
   zumKe(zumI + (e.deltaY < 0 ? 1 : -1));
 }, { passive: false });
 
-/* tab lantai: pindah, hapus, tambah */
+/* ---------- tab lantai: pindah, hapus, tambah ---------- */
 el("lantaiTab").addEventListener("click", async (e) => {
   const b = e.target.closest("button");
   if (!b) return;
 
-  /* pindah lantai (tampilan saja, bukan perubahan data) */
+  /* pindah lantai (tampilan saja — bukan perubahan data) */
   if (b.dataset.ke != null) {
     if (+b.dataset.ke === db.rak.aktif) return;
     db.rak.aktif = +b.dataset.ke;
@@ -422,7 +422,7 @@ el("lantaiTab").addEventListener("click", async (e) => {
     const L = db.rak.lantai[i];
     const kode = L.daftar.map((r) => r.kode);
     if (db.produk.some((p) => kode.includes(p.rak)))
-      return notif(`${L.nama} masih berisi barang di raknya, pindahkan dulu barangnya.`);
+      return notif(`${L.nama} masih berisi barang di raknya — pindahkan dulu barangnya.`);
     if (!(await konfirmasi(`Hapus ${L.nama}?`, `${L.daftar.length} rak di lantai ini ikut terhapus.`))) return;
     dorong(potret());
     db.rak.lantai.splice(i, 1);
@@ -444,11 +444,11 @@ el("lantaiTab").addEventListener("click", async (e) => {
     sel = ""; selArea = "";
     simpan("rak");
     gambar();
-    notif(`${L.nama} ditambahkan, atur luasnya, letakkan pintu, lalu susun raknya.`);
+    notif(`${L.nama} ditambahkan — atur luasnya, letakkan pintu, lalu susun raknya.`);
   }
 });
 
-/* pengaturan lantai: nama, luas, pintu */
+/* ---------- pengaturan lantai: nama, luas, pintu ---------- */
 el("lantaiSet").addEventListener("change", (e) => {
   const L = lantaiIni();
   const awal = potret();
@@ -477,7 +477,7 @@ el("lantaiSet").addEventListener("change", (e) => {
   if (pesan) notif(pesan);
 });
 
-/* tambah & hapus rak */
+/* ---------- tambah & hapus rak ---------- */
 /* kode rak yang belum terpakai di lantai mana pun, dijajaki urut dari A1 sampai Z9 */
 function kodeRakBaru() {
   const terpakai = new Set(db.rak.lantai.flatMap((l) => (l.daftar || []).map((r) => r.kode)));
@@ -487,11 +487,11 @@ function kodeRakBaru() {
   return "RK" + terpakai.size;
 }
 
-/* tambah rak */
+/* ---------- tambah rak ---------- */
 el("tambahRak").onclick = () => {
   const L = lantaiIni();
   const t = tempatKosong(4, 2);
-  if (!t) return notif(`Tidak ada tempat kosong 4×2 di ${L.nama}, perluas luas lantai atau rapikan rak lain.`);
+  if (!t) return notif(`Tidak ada tempat kosong 4×2 di ${L.nama} — perluas luas lantai atau rapikan rak lain.`);
   dorong(potret());
   const r = { kode: kodeRakBaru(), w: 4, h: 2, ...t };
   L.daftar.push(r);
@@ -499,14 +499,14 @@ el("tambahRak").onclick = () => {
   selArea = "";
   simpan("rak");
   gambar();
-  notif(`Rak ${r.kode} ditambahkan di ${L.nama}, geser ke posisinya.`);
+  notif(`Rak ${r.kode} ditambahkan di ${L.nama} — geser ke posisinya.`);
 };
 
-/* tambah & hapus blok / halangan */
+/* ---------- tambah & hapus blok / halangan ---------- */
 el("tambahBlok").onclick = () => {
   const L = lantaiIni();
   const t = tempatKosong(4, 2);
-  if (!t) return notif(`Tidak ada tempat kosong 4×2 di ${L.nama}, perluas luas lantai.`);
+  if (!t) return notif(`Tidak ada tempat kosong 4×2 di ${L.nama} — perluas luas lantai.`);
   dorong(potret());
   const a = { id: idBlokBaru(L), nama: "", w: 4, h: 2, ...t };
   L.area.push(a);
@@ -514,7 +514,7 @@ el("tambahBlok").onclick = () => {
   sel = "";
   simpan("rak");
   gambar();
-  notif("Blok ditambahkan, beri namanya (mis. Bagian kasir, Lift, Tembok).");
+  notif("Blok ditambahkan — beri namanya (mis. Bagian kasir, Lift, Tembok).");
 };
 
 el("hapusRak").onclick = () => {
@@ -529,7 +529,7 @@ el("hapusRak").onclick = () => {
     return notif("Blok dihapus dari " + L.nama + ".");
   }
   if (!sel) return notif("Pilih dulu rak atau blok yang mau dihapus di denah.");
-  if (db.produk.some((p) => p.rak === sel)) return notif(`Rak ${sel} masih berisi barang, pindahkan dulu isinya.`);
+  if (db.produk.some((p) => p.rak === sel)) return notif(`Rak ${sel} masih berisi barang — pindahkan dulu isinya.`);
   if (L.daftar.length <= 1) return notif(`${L.nama} minimal harus punya satu rak.`);
   dorong(potret());
   L.daftar = L.daftar.filter((r) => r.kode !== sel);

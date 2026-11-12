@@ -1,37 +1,35 @@
-/* Kelola pesanan, konfirmasi bayar, lihat bukti transfer, ubah status.
+/* Kelola pesanan — konfirmasi bayar, lihat bukti transfer, ubah status.
    Bersama: dipakai staff/pesanan.html dan admin/pesanan.html. */
 
 /* ?status= preset filter (dipakai kartu Perlu Tindakan) */
 let status = new URLSearchParams(location.search).get("status") || "";
 
-/* hitungan chip: "belum dibayar" tidak boleh menghitung yang sudah dibatalkan */
-const jmlStatus = (s) => db.pesanan.filter((o) => (s === "belum" ? !o.lunas && bukanBatal(o) : o.status === s)).length;
+const jmlStatus = (s) => db.pesanan.filter((o) => (s === "belum" ? !o.lunas : o.status === s)).length;
 
 const baris = (o) => {
   const p = produkById(o.produk);
   /* cek stok: kurang dari jumlah yang diminta = merah (jangan dipromes) */
   const kurang = p.stok != null && p.stok < o.jumlah;
-  const batal = o.status === BATAL;
   return `<div class="row">
     <button class="thumb" type="button" data-foto="${o.id}" title="Perbesar foto barang">${fotoHTML(p)}</button>
     <div>
       <b>${p.nama || "-"}</b>
       <span>${kodePesanan(o)} · ${o.pembeli || "-"} · ${tglID(o.tanggal)}</span>
-      <span>${o.jumlah} unit · ${rp(nilaiPesanan(o))}${o.ongkir ? " (termasuk ongkir)" : ""} · ${o.cara === "antar" ? "Antar ke " + (o.alamat || "-") : "Ambil di tempat"}</span>
+      <span>${o.jumlah} unit · ${rp(nilaiPesanan(o))} · ${o.cara === "antar" ? "Antar ke " + (o.alamat || "-") : "Ambil di tempat"}</span>
       <div class="rowinfo">
         ${tagStatus(o.status)}
         ${p.rak ? `<span class="tag ikonnya biru" title="Lokasi rak barang ini"><span class="ikon" data-lucide="warehouse"></span>Rak ${esc(labelRak(p.rak))}</span>` : ""}
-        ${p.stok != null && !batal ? `<span class="tag ikonnya ${kurang ? "habis" : "abu"}" title="${kurang ? "Stok tidak cukup, jangan dipromes dulu" : "Sisa stok barang ini"}"><span class="ikon" data-lucide="boxes"></span>Stok ${p.stok}${kurang ? `, kurang dari ${o.jumlah} unit` : " tersisa"}</span>` : ""}
+        ${p.stok != null ? `<span class="tag ikonnya ${kurang ? "habis" : "abu"}" title="${kurang ? "Stok tidak cukup — jangan dipromes dulu" : "Sisa stok barang ini"}"><span class="ikon" data-lucide="boxes"></span>Stok ${p.stok}${kurang ? ` — kurang dari ${o.jumlah} unit` : " tersisa"}</span>` : ""}
         ${tagBayar(o)}
         ${o.bukti
           ? `<button class="btn bukti" type="button" data-bukti="${o.id}"><span class="ikon" data-lucide="receipt"></span>Lihat bukti transfer</button>`
-          : !o.lunas && o.bayar === "Transfer ke admin" && !batal ? `<span class="tag belum">Belum ada bukti</span>` : ""}
+          : !o.lunas && o.bayar === "Transfer ke admin" ? `<span class="tag belum">Belum ada bukti</span>` : ""}
       </div>
     </div>
     <div class="btns">
-      ${o.lunas || batal ? "" : `<button class="btn" type="button" data-lunas="${o.id}">${o.bayar === "Bayar di kasir" ? "Tandai Dibayar" : "Konfirmasi Transfer"}</button>`}
+      ${o.lunas ? "" : `<button class="btn" type="button" data-lunas="${o.id}">${o.bayar === "Bayar di kasir" ? "Tandai Dibayar" : "Konfirmasi Transfer"}</button>`}
       <select class="statuspilih" data-status="${o.id}" title="Ubah status pesanan" aria-label="Ubah status pesanan">
-        ${[...ALUR, BATAL].map((s) => `<option value="${s}"${s === o.status ? " selected" : ""}>${s}</option>`).join("")}
+        ${ALUR.map((s) => `<option value="${s}"${s === o.status ? " selected" : ""}>${s}</option>`).join("")}
       </select>
     </div>
   </div>`;
@@ -39,9 +37,9 @@ const baris = (o) => {
 
 function daftar() {
   const hasil = db.pesanan
-    .filter((o) => !status || (status === "belum" ? !o.lunas && bukanBatal(o) : o.status === status))
+    .filter((o) => !status || (status === "belum" ? !o.lunas : o.status === status))
     .sort((a, b) => b.tanggal.localeCompare(a.tanggal));
-  const belum = hasil.filter((o) => !o.lunas && bukanBatal(o)).length;
+  const belum = hasil.filter((o) => !o.lunas).length;
   isi("hasil", `${hasil.length} pesanan${belum ? ` · ${belum} belum dibayar` : " · semua sudah dibayar"}`);
   isi("list", hasil.length ? hasil.map(baris).join("")
     : pesanKosong(status === "belum" ? "credit-card" : "receipt",
@@ -50,10 +48,8 @@ function daftar() {
 }
 
 /* label chip: ikon status + hitungan */
-const OPSI_CHIP = () => [["", "Semua"], ...ALUR.map((s) => [s, s]), [BATAL, BATAL], ["belum", "Belum dibayar"]];
-
 function segarChip() {
-  const label = OPSI_CHIP();
+  const label = [["", "Semua"], ...ALUR.map((s) => [s, s]), ["belum", "Belum dibayar"]];
   el("chips").querySelectorAll("button").forEach((b, i) => {
     const [nilai, teks] = label[i];
     const ikon = nilai === "belum" ? '<span class="ikon" data-lucide="credit-card"></span>' : nilai ? ikonStatus(nilai) : "";
@@ -62,7 +58,8 @@ function segarChip() {
   gambarIkon();
 }
 
-chipSaring("chips", OPSI_CHIP(), (v) => { status = v; daftar(); }, status);
+chipSaring("chips", [["", "Semua"], ...ALUR.map((s) => [s, s]), ["belum", "Belum dibayar"]],
+  (v) => { status = v; daftar(); }, status);
 
 el("list").addEventListener("click", (e) => {
   const b = e.target.closest("button");
@@ -86,11 +83,12 @@ el("list").addEventListener("click", (e) => {
   o.lunas = true;
   o.staff = db.akun.nama;
   if (o.status === "Menunggu") o.status = "Diproses";
-  /* stok keluar saat pembayaran sah; pembatalan pesanan lunas mengembalikannya */
+  /* stok otomatis: barang benar-benar keluar saat pembayaran sah —
+     (pembatalan hanya boleh sebelum lunas, jadi stok tidak perlu dikembalikan) */
   const p = produkById(o.produk);
   if (p.id) { p.stok = Math.max(0, p.stok - o.jumlah); simpan("produk"); }
   simpan("pesanan");
-  notif(`Pembayaran dikonfirmasi, stok ${p.nama || "barang"} −${o.jumlah}`);
+  notif(`Pembayaran dikonfirmasi — stok ${p.nama || "barang"} −${o.jumlah}`);
   daftar();
 });
 
@@ -100,11 +98,9 @@ el("list").addEventListener("change", (e) => {
   if (!pilih) return;
   const o = db.pesanan.find((x) => x.id === +pilih.dataset.status);
   if (!o) return;
-  const baru = pilih.value;
-  const stokBerubah = ubahStatus(o, baru);
-  if (stokBerubah) simpan("produk");
+  o.status = pilih.value;
   simpan("pesanan");
-  notif(`${kodePesanan(o)} → ${baru}${stokBerubah ? ", stok disesuaikan" : ""}`);
+  notif(`${kodePesanan(o)} → ${o.status}`);
   daftar();
 });
 

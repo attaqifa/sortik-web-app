@@ -1,6 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-
-/* SORTIK, gaya halaman masuk (flat, tanpa gradasi) */
+/* SORTIK — gaya halaman masuk (flat, tanpa gradasi) */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
@@ -10,7 +8,7 @@
   --biru-garis: #dbe6fd;
   --tinta: #111827;
   --tinta-2: #374151;
-  --tinta-3: #5b6674;  /* sama dengan app.css: lolos kontras AA */
+  --tinta-3: #6b7280;
   --garis: #e5e8ef;
   --bidang: #d7dce3;
   --fokus: 0 0 0 3px rgba(37, 99, 235, .15);
@@ -18,20 +16,15 @@
 }
 
 body {
-  font-family: "Inter", system-ui, "Segoe UI", Arial, sans-serif;
-  font-size: 15px;
+  font-family: system-ui, "Segoe UI", Arial, sans-serif;
   color: var(--tinta);
   background: #f5f7fb;
   -webkit-font-smoothing: antialiased;
 }
 
-.wrap { display: flex; min-height: 100svh; }
+.wrap { display: flex; min-height: 100vh; }
 
-/* kursor: satu aturan dasar untuk semua kontrol aktif dan nonaktif */
-a[href], button, summary, select, label[for], [role="button"] { cursor: pointer; }
-button:disabled, [aria-disabled="true"], select:disabled { cursor: not-allowed; }
-
-/* panel kiri */
+/* ---------- panel kiri ---------- */
 .promo {
   flex: 0 0 37%;
   display: flex;
@@ -69,11 +62,11 @@ button:disabled, [aria-disabled="true"], select:disabled { cursor: not-allowed; 
 .promo {
   position: sticky;
   top: 0;
-  height: 100svh;
+  height: 100vh;
   align-self: flex-start;
 }
 
-/* panel kanan */
+/* ---------- panel kanan ---------- */
 .form {
   flex: 1;
   display: flex;
@@ -83,19 +76,17 @@ button:disabled, [aria-disabled="true"], select:disabled { cursor: not-allowed; 
 }
 
 .form > * { max-width: 515px; width: 100%; margin-inline: auto; }
-.form h2 { font-size: 27px; }
-.form > p { color: var(--tinta-3); margin-block: 8px 20px; }
+.form h2 { font-size: 34px; }
+.form > p { color: var(--tinta-3); margin: 8px auto 20px; }
 
 /* kartu pilihan peran */
 .roles {
-  position: relative;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 14px;
   margin-bottom: 30px;
 }
-/* radio disembunyikan; selektor spesifik agar kalah dari .form form input */
-.roles input[type="radio"] { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; opacity: 0; }
+.roles input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .roles label {
   display: flex;
   flex-direction: column;
@@ -114,17 +105,16 @@ button:disabled, [aria-disabled="true"], select:disabled { cursor: not-allowed; 
 .roles input:checked + label { background: var(--biru-muda); border-color: var(--biru); }
 .roles input:checked + label .ikon { color: var(--biru); }
 .roles input:checked + label span { color: var(--biru-tua); }
-.roles input:focus-visible + label, .roles label:has(input:focus-visible) { outline: 2px solid var(--biru); outline-offset: 2px; }
+.roles input:focus-visible + label { outline: 2px solid var(--biru); outline-offset: 2px; }
 
 /* field + tombol; tautan masuk <-> daftar
-   (input sandi dibungkus .sandi, pakai selektor keturunan, bukan anak langsung) */
+   (input sandi dibungkus .sandi — pakai selektor keturunan, bukan anak langsung) */
 .form form > label { display: block; margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--tinta-3); }
 .form form input {
   width: 100%;
   margin-bottom: 22px;
-  padding: 11px 13px;
+  padding: 15px 18px;
   font: inherit;
-  font-size: 14px;
   background: #fff;
   border: 1px solid var(--bidang);
   border-radius: 12px;
@@ -134,10 +124,10 @@ button:disabled, [aria-disabled="true"], select:disabled { cursor: not-allowed; 
 
 .form button {
   width: 100%;
-  padding: 13px;
+  padding: 16px;
   font: inherit;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   color: #fff;
   background: var(--biru);
   border: 0;
@@ -171,41 +161,15 @@ button:disabled, [aria-disabled="true"], select:disabled { cursor: not-allowed; 
 /* kolom sandi */
 .sandi { position: relative; margin-bottom: 22px; }
 .sandi input { margin-bottom: 0; padding-right: 52px; }
-.sandi .lihat { position: absolute; top: 50%; right: 6px; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; color: var(--tinta-3); background: none; border: 0; border-radius: 9px; cursor: pointer; transform: translateY(-50%); transition: color var(--cepat), background var(--cepat); }
+.sandi .lihat { position: absolute; top: 35%; right: 6px; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; color: var(--tinta-3); background: none; border: 0; border-radius: 9px; cursor: pointer; transform: translateY(-50%); transition: color var(--cepat), background var(--cepat); }
 .sandi .lihat:hover { color: var(--biru); background: var(--biru-muda); }
 .sandi .lihat .ikon { width: 18px; height: 18px; }
 .sandi .lihat .tertutup, .sandi.terlihat .terbuka { display: none; }
 .sandi.terlihat .tertutup { display: block; }
 .sandi .kaps { position: absolute; left: 4px; bottom: -20px; font-size: 12px; font-weight: 600; color: #92400e; }
 
-/* pilih mode: Daftar / Masuk (halaman Punya Toko) */
-.modetabs { display: flex; gap: 10px; margin-bottom: 26px; }
-.modetabs button {
-  flex: 1;
-  padding: 13px;
-  font: inherit;
-  font-size: 14.5px;
-  font-weight: 700;
-  color: var(--tinta-3);
-  background: #fff;
-  border: 0;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background var(--cepat), color var(--cepat);
-}
-.modetabs button:hover { background: var(--biru-muda); }
-.modetabs button.on { background: var(--biru-garis); color: var(--biru-tua); }
-.modetabs button:focus-visible { outline: 2px solid var(--biru); outline-offset: 2px; }
-
-/* dua kartu peran (admin & staff) */
-.roles.dua { grid-template-columns: repeat(2, 1fr); }
-
-/* catatan di bawah formulir daftar */
-.demo b { color: var(--tinta-2); }
-
-/* responsif */
+/* ---------- responsif ---------- */
 @media (max-width: 900px) {
-  /* panel foto turun ke bawah; halaman masuk ikut urutan yang sama dengan halaman lain */
   .wrap { flex-direction: column; }
   .promo {
     position: static;
