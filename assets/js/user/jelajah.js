@@ -3,7 +3,7 @@
 /* Kota diambil dari alamat setelah koma terakhir. */
 const kotaToko = (t) => (t.alamat || "").split(",").pop().trim() || "Kota belum diisi";
 /* sama dengan terlaris produk: pesanan batal tidak dihitung */
-const unitToko = (t) => (t.pesanan || []).reduce((n, o) => n + (o.status === "Selesai" && o.lunas ? o.jumlah : 0), 0);
+const unitToko = (t) => (t.pesanan || []).reduce((n, o) => n + (bukanBatal(o) ? o.jumlah : 0), 0);
 console.assert(kotaToko({ alamat: "Jl. Merdeka No. 12, Malang" }) === "Malang"
   && kotaToko({ alamat: "" }) === "Kota belum diisi", "pembacaan kota toko salah");
 

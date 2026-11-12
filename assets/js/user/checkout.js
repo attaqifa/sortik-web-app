@@ -5,7 +5,7 @@ const state = { cara: "ambil", bayar: "Transfer ke admin" };
 const subtotal = () => keranjang.reduce((n, i) => n + hargaJual(produkById(i.produk)) * i.jumlah, 0);
 
 /* buang barang yang sudah tidak ada, batasi jumlah ke stok */
-keranjang.forEach((i) => (i.jumlah = Math.min(i.jumlah, stokTersedia(produkById(i.produk)))));
+keranjang.forEach((i) => (i.jumlah = Math.min(i.jumlah, produkById(i.produk).stok || 0)));
 const tersedia = keranjang.filter((i) => i.jumlah > 0);
 if (tersedia.length !== keranjang.length) {
   keranjang.length = 0;
@@ -15,11 +15,10 @@ simpanKeranjang();
 
 const item = (i) => {
   const p = produkById(i.produk);
-  const stok = stokTersedia(p);
-  const penuh = i.jumlah >= stok;
+  const penuh = i.jumlah >= (p.stok || 0);
   return `<div class="row">
     <div class="thumb">${fotoHTML(p)}</div>
-    <div><b>${p.nama}</b><span>${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""} · Rak ${p.rak}${penuh ? ` · <b class="maks">Maks ${stok} unit</b>` : ""}</span><b class="subbaris">${rp(hargaJual(p) * i.jumlah)}</b></div>
+    <div><b>${p.nama}</b><span>${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""} · Rak ${p.rak}${penuh ? ` · <b class="maks">Maks ${p.stok} unit</b>` : ""}</span><b class="subbaris">${rp(hargaJual(p) * i.jumlah)}</b></div>
     <div class="qty">
       <button type="button" data-kurang="${p.id}" aria-label="Kurangi jumlah">−</button><b>${i.jumlah}</b><button type="button" data-tambah="${p.id}" aria-label="Tambah jumlah"${penuh ? " disabled" : ""}>＋</button>
       <button type="button" class="x" data-hapus="${p.id}" title="Hapus" aria-label="Hapus dari keranjang">×</button>
@@ -62,7 +61,7 @@ el("items").addEventListener("click", (e) => {
   const id = +(b.dataset.tambah || b.dataset.kurang || b.dataset.hapus);
   const i = keranjang.find((x) => x.produk === id);
   if (b.dataset.hapus) keranjang.splice(keranjang.indexOf(i), 1);
-  else if (b.dataset.tambah) i.jumlah = Math.min(stokTersedia(produkById(id)), i.jumlah + 1);
+  else if (b.dataset.tambah) i.jumlah = Math.min(produkById(id).stok, i.jumlah + 1);
   else i.jumlah = Math.max(1, i.jumlah - 1);
   simpanKeranjang();
   render();
@@ -88,7 +87,7 @@ function sesuaikanStok() {
   const kurang = [];
   keranjang.forEach((i) => {
     const p = produkById(i.produk);
-    const stok = stokTersedia(p);
+    const stok = p.stok || 0;
     if (i.jumlah > stok) {
       kurang.push(`${p.nama || "barang"} ${stok ? "tinggal " + stok : "habis"}`);
       i.jumlah = stok;
@@ -100,6 +99,7 @@ function sesuaikanStok() {
   render();
   kabarTokoLain();
   notif(`Jumlah disesuaikan dengan stok: ${kurang.join(", ")}.`);
+  /* shortcut: stok dicek saat submit, tidak dikunci; staff menolak lewat Kelola Pesanan. */
   return false;
 }
 
@@ -123,7 +123,7 @@ el("buat").onclick = async () => {
 
   if (!db.akun.id) {
     notif("Masuk dulu dengan akun Anda untuk membuat pesanan.");
-    location.href = "../auth/login.html?kembali=checkout";
+    location.href = "../auth/login.html";
     return;
   }
 
@@ -137,8 +137,6 @@ el("buat").onclick = async () => {
     `${keranjang.reduce((n, i) => n + i.jumlah, 0)} item, total ${rp(subtotal() + ong)}`
     + (ong ? " (termasuk ongkir)." : "."), "Ya, Buat Pesanan");
   if (!yakin) return;
-  if (el("buat").disabled) return;
-  if (!sesuaikanStok()) return;
 
   /* id pesanan dibuat unik antar toko: satu pembeli bisa punya pesanan di banyak toko */
   const mulai = Math.max(0, ...semuaToko.flatMap((t) => t.pesanan || []).map((o) => o.id)) + 1;
@@ -168,8 +166,7 @@ el("buat").onclick = async () => {
   tombol.disabled = true;
   tombol.textContent = "Menyimpan pesanan…";
 
-  let tersimpan = false;
-  try { tersimpan = await simpan("pesanan"); } catch {}
+  const tersimpan = await simpan("pesanan");
   if (!tersimpan) {
     /* pembatalan: buang baris optimis agar tidak dobel saat dicoba lagi */
     db.pesanan = db.pesanan.filter((o) => !dibuat.includes(o));
@@ -182,7 +179,7 @@ el("buat").onclick = async () => {
   keranjang.length = 0;
   simpanKeranjang();
   /* ?baru=1 → notif sukses di pesan.html */
-  location.href = "pesan.html?id=" + dibuat[0].id + "&toko=" + encodeURIComponent(db.aktifToko) + "&baru=1";
+  location.href = "pesan.html?id=" + dibuat[0].id + "&baru=1";
 };
 
 render();

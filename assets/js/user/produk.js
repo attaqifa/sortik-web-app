@@ -3,9 +3,8 @@
 const p = produkById(+new URLSearchParams(location.search).get("id"));
 
 function gambar(p) {
-  const stok = stokTersedia(p);
-  const habis = stok < 1;
-  const tipis = stok > 0 && stok <= 3;
+  const habis = p.stok < 1;
+  const tipis = p.stok > 0 && p.stok <= 3;
   /* ikon cadangan tampil bila foto gagal (onerror) */
   const foto = (src) => `${ikonCadangan(p)}<img src="${src}" alt="${p.nama}" onerror="this.remove()">`;
 
@@ -34,7 +33,7 @@ function gambar(p) {
   <b class="harga">${rp(hargaJual(p))}${p.diskon ? `<s class="hargalama">${rp(p.harga)}</s>` : ""}</b>
 
   <div class="chipstat">
-    <span class="stok${habis ? " habis" : tipis ? " menipis" : ""}"><span class="ikon" data-lucide="${habis ? "triangle-alert" : tipis ? "triangle-alert" : "package"}"></span>${habis ? "Stok habis" : tipis ? `Stok tersedia ${stok} unit` : `Stok tersedia ${stok} unit`}</span>
+    <span class="stok${habis ? " habis" : tipis ? " menipis" : ""}"><span class="ikon" data-lucide="${habis ? "triangle-alert" : tipis ? "triangle-alert" : "package"}"></span>${habis ? "Stok habis" : tipis ? `Stok menipis, ${p.stok} unit` : `Stok ${p.stok} unit`}</span>
     ${p.diskon ? `<span class="promo"><span class="ikon" data-lucide="tag"></span>Diskon ${p.diskon}%, hemat ${rp(p.harga - hargaJual(p))}</span>` : ""}
     <a href="cari.html?rak=${encodeURIComponent(p.rak)}" title="Lihat produk di rak ini"><span class="ikon" data-lucide="warehouse"></span>Rak ${p.rak}</a>
     <a href="cari.html?kat=${p.kategori}" title="Lihat kategori ini"><span class="ikon" data-lucide="layout-grid"></span>${kat(p)}</a>
@@ -63,7 +62,7 @@ function gambar(p) {
   </div>`);
 
   let n = 1;
-  const batas = (v) => Math.max(1, Math.min(stok, v));
+  const batas = (v) => Math.max(1, Math.min(p.stok, v));
   /* jumlah & total beli berubah bersama */
   const tampil = () => {
     el("jumlah").textContent = n;

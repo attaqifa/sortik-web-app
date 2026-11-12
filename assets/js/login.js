@@ -76,30 +76,12 @@ document.querySelectorAll("form").forEach((f) => {
       return galat(`Email ini terdaftar sebagai ${PERAN_MASUK[profil.role] || profil.role}, pilih peran itu di atas.`, f);
     }
 
-    if (profil.role === "pembeli" && bacaToko() && new URLSearchParams(location.search).get("kembali") === "checkout") {
-      const kunciTamu = "sortik2:keranjang:" + bacaToko();
-      const kunciAkun = kunciTamu + ":akun:" + profil.id;
-      try {
-        const tamu = JSON.parse(localStorage.getItem(kunciTamu) || "[]");
-        const akun = JSON.parse(localStorage.getItem(kunciAkun) || "[]");
-        if (Array.isArray(tamu) && Array.isArray(akun) && tamu.length) {
-          tamu.forEach((barang) => {
-            const ada = akun.find((x) => x.produk === barang.produk);
-            if (ada) ada.jumlah += barang.jumlah;
-            else akun.push(barang);
-          });
-          localStorage.setItem(kunciAkun, JSON.stringify(akun));
-          localStorage.removeItem(kunciTamu);
-        }
-      } catch { galat("Keranjang pengunjung belum dapat digabungkan. Periksa penyimpanan browser.", f); return; }
-    }
-
     /* pembeli yang belum pernah memilih toko diarahkan ke Jelajah Toko */
     if (profil.role === "pembeli" && !bacaToko()) {
       location.href = "../user/jelajah.html";
       return;
     }
-    location.href = profil.role === "pembeli" && new URLSearchParams(location.search).get("kembali") === "checkout" ? "../user/checkout.html" : (TUJUAN[profil.role] || TUJUAN.pembeli);
+    location.href = TUJUAN[profil.role] || TUJUAN.pembeli;
   };
 });
 

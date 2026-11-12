@@ -2,7 +2,7 @@
 
 const pengeluaran = () => db.keuangan.pengeluaran || [];
 /* pesanan dibatalkan bukan uang masuk maupun piutang */
-const bayaran = () => db.pesanan.filter((o) => o.lunas && (bukanBatal(o) || o.refundPada));
+const bayaran = () => db.pesanan.filter((o) => o.lunas && bukanBatal(o));
 const totalPendapatan = () => bayaran().reduce((n, o) => n + nilaiPesanan(o), 0);
 const totalPiutang = () => db.pesanan.filter((o) => !o.lunas && bukanBatal(o)).reduce((n, o) => n + nilaiPesanan(o), 0);
 const totalKeluar = () => pengeluaran().reduce((n, x) => n + (+x.jumlah || 0), 0);
@@ -33,7 +33,7 @@ function gambarGrafik() {
     const kunci = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     return {
       label: bln[d.getMonth()],
-      p: bayaran().filter((o) => (o.dibayarPada || o.tanggal).startsWith(kunci)).reduce((n, o) => n + nilaiPesanan(o), 0),
+      p: bayaran().filter((o) => o.tanggal.startsWith(kunci)).reduce((n, o) => n + nilaiPesanan(o), 0),
       k: pengeluaran().filter((x) => String(x.tanggal).startsWith(kunci)).reduce((n, x) => n + (+x.jumlah || 0), 0)
     };
   });
@@ -59,13 +59,13 @@ function gambarKas() {
   /* gabungkan uang masuk (pesanan lunas) & keluar (pengeluaran), urut dari terbaru */
   const acara = [
     ...bayaran().map((o) => ({
-      tanggal: (o.dibayarPada || o.tanggal).slice(0, 10), masuk: true, kategori: "Pendapatan",
+      tanggal: o.tanggal, masuk: true, kategori: "Pendapatan",
       keterangan: `Pesanan ${kodePesanan(o)}, ${produkById(o.produk).nama || "barang"}`,
       jumlah: nilaiPesanan(o)
     })),
     ...pengeluaran().map((x) => ({
       tanggal: x.tanggal, masuk: false, id: x.id,
-      kategori: x.kategori || "Lain-lain", keterangan: x.keterangan, jumlah: +x.jumlah || 0, refund: !!x.refundPesanan
+      kategori: x.kategori || "Lain-lain", keterangan: x.keterangan, jumlah: +x.jumlah || 0
     }))
   ].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
 
@@ -75,7 +75,7 @@ function gambarKas() {
     <span class="ikas${a.masuk ? "" : " merah"}" title="${a.masuk ? "Uang masuk" : "Uang keluar"}">
       <span class="ikon" data-lucide="${a.masuk ? "arrow-down-left" : "arrow-up-right"}"></span></span>
     <div><b>${esc(a.keterangan)}</b><span>${tglID(a.tanggal)}</span>
-      <div class="rowinfo"><span class="tag ${a.masuk ? "biru" : "abu"}">${esc(a.kategori)}</span>${!a.masuk && !a.refund && db.akun.role === "admin" ? `<button class="btn" type="button" data-hapus="${a.id}" title="Hapus catatan ini"><span class="ikon" data-lucide="trash-2"></span>Hapus</button>` : ""}</div>
+      <div class="rowinfo"><span class="tag ${a.masuk ? "biru" : "abu"}">${esc(a.kategori)}</span>${!a.masuk && db.akun.role === "admin" ? `<button class="btn" type="button" data-hapus="${a.id}" title="Hapus catatan ini"><span class="ikon" data-lucide="trash-2"></span>Hapus</button>` : ""}</div>
     </div>
     <b>${a.masuk ? "+" : "−"} ${rp(a.jumlah)}</b>
   </div>`).join("");
@@ -104,7 +104,7 @@ if (db.akun.role === "admin") {
     </div>
   </div>`;
 
-  el("k-simpan").onclick = async () => {
+  el("k-simpan").onclick = () => {
     const tanggal = el("k-tanggal").value;
     const keterangan = el("k-ket").value.trim();
     const jumlah = +el("k-jumlah").value || 0;
@@ -114,9 +114,7 @@ if (db.akun.role === "admin") {
     const id = pengeluaran().reduce((m, x) => Math.max(m, x.id || 0), 0) + 1;
     db.keuangan.pengeluaran = pengeluaran();
     db.keuangan.pengeluaran.push({ id, tanggal, kategori: el("k-kategori").value.trim() || "Lain-lain", keterangan, jumlah });
-    let tersimpan = false;
-    try { tersimpan = await simpan("keuangan"); } catch {}
-    if (!tersimpan) { db.keuangan.pengeluaran.pop(); return; }
+    simpan("keuangan");
     el("k-ket").value = "";
     el("k-jumlah").value = "";
     el("k-info").textContent = "Tercatat, langsung masuk ke ringkasan & grafik.";
@@ -131,13 +129,9 @@ if (db.akun.role === "admin") {
     if (!b) return;
     const id = +b.dataset.hapus;
     const x = pengeluaran().find((p) => p.id === id) || {};
-    if (x.refundPesanan) return notif("Catatan pengembalian dana tidak dapat dihapus.");
     if (!(await konfirmasi("Hapus pengeluaran ini?", `"${x.keterangan}" (${rp(x.jumlah)}) hilang dari ringkasan.`))) return;
-    const sebelumnya = pengeluaran();
-    db.keuangan.pengeluaran = sebelumnya.filter((p) => p.id !== id);
-    let tersimpan = false;
-    try { tersimpan = await simpan("keuangan"); } catch {}
-    if (!tersimpan) { db.keuangan.pengeluaran = sebelumnya; return; }
+    db.keuangan.pengeluaran = pengeluaran().filter((p) => p.id !== id);
+    simpan("keuangan");
     segarkan();
     notif("Catatan pengeluaran dihapus.");
   });
@@ -153,7 +147,7 @@ if (db.akun.role === "admin") {
     /* tabel: uang masuk (pesanan lunas) + uang keluar (pengeluaran), lalu ringkasan */
     const tabel = [["Tanggal", "Jenis", "Kategori", "Keterangan", "Jumlah (Rp)"]];
     bayaran().forEach((o) =>
-      tabel.push([(o.dibayarPada || o.tanggal).slice(0, 10), "Masuk", "Pendapatan", `Pesanan ${kodePesanan(o)}, ${produkById(o.produk).nama || "barang"}`, nilaiPesanan(o)]));
+      tabel.push([o.tanggal, "Masuk", "Pendapatan", `Pesanan ${kodePesanan(o)}, ${produkById(o.produk).nama || "barang"}`, nilaiPesanan(o)]));
     pengeluaran().forEach((x) =>
       tabel.push([x.tanggal, "Keluar", x.kategori || "Lain-lain", x.keterangan, +x.jumlah || 0]));
     tabel.push([], ["", "Ringkasan", "", "Pendapatan", totalPendapatan()]);

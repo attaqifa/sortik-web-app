@@ -14,7 +14,7 @@ el("sapTutup").onclick = () => {
 
 const jalan = db.pesanan.filter(pesananJalan);
 const belumBayar = jalan.filter((o) => !o.lunas);
-const tipis = db.produk.filter((p) => p.stok > 0 && p.stok <= 3);
+const tipis = db.produk.filter((p) => p.stok <= 5);
 const terbaru = (daftar) => [...daftar].sort((a, b) => b.tanggal.localeCompare(a.tanggal)).slice(0, 5);
 
 isi("stats", [
@@ -50,7 +50,7 @@ isi("tipis", tipis.length ? tipis.map((p) => `<a class="row" href="produk.html?i
   <div class="thumb">${fotoHTML(p)}</div>
   <div><b>${p.nama}</b><span>${kat(p)} · Rak ${labelRak(p.rak)} · ${rp(p.harga)}</span></div>
   <em class="${p.stok ? "wait" : "done"}">stok ${p.stok}</em>
-</a>`).join("") : pesanKosong("package", "Tidak ada stok menipis."));
+</a>`).join("") : pesanKosong("package", "Semua stok di atas 5 unit."));
 
 const hitung = {};
 db.produk.forEach((p) => {

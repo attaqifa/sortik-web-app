@@ -40,7 +40,7 @@ const nilaiBarang = (o) => (o.harga != null ? o.harga : hargaJual(produkPesanan(
 /* shortcut: ongkir hanya di baris pertama; rapikan saat satu pesanan bisa banyak barang. */
 const nilaiPesanan = (o) => nilaiBarang(o) + (o.ongkir || 0);
 /* total unit terjual satu produk (dari seluruh pesanan), untuk badge/urutan Terlaris */
-const jmlTerjual = (id) => db.pesanan.reduce((n, o) => n + (o.status === "Selesai" && o.lunas && o.produk === id ? o.jumlah : 0), 0);
+const jmlTerjual = (id) => db.pesanan.reduce((n, o) => n + (bukanBatal(o) && o.produk === id ? o.jumlah : 0), 0);
 /* lantai & rak */
 /* Denah multi-lantai: db.rak.lantai berisi lantai, db.rak.aktif lantai tampil. */
 const lantaiIni = () => db.rak.lantai[Math.min(db.rak.aktif || 0, db.rak.lantai.length - 1)]
@@ -72,8 +72,6 @@ const BATAL = "Dibatalkan";
 const bukanBatal = (o) => o.status !== BATAL;
 /* pesanan yang masih perlu dipantau pembeli maupun staff */
 const pesananJalan = (o) => o.status !== "Selesai" && bukanBatal(o);
-const stokDipesan = (produk, pesanan = db.pesanan) => pesanan.reduce((n, o) => n + (o.produk === produk && !o.lunas && pesananJalan(o) ? o.jumlah : 0), 0);
-const stokTersedia = (p, pesanan = db.pesanan) => Math.max(0, (p.stok || 0) - stokDipesan(p.id, pesanan));
 /* ikon Lucide per status, penanda visual di daftar & chip */
 const IKON_STATUS = { Menunggu: "clock", Diproses: "loader", Siap: "package-check", Selesai: "circle-check", Dibatalkan: "ban" };
 const ikonStatus = (s) => `<span class="ikon" data-lucide="${IKON_STATUS[s] || "circle"}"></span>`;
@@ -123,13 +121,13 @@ const fotoHTML = (p) => {
 };
 
 /* Kartu produk: satu tautan menutup kartu, tombol keranjang di atasnya. */
-const kartu = (p) => `<div class="pcard${stokTersedia(p) ? "" : " habis"}">
-  <div class="pimg">${p.diskon ? `<span class="ptanda diskon">−${p.diskon}%</span>` : ""}${fotoHTML(p)}${stokTersedia(p) ? `<button class="belicepat" type="button" data-beli="${p.id}" aria-label="Tambah ${esc(p.nama)} ke keranjang"><span class="ikon" data-lucide="shopping-cart"></span></button>` : ""}</div>
+const kartu = (p) => `<div class="pcard${p.stok ? "" : " habis"}">
+  <div class="pimg">${jmlTerjual(p.id) ? `<span class="ptanda laris">Terlaris</span>` : ""}${p.diskon ? `<span class="ptanda diskon">−${p.diskon}%</span>` : ""}${fotoHTML(p)}${p.stok ? `<button class="belicepat" type="button" data-beli="${p.id}" aria-label="Tambah ${esc(p.nama)} ke keranjang"><span class="ikon" data-lucide="shopping-cart"></span></button>` : ""}</div>
   <div class="pbody">
     <span class="pcat">${kat(p)}</span>
     <h3>${esc(p.nama)}</h3>
     <b>${rp(hargaJual(p))}${p.diskon ? `<s class="hargalama">${rp(p.harga)}</s>` : ""}</b>
-    <span class="pstok${stokTersedia(p) ? "" : " habis"}">${stokTersedia(p) ? `Stok tersedia ${stokTersedia(p)} · <span class="koderak">${esc(labelRak(p.rak))}</span>` : "Stok habis"}</span>
+    <span class="pstok${p.stok ? "" : " habis"}">${p.stok ? `Stok ${p.stok} · <span class="koderak">${esc(labelRak(p.rak))}</span>` : "Stok habis"}</span>
   </div>
   <a class="plink" href="produk.html?id=${p.id}"><span class="sr">Lihat ${esc(p.nama)}</span></a>
 </div>`;
@@ -140,9 +138,9 @@ document.addEventListener("click", (e) => {
   if (!b) return;
   e.preventDefault();
   const p = produkById(+b.dataset.beli);
-  if (!p || !stokTersedia(p)) return;
+  if (!p || !p.stok) return;
   const item = keranjang.find((i) => i.produk === p.id);
-  if (item) item.jumlah = Math.min(stokTersedia(p), item.jumlah + 1);
+  if (item) item.jumlah = Math.min(p.stok, item.jumlah + 1);
   else keranjang.push({ produk: p.id, jumlah: 1 });
   simpanKeranjang();
   notif(`${p.nama} masuk keranjang`, { href: "checkout.html", label: "Lihat Keranjang" });

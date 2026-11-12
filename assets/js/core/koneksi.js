@@ -178,9 +178,7 @@ const rapikanDB = (d) => {
 };
 const muatDB = () => {
   let d = null;
-  const mentah = localStorage.getItem(KUNCI_DB);
-  try { d = JSON.parse(mentah); } catch { throw new Error("Data tersimpan tidak dapat dibaca; data asli tidak dihapus."); }
-  if (mentah !== null && (!d || typeof d !== "object" || Array.isArray(d))) throw new Error("Format data tidak valid; data asli tidak dihapus.");
+  try { d = JSON.parse(localStorage.getItem(KUNCI_DB)); } catch {}
   if (!d) { d = rapikanDB(DATA_AWAL()); simpanDB(d); return d; }
   const perlu = !Array.isArray(d.toko) || (d.pesan || []).some((m) => !["staff", "admin"].includes(m.peran))
     || (d.toko || []).some((t) => !("foto" in t) || !("pemilik" in t) || "kode" in t)

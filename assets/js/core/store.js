@@ -6,31 +6,16 @@ const TUJUAN_PERAN = { pembeli: "../user/index.html", staff: "../staff/index.htm
 const peran = FOLDER[(location.pathname.match(/\/(user|staff|admin)\//) || [])[1]] || "pembeli";
 /* semua toko (untuk jelajah pembeli); db.toko tetap toko yang sedang aktif */
 let semuaToko = [];
-let versiData = null;
-let alasanMutasiStok = "";
 
 /* Simpan seluruh db ke localStorage; toko aktif dikembalikan ke koleksi asli dulu. */
 const simpan = (k) => tulis();
 
 /* tulis db ke penyimpanan; perbaikan(asli) boleh mengubah toko lain lebih dulu */
 function tulis(perbaikan) {
-  if (versiData !== localStorage.getItem(KUNCI_DB)) {
-    alert("Data telah berubah di tab lain. Perubahan ini belum disimpan. Muat ulang halaman sebelum melanjutkan.");
-    throw new Error("Data berubah di tab lain; penyimpanan dibatalkan.");
-  }
   const asli = muatDB();
   asli.pengguna = db.pengguna;
   if (db.aktifToko != null) {
     const i = asli.toko.findIndex((t) => t.id === db.aktifToko);
-    if (i >= 0) {
-      const lama = asli.toko[i].produk || [];
-      const perubahan = db.produk.flatMap((p) => {
-        const sebelum = lama.find((x) => x.id === p.id);
-        if (!sebelum || sebelum.stok === p.stok) return [];
-        return [{ produk: p.id, nama: p.nama, sebelum: sebelum.stok, sesudah: p.stok, waktu: new Date().toISOString(), pelaku: db.akun.nama, alasan: alasanMutasiStok || "Perubahan dari transaksi" }];
-      });
-      db.toko.mutasiStok = [...(asli.toko[i].mutasiStok || []), ...perubahan];
-    }
     if (i >= 0) asli.toko[i] = {
       ...asli.toko[i], ...db.toko,
       kategori: db.kategori, rak: db.rak, produk: db.produk,
@@ -39,12 +24,7 @@ function tulis(perbaikan) {
   }
   if (perbaikan) perbaikan(asli);
   const g = simpanDB({ ...asli, akun: undefined, aktifToko: undefined });
-  if (g) {
-    alert("Gagal menyimpan: " + g.message + " Perubahan belum tersimpan.");
-    throw new Error("Penyimpanan gagal: " + g.message);
-  }
-  versiData = localStorage.getItem(KUNCI_DB);
-  alasanMutasiStok = "";
+  if (g) { notif("Gagal menyimpan, " + g.message); return Promise.resolve(false); }
   return Promise.resolve(true);
 }
 
@@ -69,7 +49,6 @@ function tokoAktif(profil, data) {
 
 async function muatData() {
   const data = muatDB();
-  versiData = localStorage.getItem(KUNCI_DB);
   semuaToko = data.toko;
   db.pengguna = data.pengguna || [];
 
@@ -118,7 +97,7 @@ async function muatData() {
 }
 
 /* Keranjang sementara per toko, bukan sumber data bisnis. */
-const kunciKeranjang = (id) => VERSI + "keranjang" + (id ? ":" + id : "") + (db.akun && db.akun.id ? ":akun:" + db.akun.id : "");
+const kunciKeranjang = (id) => VERSI + "keranjang" + (id ? ":" + id : "");
 const keranjang = [];
 const bacaKeranjang = (tokoId) => {
   try { return JSON.parse(localStorage.getItem(kunciKeranjang(tokoId))) || []; } catch { return []; }
@@ -243,7 +222,7 @@ async function mulaiAplikasi(mulai) {
     console.error("Gagal memuat data lokal:", error);
     document.querySelector("main")?.replaceChildren(Object.assign(document.createElement("p"), {
       className: "kosong",
-      textContent: "Data gagal dimuat. Coba muat ulang halaman. Jika masalah berlanjut, hubungi pengelola aplikasi sebelum menghapus data browser."
+      textContent: "Data gagal dimuat. Jalankan localStorage.removeItem(\"sortik-db\") di Console untuk reset, lalu muat ulang halaman."
     }));
   }
 }
