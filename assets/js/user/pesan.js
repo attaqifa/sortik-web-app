@@ -5,14 +5,14 @@ const mode = document.body.dataset.status || "";
 let status = "";
 
 const tampil = (o) => (mode === "Selesai" ? o.status === "Selesai" : o.status !== "Selesai");
-const pesanan = () => [...pesananku()].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+const pesanan = () => transaksi([...pesananku()]).sort((a, b) => b.tanggal.localeCompare(a.tanggal));
 
 const baris = (o) => {
   const p = produkById(o.produk);
   const n = ALUR.indexOf(o.status);
   return `<button class="row" data-id="${o.id}">
     <div class="thumb">${fotoHTML(p)}</div>
-    <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${o.jumlah} item · ${rp(nilaiPesanan(o))}${o.lunas ? "" : " · belum dibayar"}</span>
+    <div><b>${esc(p.nama || "-")}${itemPesanan(o).length > 1 ? ` + ${itemPesanan(o).length - 1} produk` : ""}</b><span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${itemPesanan(o).reduce((n, x) => n + x.jumlah, 0)} unit · ${rp(totalTransaksi(o))}${o.lunas ? "" : " · belum dibayar"}</span>
       <span class="langkah" title="Tahap ${n + 1} dari ${ALUR.length}: ${o.status}">${ALUR.map((s, i) => `<i${i <= n ? ' class="on"' : ""}></i>`).join("")}</span></div>
     ${tagStatus(o.status)}
   </button>`;
@@ -24,24 +24,25 @@ const rincian = (o) => {
   const transfer = o.bayar === "Transfer ke admin";
   return `<a class="back" href="#">← Kembali ke daftar</a>
   <ol class="steps">${ALUR.map((s, i) => `<li data-n="${i + 1}"${i <= n ? ' class="on"' : ""}>${s}</li>`).join("")}</ol>
-  <div class="produk-ringkas">
-    <button class="foto" type="button" data-fotoproduk="${p.id}" title="Perbesar foto produk">${fotoHTML(p)}</button>
-    <div class="ket">
-      <b>${p.nama || "-"}</b>
-      <span>${kodePesanan(o)} · ${tglID(o.tanggal)}</span>
-      <span>${kat(p)} · ${o.jumlah} unit · Rak ${p.rak || "-"}</span>
-      ${tagStatus(o.status)}
-    </div>
-  </div>
-  <div class="sum"><span>Subtotal</span><b>${rp(nilaiPesanan(o))}</b></div>
-  <div class="sum"><span>Pengambilan</span><b>${AMBIL[o.cara] || AMBIL.ambil}${o.alamat ? " — " + o.alamat : ""}</b></div>
-  <div class="sum"><span>Pembayaran</span><b>${o.bayar || "Transfer ke admin"}</b></div>
+  ${itemPesanan(o).map((item) => {
+    const produk = produkById(item.produk);
+    return `<div class="produk-ringkas">
+      <button class="foto" type="button" data-fotoproduk="${produk.id}" title="Perbesar foto produk">${fotoHTML(produk)}</button>
+      <div class="ket"><b>${esc(produk.nama || "-")}</b><span>${esc(kat(produk))} · ${item.jumlah} unit · Rak ${esc(produk.rak || "-")}</span>
+      <span>${rp(subtotalPesanan(item))}</span></div></div>`;
+  }).join("")}
+  <div class="sum"><span>Nomor pesanan</span><b>${kodePesanan(o)} · ${tglID(o.tanggal)}</b></div>
+  <div class="sum"><span>Subtotal</span><b>${rp(itemPesanan(o).reduce((n, x) => n + subtotalPesanan(x), 0))}</b></div>
+  <div class="sum"><span>Ongkir</span><b>${rp(itemPesanan(o).reduce((n, x) => n + (+x.ongkir || 0), 0))}</b></div>
+  <div class="sum"><span>Total pesanan</span><b>${rp(totalTransaksi(o))}</b></div>
+  <div class="sum"><span>Pengambilan</span><b>${AMBIL[o.cara] || AMBIL.ambil}${o.alamat ? " — " + esc(o.alamat) : ""}</b></div>
+  <div class="sum"><span>Pembayaran</span><b>${esc(o.bayar || "Transfer ke admin")}</b></div>
   <div class="sum"><span>Status bayar</span><b>${tagBayar(o)}</b></div>
   ${transfer ? `<div class="bukti-blok">
     <label class="lbl">Bukti transfer</label>
     ${o.bukti
       ? `<button class="bukti-gambar" type="button" data-lihatbukti="${o.id}" title="Perbesar bukti transfer">
-        <img src="${o.bukti}" alt="Bukti transfer ${kodePesanan(o)}">
+        <img src="${urlGambar(o.bukti)}" alt="Bukti transfer ${kodePesanan(o)}">
       </button>
       <p class="note">Bukti sudah diunggah${o.buktiPada ? " pada " + tglID(o.buktiPada.slice(0, 10)) : ""} — tinggal menunggu konfirmasi staff.</p>`
       : `<p class="note">Belum ada bukti transfer. Unggah foto/screenshot bukti transfer agar pesanan bisa dikonfirmasi.</p>`}
@@ -51,14 +52,14 @@ const rincian = (o) => {
     </div>`}
   </div>` : ""}
   <div class="aksipesan">
-    ${(p.stok || 0) > 0
+    ${itemPesanan(o).some((x) => (produkById(x.produk).stok || 0) > 0)
       ? `<button class="primary garis" id="beliLagi" type="button">Beli Lagi</button>`
       : `<button class="primary" id="beliLagi" type="button" disabled>Beli Lagi — stok habis</button>`}
     ${o.status === "Menunggu" && o.lunas !== true ? `<button class="btn danger" id="batalkan" type="button">Batalkan Pesanan</button>` : ""}
-    <a class="btn" href="https://wa.me/${db.toko.wa}?text=${encodeURIComponent(`Halo, saya mau tanya pesanan ${kodePesanan(o)} — ${p.nama || "-"}`)}" target="_blank" rel="noopener">Tanya via WhatsApp</a>
+    <a class="btn" href="https://wa.me/${String(db.toko.wa || "").replace(/\D/g, "")}?text=${encodeURIComponent(`Halo, saya mau tanya pesanan ${kodePesanan(o)} — ${p.nama || "-"}`)}" target="_blank" rel="noopener">Tanya via WhatsApp</a>
   </div>
-  <p class="note">Pembayaran dan status pesanan dikonfirmasi oleh staff ${db.toko.nama}. Hubungi
-    <a href="https://wa.me/${db.toko.wa}" target="_blank" rel="noopener">+${db.toko.wa}</a> bila ada pertanyaan.</p>`;
+  <p class="note">Pembayaran dan status pesanan dikonfirmasi oleh staff ${esc(db.toko.nama)}. Hubungi
+    <a href="https://wa.me/${String(db.toko.wa || "").replace(/\D/g, "")}" target="_blank" rel="noopener">+${esc(db.toko.wa)}</a> bila ada pertanyaan.</p>`;
 };
 
 function daftar() {
@@ -70,7 +71,8 @@ function daftar() {
 }
 
 function buka(id) {
-  const o = pesanan().find((x) => x.id === id);
+  const baris = pesananku().find((x) => x.id === id);
+  const o = baris && (pesanan().find((x) => x.id === id || (baris.pesananId && x.pesananId === baris.pesananId)));
   if (!o) return;
   el("daftar").hidden = true;
   el("detail").hidden = false;
@@ -86,9 +88,14 @@ function buka(id) {
     }
     kirim.disabled = true;
     try {
-      o.bukti = await bacaGambar(berkas, 1000);
+      const foto = await bacaGambar(berkas, 1000);
+      const lama = { bukti: o.bukti, buktiPada: o.buktiPada };
+      o.bukti = foto;
       o.buktiPada = new Date().toISOString();
-      simpan("pesanan");
+      if (!await simpan("pesanan")) {
+        Object.assign(o, lama);
+        kirim.disabled = false; return;
+      }
       notif("Bukti transfer terkirim — menunggu konfirmasi");
       buka(o.id);
     } catch {
@@ -100,13 +107,20 @@ function buka(id) {
   /* Beli Lagi — item kembali ke keranjang, dibatasi stok */
   const lagi = el("beliLagi");
   if (lagi) lagi.onclick = () => {
-    const pr = produkById(o.produk);
-    if ((pr.stok || 0) < 1) return notif("Stok produk ini habis.");
-    const n = Math.min(pr.stok, o.jumlah);
-    const item = keranjang.find((i) => i.produk === o.produk);
-    if (item) item.jumlah = Math.min(pr.stok, item.jumlah + n);
-    else keranjang.push({ produk: o.produk, jumlah: n });
-    simpanKeranjang();
+    const sebelum = keranjang.map((x) => ({ ...x }));
+    let ditambah = 0;
+    itemPesanan(o).forEach((x) => {
+      const pr = produkById(x.produk);
+      if (!pr.id || pr.stok < 1) return;
+      const item = keranjang.find((i) => i.produk === x.produk);
+      const awal = item ? item.jumlah : 0;
+      const jumlah = Math.min(pr.stok, awal + x.jumlah);
+      if (item) item.jumlah = jumlah;
+      else keranjang.push({ produk: x.produk, jumlah });
+      ditambah += jumlah - awal;
+    });
+    if (!ditambah) return notif("Tidak ada barang yang dapat ditambahkan sesuai stok.");
+    if (!simpanKeranjang()) { keranjang.splice(0, keranjang.length, ...sebelum); return; }
     notif("Ditambahkan ke keranjang");
     location.href = "checkout.html";
   };
@@ -114,12 +128,18 @@ function buka(id) {
   /* Batalkan — hanya pesanan Menunggu yang belum dibayar */
   const bantal = el("batalkan");
   if (bantal) bantal.onclick = async () => {
-    const pr = produkById(o.produk);
-    const yakin = await konfirmasi("Batalkan pesanan ini?",
-      `${kodePesanan(o)} — ${pr.nama || "-"} (${rp(nilaiPesanan(o))}) akan dihapus dari daftar pesanan Anda.`);
+    const items = itemPesanan(o);
+    if (items.some((x) => x.status !== "Menunggu" || x.lunas)) return notif("Pesanan tidak dapat dibatalkan setelah diproses atau dibayar.");
+    const yakin = await konfirmasi("Batalkan pesanan ini?", `${kodePesanan(o)} beserta ${items.length} produk akan dibatalkan.`);
     if (!yakin) return;
-    db.pesanan.splice(db.pesanan.indexOf(o), 1);
-    simpan("pesanan");
+    /* Checkout versi lama belum dikelola sebagai satu transaksi. */
+    const lain = !o.pesananId && o.checkoutId && o.ongkir && db.pesanan.filter((x) => x !== o && x.checkoutId === o.checkoutId);
+    const penerima = lain && lain.find((x) => !x.lunas);
+    if (lain && lain.length && !penerima) return notif("Ongkir terkait pesanan yang sudah lunas. Hubungi toko untuk pembatalan.");
+    if (penerima) penerima.ongkir = (+penerima.ongkir || 0) + o.ongkir;
+    const sebelumnya = [...db.pesanan];
+    db.pesanan = db.pesanan.filter((x) => !items.includes(x));
+    if (!await simpan("pesanan")) { db.pesanan = sebelumnya; if (penerima) penerima.ongkir -= o.ongkir; return; }
     gambarSidebar();
     notif("Pesanan dibatalkan");
     el("detail").hidden = true;

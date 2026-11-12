@@ -7,7 +7,7 @@ const u = db.akun;
 let avatar = u.avatar || "";
 
 function renderAvatar() {
-  isi("a-avatar", avatar ? `<img src="${avatar}" alt="Foto profil">` : inisial(u.nama));
+  isi("a-avatar", avatar ? `<img src="${urlGambar(avatar)}" alt="Foto profil">` : esc(inisial(u.nama)));
   el("a-hapusfoto").hidden = !avatar;
 }
 
@@ -47,10 +47,11 @@ el("a-simpan").onclick = async () => {
   tombol.disabled = true;
   const baris = db.pengguna.find((p) => p.id === u.id);
   if (!baris) { tombol.disabled = false; return notif("Akun tidak ditemukan di database lokal."); }
+  const sebelumnya = { ...baris };
   Object.assign(baris, perubahan);
   const ok = await simpan("pengguna");
   tombol.disabled = false;
-  if (!ok) return;
+  if (!ok) { Object.assign(baris, sebelumnya); return; }
 
   Object.assign(u, perubahan);
   renderAvatar();

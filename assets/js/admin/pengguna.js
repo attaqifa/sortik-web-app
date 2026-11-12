@@ -41,7 +41,7 @@ kelola({
   cari: (u) => `${u.nama} ${u.email} ${PERAN[u.role] || u.role}`,
   urut: (a, b) => a.nama.localeCompare(b.nama),
 
-  baris: (u) => `<div class="thumb">${u.nama.charAt(0)}</div>
-  <div><b>${u.nama}</b><span>${u.email} · ${PERAN[u.role] || u.role}</span>
+  baris: (u) => `<div class="thumb">${esc(u.nama.charAt(0))}</div>
+  <div><b>${esc(u.nama)}</b><span>${esc(u.email)} · ${esc(PERAN[u.role] || u.role)}</span>
   <em class="${u.status === "aktif" ? "ok" : "done"}">${u.status === "aktif" ? "Aktif" : "Nonaktif"}</em></div>`
 });

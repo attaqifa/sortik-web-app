@@ -34,15 +34,16 @@ function gambar() {
 }
 
 /* kirim pesan */
-el("formKirim").addEventListener("submit", (e) => {
+el("formKirim").addEventListener("submit", async (e) => {
   e.preventDefault();
   const teks = el("teksPesan").value.trim();
   if (!teks) return;
   const id = db.pesan.reduce((m, x) => Math.max(m, x.id || 0), 0) + 1;
-  db.pesan.push({ id, dari: db.akun.nama, peran: db.akun.role, teks, waktu: new Date().toISOString() });
+  const pesan = { id, dari: db.akun.nama, peran: db.akun.role, teks, waktu: new Date().toISOString() };
+  db.pesan.push(pesan);
+  if (!await simpan("pesan")) { db.pesan = db.pesan.filter((x) => x !== pesan); return; }
   el("teksPesan").value = "";
   tandaiBaca();
-  simpan("pesan");
   gambar();
 });
 
@@ -52,8 +53,9 @@ el("dinding").addEventListener("click", async (e) => {
   if (!b) return;
   const kotak = b.closest(".bubble");
   if (!(await konfirmasi("Hapus pesan ini?", "Pesan hilang untuk semua anggota grup."))) return;
+  const sebelumnya = db.pesan;
   db.pesan = db.pesan.filter((m) => m.id !== +kotak.dataset.id);
-  simpan("pesan");
+  if (!await simpan("pesan")) { db.pesan = sebelumnya; return; }
   gambar();
   notif("Pesan dihapus.");
 });

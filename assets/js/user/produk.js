@@ -6,14 +6,14 @@ function gambar(p) {
   const habis = p.stok < 1;
   const tipis = p.stok > 0 && p.stok <= 3;
   /* ikon cadangan tampil bila foto gagal (onerror) */
-  const foto = (src) => `${ikonCadangan(p)}<img src="${src}" alt="${p.nama}" onerror="this.remove()">`;
+  const foto = (src) => `${ikonCadangan(p)}<img src="${urlGambar(src)}" alt="${esc(p.nama)}" onerror="this.remove()">`;
 
   /* galeri: foto utama + thumbnail */
   const semua = galeriProduk(p);
   if (semua.length) {
     isi("galeri", `<div class="galeri-utama" id="galeriGambar" title="Klik untuk memperbesar">${foto(semua[0])}</div>` +
       (semua.length > 1 ? `<div class="galeri-thumb" id="galeriThumb">${semua.map((s, i) =>
-        `<button type="button" data-src="${s}" class="${i ? "" : "on"}" title="Foto ${i + 1}">${foto(s)}</button>`).join("")}</div>` : ""));
+        `<button type="button" data-src="${urlGambar(s)}" class="${i ? "" : "on"}" title="Foto ${i + 1}">${foto(s)}</button>`).join("")}</div>` : ""));
     const utama = el("galeriGambar");
     utama.onclick = () => lihatGambar(semua[0], p.nama);
 
@@ -29,21 +29,21 @@ function gambar(p) {
     isi("galeri", `<div class="galeri-utama">${ikonCadangan(p)}</div>`);
   }
 
-  isi("info", `<h2>${p.nama}</h2>
+  isi("info", `<h2>${esc(p.nama)}</h2>
   <b class="harga">${rp(hargaJual(p))}${p.diskon ? `<s class="hargalama">${rp(p.harga)}</s>` : ""}</b>
 
   <div class="chipstat">
     <span class="stok${habis ? " habis" : tipis ? " menipis" : ""}"><span class="ikon" data-lucide="${habis ? "triangle-alert" : tipis ? "triangle-alert" : "package"}"></span>${habis ? "Stok habis" : tipis ? `Stok menipis — ${p.stok} unit` : `Stok ${p.stok} unit`}</span>
     ${p.diskon ? `<span class="promo"><span class="ikon" data-lucide="tag"></span>Diskon ${p.diskon}% — hemat ${rp(p.harga - hargaJual(p))}</span>` : ""}
-    <a href="cari.html?rak=${encodeURIComponent(p.rak)}" title="Lihat produk di rak ini"><span class="ikon" data-lucide="warehouse"></span>Rak ${p.rak}</a>
-    <a href="cari.html?kat=${p.kategori}" title="Lihat kategori ini"><span class="ikon" data-lucide="layout-grid"></span>${kat(p)}</a>
+    <a href="cari.html?rak=${encodeURIComponent(p.rak)}" title="Lihat produk di rak ini"><span class="ikon" data-lucide="warehouse"></span>Rak ${esc(p.rak)}</a>
+    <a href="cari.html?kat=${encodeURIComponent(p.kategori)}" title="Lihat kategori ini"><span class="ikon" data-lucide="layout-grid"></span>${esc(kat(p))}</a>
   </div>
 
-  <p class="desc">${p.deskripsi || "Belum ada deskripsi produk."}</p>
+  <p class="desc">${esc(p.deskripsi || "Belum ada deskripsi produk.")}</p>
 
   <ul class="spec">
     <li><span>Kode produk</span><b>PRD-${String(p.id).padStart(3, "0")}</b></li>
-    <li><span>Lokasi toko</span><b>${db.toko.nama}</b></li>
+    <li><span>Lokasi toko</span><b>${esc(db.toko.nama)}</b></li>
     <li><span>Pengambilan</span><b>Ambil di tempat / antar</b></li>
     <li><span>Pembayaran</span><b>Transfer ke admin / bayar di kasir</b></li>
   </ul>
@@ -69,16 +69,18 @@ function gambar(p) {
     el("totalBeli").textContent = rp(hargaJual(p) * n);
   };
   const masuk = () => {
+    const sebelum = keranjang.map((x) => ({ ...x }));
     const item = keranjang.find((i) => i.produk === p.id);
     if (item) item.jumlah = batas(item.jumlah + n);
     else keranjang.push({ produk: p.id, jumlah: n });
-    simpanKeranjang();
+    if (!simpanKeranjang()) { keranjang.splice(0, keranjang.length, ...sebelum); return false; }
+    return true;
   };
 
   el("kurang").onclick = () => { n = batas(n - 1); tampil(); };
   el("tambah").onclick = () => { n = batas(n + 1); tampil(); };
-  el("keranjang").onclick = () => { masuk(); el("keranjang").textContent = "✓ Masuk keranjang"; };
-  el("beli").onclick = () => { masuk(); location.href = "checkout.html"; };
+  el("keranjang").onclick = () => { if (masuk()) el("keranjang").textContent = "✓ Masuk keranjang"; };
+  el("beli").onclick = () => { if (masuk()) location.href = "checkout.html"; };
 
   const serupa = db.produk.filter((x) => x.kategori === p.kategori && x.id !== p.id).slice(0, 4);
   isi("serupa", serupa.length ? serupa.map(kartu).join("") : pesanKosong("package", "Belum ada produk lain di kategori ini."));
@@ -87,7 +89,7 @@ function gambar(p) {
 
 if (p.id) {
   document.title = p.nama + " — SORTIK";
-  isi("remah", `<a href="index.html">Beranda</a><span>/</span><a href="cari.html?kat=${p.kategori}">${kat(p)}</a><span>/</span><b>${p.nama}</b>`);
+  isi("remah", `<a href="index.html">Beranda</a><span>/</span><a href="cari.html?kat=${encodeURIComponent(p.kategori)}">${esc(kat(p))}</a><span>/</span><b>${esc(p.nama)}</b>`);
   gambar(p);
 } else {
   isi("remah", `<a href="index.html">Beranda</a><span>/</span><b>Produk tidak ditemukan</b>`);

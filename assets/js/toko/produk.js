@@ -28,7 +28,7 @@ kelola({
   cari: (p) => `${p.nama} ${kat(p)} ${p.rak}`,
   urut: (a, b) => a.nama.localeCompare(b.nama),
   baris: (p) => `<div class="thumb">${p.diskon ? `<span class="ptanda">−${p.diskon}%</span>` : ""}${fotoHTML(p)}</div>
-  <div><b>${p.nama}</b><span>${kat(p)} · ${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""} · stok ${p.stok} · rak ${p.rak}</span>
+  <div><b>${esc(p.nama)}</b><span>${esc(kat(p))} · ${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""} · stok ${p.stok} · rak ${esc(p.rak)}</span>
     <div class="rowinfo">${p.stok < 1
       ? `<span class="tag habis">Stok habis</span>`
       : p.stok <= 3 ? `<span class="tag menipis">Stok menipis</span>` : ""}</div></div>`,
@@ -65,5 +65,5 @@ kelola({
     : ""),
 
   baris: (k) => `<div class="thumb">${ikonKategori(k)}</div>
-  <div><b>${k.nama}</b><span>kode: ${k.id} · dipakai ${db.produk.filter((p) => p.kategori === k.id).length} barang</span></div>`
+  <div><b>${esc(k.nama)}</b><span>kode: ${esc(k.id)} · dipakai ${db.produk.filter((p) => p.kategori === k.id).length} barang</span></div>`
 });

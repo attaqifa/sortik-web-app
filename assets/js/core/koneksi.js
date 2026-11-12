@@ -96,7 +96,6 @@ const muatDB = () => {
   else if ((d.pesan || []).some((m) => m.peran === "bot")) {
     /* sisa pesan SORTIK Bot dari versi lama dibuang sekali di sini */
     d.pesan = d.pesan.filter((m) => m.peran !== "bot");
-    simpanDB(d);
   }
   return d;
 };
@@ -133,19 +132,23 @@ const masukLokal = async (email, sandi = "") => {
 
 /* daftar: selalu peran pembeli; staff/admin dibuat lewat data awal */
 const daftarLokal = async (email, nama, sandi) => {
-  const d = muatDB();
-  if ((d.pengguna || []).some((r) => String(r.email || "").toLowerCase() === String(email).toLowerCase()))
-    return { data: null, error: "Email sudah terdaftar — silakan masuk di halaman Masuk." };
-  const u = {
-    id: "u" + Date.now().toString(36), nama: nama || String(email).split("@")[0],
-    role: "pembeli", status: "aktif", email,
-    sandi: await hashSandi(sandi), telepon: "", alamat: "", avatar: ""
-  };
-  d.pengguna.push(u);
-  const g = simpanDB(d);
-  if (g) return { data: null, error: g.message };
-  simpanSesi(u.id);
-  return { data: u, error: null };
+  const hash = await hashSandi(sandi);
+  if (!navigator.locks) return { data: null, error: "Browser tidak mendukung penguncian data. Gunakan browser modern melalui localhost atau HTTPS." };
+  return navigator.locks.request("sortik-db", () => {
+    const d = muatDB();
+    if ((d.pengguna || []).some((r) => String(r.email || "").toLowerCase() === String(email).toLowerCase()))
+      return { data: null, error: "Email sudah terdaftar — silakan masuk di halaman Masuk." };
+    const u = {
+      id: "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      nama: nama || String(email).split("@")[0], role: "pembeli", status: "aktif", email,
+      sandi: hash, telepon: "", alamat: "", avatar: ""
+    };
+    d.pengguna.push(u);
+    const g = simpanDB(d);
+    if (g) return { data: null, error: g.message };
+    simpanSesi(u.id);
+    return { data: u, error: null };
+  });
 };
 
 const keluarLokal = () => simpanSesi(null);

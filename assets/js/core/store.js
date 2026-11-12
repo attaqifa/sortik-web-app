@@ -7,10 +7,45 @@ const peran = FOLDER[(location.pathname.match(/\/(user|staff|admin)\//) || [])[1
 
 /* ---------- penyimpanan: seluruh db ditulis ke localStorage ----------
    Halaman tetap memakai pola lama: ubah db[k] di memori, lalu simpan(k). */
+let versiData = null;
+let antreSimpan = Promise.resolve();
+let simpanTerhenti = false;
+function gagalSimpan(teks) {
+  simpanTerhenti = true;
+  let peringatan = document.getElementById("peringatan-simpan");
+  if (!peringatan) {
+    peringatan = document.createElement("div");
+    peringatan.id = "peringatan-simpan";
+    peringatan.setAttribute("role", "alert");
+    peringatan.style.cssText = "position:fixed;z-index:99999;top:0;left:0;right:0;padding:14px;background:#8b1c1c;color:white;text-align:center;font-weight:bold";
+    document.body.appendChild(peringatan);
+  }
+  peringatan.textContent = teks;
+}
+/* Tolak snapshot lama; Web Locks menyatukan pemeriksaan dan penulisan antar-tab. */
 const simpan = (k) => {
-  const g = simpanDB({ ...db, akun: undefined });
-  if (g) { notif("Gagal menyimpan — " + g.message); return Promise.resolve(false); }
-  return Promise.resolve(true);
+  const snapshot = JSON.stringify({ ...db, akun: undefined });
+  const tulis = async () => {
+    const jalankan = () => {
+      if (simpanTerhenti) return false;
+      if (localStorage.getItem(KUNCI_DB) !== versiData) {
+        gagalSimpan("Data berubah di tab lain. Perubahan di halaman ini belum disimpan; muat ulang halaman.");
+        return false;
+      }
+      const g = simpanDB(JSON.parse(snapshot));
+      if (g) { gagalSimpan("Gagal menyimpan — " + g.message + " Muat ulang setelah mengatasi masalah."); return false; }
+      versiData = localStorage.getItem(KUNCI_DB);
+      return true;
+    };
+    if (!navigator.locks) { gagalSimpan("Browser ini tidak mendukung penguncian data. Gunakan browser modern melalui localhost atau HTTPS."); return false; }
+    return navigator.locks.request("sortik-db", jalankan);
+  };
+  const hasil = antreSimpan.then(tulis, tulis).catch(() => {
+    gagalSimpan("Penyimpanan gagal. Perubahan belum disimpan; muat ulang halaman dan coba lagi.");
+    return false;
+  });
+  antreSimpan = hasil.catch(() => false);
+  return hasil;
 };
 /* localStorage juga memuat keranjang belanja (status sementara per browser). */
 const baca = (k, nilaiKosong = []) => {
@@ -19,7 +54,10 @@ const baca = (k, nilaiKosong = []) => {
 };
 
 async function muatData() {
-  const data = muatDB();
+  const bacaAwal = () => { muatDB(); return localStorage.getItem(KUNCI_DB); };
+  const mentah = navigator.locks ? await navigator.locks.request("sortik-db", bacaAwal) : bacaAwal();
+  const data = JSON.parse(mentah);
+  versiData = mentah;
   db.kategori = data.kategori || [];
   /* toko disimpan satu objek — cadangan untuk data lama bentuk array */
   db.toko = (Array.isArray(data.toko) ? data.toko[0] : data.toko)
@@ -28,7 +66,7 @@ async function muatData() {
   db.produk = (data.produk || []).map((p) => ({ ...p, kategori: p.kategori || "", galeri: Array.isArray(p.galeri) ? p.galeri : [] }));
   db.pesanan = data.pesanan || [];
   db.pengguna = data.pengguna || [];
-  db.pesan = data.pesan || [];
+  db.pesan = (data.pesan || []).filter((m) => m.peran !== "bot");
   db.keuangan = data.keuangan || { pengeluaran: [] };
 
   const profil = db.pengguna.find((u) => u.id === bacaSesi());
@@ -57,17 +95,21 @@ async function muatData() {
 const keranjang = baca("keranjang", []);
 const jmlKeranjang = () => keranjang.reduce((n, i) => n + i.jumlah, 0);
 const simpanKeranjang = () => {
-  try { localStorage.setItem(VERSI + "keranjang", JSON.stringify(keranjang)); } catch {}
+  try {
+    if (keranjang.length) localStorage.setItem(VERSI + "keranjang", JSON.stringify(keranjang));
+    else localStorage.removeItem(VERSI + "keranjang");
+  } catch { notif("Keranjang gagal disimpan. Periksa penyimpanan browser."); return false; }
   const badge = el("jml");
   if (badge) badge.textContent = jmlKeranjang() || "";
+  return true;
 };
 
 const labelPeran = (r) => PERAN[r] || r;
 const inisial = (nama) => String(nama || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 /* avatar hanya dari foto; tanpa foto tampil inisial nama */
-const avatarHTML = (u) => (u.avatar ? `<img src="${u.avatar}" alt="">` : inisial(u.nama));
+const avatarHTML = (u) => (u.avatar ? `<img src="${urlGambar(u.avatar)}" alt="">` : esc(inisial(u.nama)));
 const pesananku = () => db.pesanan.filter((o) => o.pembeli_id === db.akun.id);
-const nTunggu = () => db.pesanan.filter((o) => o.status === "Menunggu").length;
+const nTunggu = () => transaksi(db.pesanan).filter((o) => o.status === "Menunggu").length;
 const nPesanBaru = () => 0;
 
 /* menu sidebar per peran, dikelompokkan menurut fungsinya */
@@ -128,7 +170,7 @@ function gambarSidebar() {
   const akun = db.akun || { nama: "Memuat…", role: peran };
   const tautanProfil = (html) => `<a class="profil" href="akun.html" title="Akun saya">${html}</a>`;
   isi("side", `<a class="logo" href="index.html">
-  <img src="${db.toko.logo || "../assets/img/SortikLogo.jpeg"}" alt="Logo toko" width="34"><span class="namatoko"><b>${esc(db.toko.nama || "SORTIK")}</b><i>with SORTIK</i></span>
+  <img src="${db.toko.logo ? urlGambar(db.toko.logo) : "../assets/img/SortikLogo.jpeg"}" alt="Logo toko" width="34"><span class="namatoko"><b>${esc(db.toko.nama || "SORTIK")}</b><i>with SORTIK</i></span>
 </a>
 <nav>${MENU[peran].map(([grup, item]) => `<div class="navgrup"><span class="navjudul">${grup}</span>${item.map(([ikon, label, href, ekstra = "", singkat = label]) =>
     `<a${href === berkas ? ' class="on"' : ""} href="${href}"><span class="ikon" data-lucide="${ikon}"></span><span class="lengkap">${label}</span><span class="pendek">${singkat}</span> ${ekstra}</a>`).join("")}</div>`).join("")}</nav>
@@ -136,7 +178,7 @@ function gambarSidebar() {
 <a class="keluar" href="../auth/login.html" title="Keluar"><span class="ikon" data-lucide="log-out"></span><span class="lengkap">Keluar</span></a></div>`);
   /* badge pesanan aktif milik akun ini (menu pembeli) */
   const jmlPesan = el("jmlPesan");
-  if (jmlPesan) jmlPesan.textContent = pesananku().filter((o) => o.status !== "Selesai").length || "";
+  if (jmlPesan) jmlPesan.textContent = transaksi(pesananku()).filter((o) => o.status !== "Selesai").length || "";
 }
 
 async function mulaiAplikasi(mulai) {

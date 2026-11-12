@@ -30,6 +30,13 @@ const batas = (f, daftar) => (daftar.length ? Math.max(...daftar.map(f)) : 0);
 const lebarMin = (L) => Math.max(8, batas((r) => r.x + r.w, L.daftar), batas((a) => a.x + a.w, L.area || [])) + 1;
 const tinggiMin = (L) => Math.max(6, batas((r) => r.y + r.h, L.daftar), batas((a) => a.y + a.h, L.area || [])) + 1;
 
+function pulihkanDenah() {
+  const tersimpan = JSON.parse(versiData);
+  db.rak = tersimpan.rak;
+  db.produk = tersimpan.produk;
+  sel = ""; selArea = ""; riwayat.length = 0;
+  gambar();
+}
 function gambar() {
   const L = lantaiIni();
   const peta = petaRak();
@@ -83,12 +90,12 @@ function gambar() {
 
   if (!sel) return;
   const daftar = peta[sel] || [];
-  isi("panelJudul", `Rak ${sel} — ${daftar.length} barang`);
+  isi("panelJudul", `Rak ${esc(sel)} — ${daftar.length} barang`);
   isi("panelIsi", daftar.length ? daftar.map((p) => `<div class="row">
     <div class="thumb">${fotoHTML(p)}</div>
-    <div><b>${p.nama}</b><span>${kat(p)} · ${rp(p.harga)} · stok ${p.stok}</span></div>
-    <select data-pindah="${p.id}" title="Pindahkan ke rak">${semuaRak().map((r) => `<option value="${r}"${r === p.rak ? " selected" : ""}>${esc(labelRak(r))}</option>`).join("")}</select>
-  </div>`).join("") : pesanKosong("package", `Rak ${sel} masih kosong. Pilih rak lain di denah, lalu pindahkan barangnya ke sini.`));
+    <div><b>${esc(p.nama)}</b><span>${esc(kat(p))} · ${rp(p.harga)} · stok ${p.stok}</span></div>
+    <select data-pindah="${p.id}" title="Pindahkan ke rak">${semuaRak().map((r) => `<option value="${esc(r)}"${r === p.rak ? " selected" : ""}>${esc(labelRak(r))}</option>`).join("")}</select>
+  </div>`).join("") : pesanKosong("package", `Rak ${esc(sel)} masih kosong. Pilih rak lain di denah, lalu pindahkan barangnya ke sini.`));
 }
 
 /* klik rak/blok (tanpa menggeser) = pilih untuk dilihat/diatur */
@@ -101,12 +108,12 @@ el("denah").addEventListener("click", (e) => {
   else if (blok) { selArea = selArea === blok.dataset.area ? "" : blok.dataset.area; sel = ""; gambar(); }
 });
 
-el("panel").addEventListener("change", (e) => {
+el("panel").addEventListener("change", async (e) => {
   const s = e.target.closest("[data-pindah]");
   if (s) {
     const p = produkById(+s.dataset.pindah);
     p.rak = s.value;
-    simpan("produk");
+    if (!await simpan("produk")) { pulihkanDenah(); return; }
     notif(`${p.nama} → rak ${labelRak(s.value)}`);
     gambar();
     return;
@@ -118,7 +125,7 @@ el("panel").addEventListener("change", (e) => {
     if (!a) return;
     dorong(potret());
     a.nama = n.value.trim();
-    simpan("rak");
+    if (!await simpan("rak")) { pulihkanDenah(); return; }
     gambar();
     notif(a.nama ? `Blok dinamai "${a.nama}".` : "Nama blok dikosongkan.");
   }
@@ -132,7 +139,7 @@ const riwayat = [];
 const potret = () => JSON.stringify({ grid: db.rak.grid, aktif: db.rak.aktif, lantai: db.rak.lantai });
 const dorong = (s) => { riwayat.push(s); if (riwayat.length > 50) riwayat.shift(); el("urungkan").disabled = false; };
 
-function urungkan() {
+async function urungkan() {
   if (!riwayat.length) return;
   const s = JSON.parse(riwayat.pop());
   db.rak.grid = s.grid;
@@ -140,7 +147,7 @@ function urungkan() {
   db.rak.lantai = s.lantai;
   if (!lantaiIni().daftar.some((r) => r.kode === sel)) sel = "";
   if (!(lantaiIni().area || []).some((a) => a.id === selArea)) selArea = "";
-  simpan("rak");
+  if (!await simpan("rak")) { pulihkanDenah(); return; }
   gambar();
   el("urungkan").disabled = !riwayat.length;
   notif("Perubahan denah dikembalikan.");
@@ -285,7 +292,7 @@ el("denah").addEventListener("pointermove", (e) => {
   tempat(elKotak, r, jenis);
 });
 
-el("denah").addEventListener("pointerup", () => {
+el("denah").addEventListener("pointerup", async () => {
   if (!tarik) return;
   const t = tarik;
   tarik = null;
@@ -295,7 +302,7 @@ el("denah").addEventListener("pointerup", () => {
 
   /* pintu / luas lantai berubah */
   if (t.pintu || t.luas) {
-    if (t.jalan) { dorong(t.potret); simpan("rak"); gambar(); }
+    if (t.jalan) { dorong(t.potret); if (!await simpan("rak")) { pulihkanDenah(); return; } gambar(); }
     return;
   }
 
@@ -315,7 +322,7 @@ el("denah").addEventListener("pointerup", () => {
       : "Rak tidak boleh menimpa rak atau blok — posisi dikembalikan.");
   } else if (berubah) {
     dorong(t.potret);
-    simpan("rak");
+    if (!await simpan("rak")) { pulihkanDenah(); return; }
     gambar();
   }
 });
@@ -428,7 +435,7 @@ el("lantaiTab").addEventListener("click", async (e) => {
     db.rak.lantai.splice(i, 1);
     db.rak.aktif = Math.max(0, Math.min(db.rak.aktif, db.rak.lantai.length - 1));
     sel = ""; selArea = "";
-    simpan("rak");
+    if (!await simpan("rak")) { pulihkanDenah(); return; }
     gambar();
     notif(`${L.nama} dihapus.`);
     return;
@@ -442,14 +449,14 @@ el("lantaiTab").addEventListener("click", async (e) => {
     db.rak.lantai.push(L);
     db.rak.aktif = db.rak.lantai.length - 1;
     sel = ""; selArea = "";
-    simpan("rak");
+    if (!await simpan("rak")) { pulihkanDenah(); return; }
     gambar();
     notif(`${L.nama} ditambahkan — atur luasnya, letakkan pintu, lalu susun raknya.`);
   }
 });
 
 /* ---------- pengaturan lantai: nama, luas, pintu ---------- */
-el("lantaiSet").addEventListener("change", (e) => {
+el("lantaiSet").addEventListener("change", async (e) => {
   const L = lantaiIni();
   const awal = potret();
   let pesan = "";
@@ -472,7 +479,7 @@ el("lantaiSet").addEventListener("change", (e) => {
   } else return;
 
   dorong(awal);
-  simpan("rak");
+  if (!await simpan("rak")) { pulihkanDenah(); return; }
   gambar();
   if (pesan) notif(pesan);
 });
@@ -488,7 +495,7 @@ function kodeRakBaru() {
 }
 
 /* ---------- tambah rak ---------- */
-el("tambahRak").onclick = () => {
+el("tambahRak").onclick = async () => {
   const L = lantaiIni();
   const t = tempatKosong(4, 2);
   if (!t) return notif(`Tidak ada tempat kosong 4×2 di ${L.nama} — perluas luas lantai atau rapikan rak lain.`);
@@ -497,13 +504,13 @@ el("tambahRak").onclick = () => {
   L.daftar.push(r);
   sel = r.kode;
   selArea = "";
-  simpan("rak");
+  if (!await simpan("rak")) { pulihkanDenah(); return; }
   gambar();
   notif(`Rak ${r.kode} ditambahkan di ${L.nama} — geser ke posisinya.`);
 };
 
 /* ---------- tambah & hapus blok / halangan ---------- */
-el("tambahBlok").onclick = () => {
+el("tambahBlok").onclick = async () => {
   const L = lantaiIni();
   const t = tempatKosong(4, 2);
   if (!t) return notif(`Tidak ada tempat kosong 4×2 di ${L.nama} — perluas luas lantai.`);
@@ -512,29 +519,29 @@ el("tambahBlok").onclick = () => {
   L.area.push(a);
   selArea = a.id;
   sel = "";
-  simpan("rak");
+  if (!await simpan("rak")) { pulihkanDenah(); return; }
   gambar();
   notif("Blok ditambahkan — beri namanya (mis. Bagian kasir, Lift, Tembok).");
 };
 
-el("hapusRak").onclick = () => {
+el("hapusRak").onclick = async () => {
   const L = lantaiIni();
   /* blok yang terpilih? hapus bloknya */
   if (selArea) {
     dorong(potret());
     L.area = L.area.filter((a) => a.id !== selArea);
     selArea = "";
-    simpan("rak");
+    if (!await simpan("rak")) { pulihkanDenah(); return; }
     gambar();
     return notif("Blok dihapus dari " + L.nama + ".");
   }
   if (!sel) return notif("Pilih dulu rak atau blok yang mau dihapus di denah.");
-  if (db.produk.some((p) => p.rak === sel)) return notif(`Rak ${sel} masih berisi barang — pindahkan dulu isinya.`);
+  if (db.produk.some((p) => p.rak === sel)) return notif(`Rak ${esc(sel)} masih berisi barang — pindahkan dulu isinya.`);
   if (L.daftar.length <= 1) return notif(`${L.nama} minimal harus punya satu rak.`);
   dorong(potret());
   L.daftar = L.daftar.filter((r) => r.kode !== sel);
   sel = "";
-  simpan("rak");
+  if (!await simpan("rak")) { pulihkanDenah(); return; }
   gambar();
   notif(`Rak dihapus dari ${L.nama}.`);
 };

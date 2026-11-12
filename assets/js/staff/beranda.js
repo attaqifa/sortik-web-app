@@ -1,6 +1,6 @@
 /* Beranda staff — ringkasan operasional toko. */
 
-isi("nama", db.akun.nama);
+el("nama").textContent = db.akun.nama;
 el("sapa").innerHTML = avatarHTML(db.akun);
 
 /* sambutan bisa ditutup dengan × — disembunyikan sampai besok */
@@ -12,7 +12,7 @@ el("sapTutup").onclick = () => {
   try { localStorage.setItem(VERSI + "sapa", hariSapa); } catch {}
 };
 
-const jalan = db.pesanan.filter((o) => o.status !== "Selesai");
+const jalan = transaksi(db.pesanan).filter((o) => o.status !== "Selesai");
 const belumBayar = jalan.filter((o) => !o.lunas);
 const tipis = db.produk.filter((p) => p.stok <= 5);
 const terbaru = (daftar) => [...daftar].sort((a, b) => b.tanggal.localeCompare(a.tanggal)).slice(0, 5);
@@ -40,7 +40,7 @@ const kartuPesanan = (o) => {
   const p = produkById(o.produk);
   return `<a class="row" href="pesanan.html">
     <div class="thumb">${fotoHTML(p)}</div>
-    <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${o.pembeli || "-"} · ${o.bayar}</span>${tagBayar(o)}</div>
+    <div><b>${esc(p.nama || "-")}</b><span>${kodePesanan(o)} · ${esc(o.pembeli || "-")} · ${esc(o.bayar)}</span>${tagBayar(o)}</div>
     ${tagStatus(o.status)}
   </a>`;
 };
@@ -48,7 +48,7 @@ isi("tindak", jalan.length ? terbaru(jalan).map(kartuPesanan).join("") : pesanKo
 
 isi("tipis", tipis.length ? tipis.map((p) => `<a class="row" href="produk.html?id=${p.id}">
   <div class="thumb">${fotoHTML(p)}</div>
-  <div><b>${p.nama}</b><span>${kat(p)} · Rak ${labelRak(p.rak)} · ${rp(p.harga)}</span></div>
+  <div><b>${esc(p.nama)}</b><span>${esc(kat(p))} · Rak ${esc(labelRak(p.rak))} · ${rp(p.harga)}</span></div>
   <em class="${p.stok ? "wait" : "done"}">stok ${p.stok}</em>
 </a>`).join("") : pesanKosong("package", "Semua stok di atas 5 unit."));
 

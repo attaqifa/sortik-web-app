@@ -20,7 +20,7 @@ isi("hero", `<div class="heroTeks">
 </div>
 ${slideBanner.length ? `<div class="heroBanner" id="heroBanner">
   ${slideBanner.map((p, i) => `<a class="slide${i ? "" : " on"}" href="produk.html?id=${p.id}" title="Lihat ${esc(p.nama)}">
-    <img src="${galeriProduk(p)[0]}" alt="${esc(p.nama)}">
+    <img src="${urlGambar(galeriProduk(p)[0])}" alt="${esc(p.nama)}">
     <div class="heroTag"><span>${p.diskon ? `Diskon ${p.diskon}%` : "Pilihan toko"}</span><b>${esc(p.nama)}</b><em>${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""}</em></div>
   </a>`).join("")}
   ${slideBanner.length > 1 ? `<div class="dots">${slideBanner.map((_, i) =>
@@ -55,7 +55,7 @@ el("promoWrap").hidden = !promo.length;
 isi("promo", promo.map(kartu).join(""));
 
 /* ---------- ringkasan akun ---------- */
-const punyaku = pesananku();
+const punyaku = transaksi(pesananku());
 const jalan = punyaku.filter((o) => o.status !== "Selesai").sort((a, b) => b.tanggal.localeCompare(a.tanggal));
 
 isi("stats", [
@@ -69,7 +69,7 @@ isi("pesanan", jalan.map((o) => {
   const p = produkById(o.produk);
   return `<div class="row">
     <div class="thumb">${fotoHTML(p)}</div>
-    <div><b>${p.nama || "-"}</b><span>${o.jumlah} item · ${rp(nilaiPesanan(o))}</span>${tagBayar(o)}</div>
+    <div><b>${esc(p.nama || "-")}</b><span>${itemPesanan(o).reduce((n, x) => n + x.jumlah, 0)} unit · ${rp(totalTransaksi(o))}</span>${tagBayar(o)}</div>
     ${tagStatus(o.status)}
   </div>`;
 }).join("") || pesanKosong("shopping-cart", "Belum ada pesanan berjalan.", ["cari.html", "Mulai belanja"]));
@@ -88,4 +88,4 @@ chipSaring("pilKat", [["", "Semua"], ...db.kategori.map((k) => [k.id, `${ikonKat
 gambarBaru();
 
 /* ---------- kategori (papan penuh, tautan ke pencarian) ---------- */
-isi("kategori", db.kategori.map((k) => `<a class="cat" href="cari.html?kat=${k.id}">${ikonKategori(k)}<span>${k.nama}</span></a>`).join(""));
+isi("kategori", db.kategori.map((k) => `<a class="cat" href="cari.html?kat=${encodeURIComponent(k.id)}">${ikonKategori(k)}<span>${esc(k.nama)}</span></a>`).join(""));

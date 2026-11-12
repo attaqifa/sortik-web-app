@@ -26,7 +26,7 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
     const id = `${wadah}-${f}`;
     const pilihan = typeof opsi === "function" ? opsi() : opsi;
     const kontrol = jenis === "pilih"
-      ? `<select id="${id}" data-f="${f}">${pilihan.map(([v, t]) => `<option value="${v}">${t}</option>`).join("")}</select>`
+      ? `<select id="${id}" data-f="${f}">${pilihan.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join("")}</select>`
       : jenis === "area" ? `<textarea id="${id}" data-f="${f}" rows="3"></textarea>`
       : jenis === "sandi" ? `<input id="${id}" data-f="${f}" type="password" minlength="8" autocomplete="new-password" placeholder="Ketik sandi baru — kosongkan jika tetap">`
         : jenis === "foto" ? `<div class="medanfoto">
@@ -58,7 +58,7 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
   function pratinjauFoto(f) {
     const kotak = el(`${wadah}-${f}-pratinjau`);
     if (!kotak) return;
-    kotak.innerHTML = foto[f] ? `<img src="${foto[f]}" alt="Pratinjau foto">` : `<span>Belum ada foto</span>`;
+    kotak.innerHTML = foto[f] ? `<img src="${urlGambar(foto[f])}" alt="Pratinjau foto">` : `<span>Belum ada foto</span>`;
     const hapus = el(`${wadah}-${f}`).closest(".medanfoto").querySelector("[data-hapusfoto]");
     if (hapus) hapus.hidden = !foto[f];
   }
@@ -69,7 +69,7 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
     const daftar = galeri[f] || [];
     kotak.innerHTML = daftar.length
       ? daftar.map((s, i) => `<div class="minifoto">
-        <img src="${s}" alt="Foto detail ${i + 1}">
+        <img src="${urlGambar(s)}" alt="Foto detail ${i + 1}">
         <button type="button" class="x" data-hapusgaleri="${f}" data-i="${i}" title="Hapus foto">✕</button>
       </div>`).join("")
       : `<span class="petunjuk">Belum ada foto detail.</span>`;
@@ -150,8 +150,9 @@ ${chips ? `<div class="chips" id="${wadah}-saring"></div>` : ""}
     );
     if (!yakin) return;
     if (x === ubah) el(`${wadah}-blok`).hidden = true;
-    db[kunci].splice(db[kunci].indexOf(x), 1);
-    simpan(kunci);
+    const indeks = db[kunci].indexOf(x);
+    db[kunci].splice(indeks, 1);
+    if (!await simpan(kunci)) { db[kunci].splice(indeks, 0, x); gambar(); return; }
     notif(`${nama} dihapus`);
     gambar();
   }

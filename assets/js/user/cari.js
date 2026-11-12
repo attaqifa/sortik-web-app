@@ -22,7 +22,7 @@ function render() {
     : state.urut === "laris" ? [...hasil].sort((a, b) => jmlTerjual(b.id) - jmlTerjual(a.id))
     : hasil;
 
-  isi("hasil", `${hasil.length} dari ${db.produk.length} produk${state.rak ? ` di rak ${labelRak(state.rak)}` : ""}`);
+  isi("hasil", `${hasil.length} dari ${db.produk.length} produk${state.rak ? ` di rak ${esc(labelRak(state.rak))}` : ""}`);
   isi("produk", daftar.length ? daftar.map(kartu).join("") : pesanKosong("search-x", "Produk tidak ditemukan. Coba kata kunci, kategori, atau rak lain.", ["index.html", "Kembali ke Beranda"]));
 
   /* baris filter aktif: ✕ melepas satu, Reset semua */
@@ -30,8 +30,8 @@ function render() {
     : (db.kategori.find((k) => k.id === state.kat) || {}).nama || state.kat;
   isi("filter", (state.kat || state.rak)
     ? `<span>Filter aktif:</span>
-      ${state.kat ? `<button type="button" class="chipx" data-lepas="kat">${nameKat} <b>✕</b></button>` : ""}
-      ${state.rak ? `<button type="button" class="chipx" data-lepas="rak">Rak ${state.rak} <b>✕</b></button>` : ""}
+      ${state.kat ? `<button type="button" class="chipx" data-lepas="kat">${esc(nameKat)} <b>✕</b></button>` : ""}
+      ${state.rak ? `<button type="button" class="chipx" data-lepas="rak">Rak ${esc(state.rak)} <b>✕</b></button>` : ""}
       <button type="button" class="btn" data-reset>Reset</button>`
     : "");
 
@@ -63,7 +63,7 @@ el("filter").addEventListener("click", (e) => {
 el("q").addEventListener("input", (e) => { state.q = e.target.value; render(); });
 el("urut").addEventListener("change", (e) => { state.urut = e.target.value; render(); });
 
-chipSaring("chips", [["", `<span class="ikon" data-lucide="layout-grid"></span> Semua`], ...db.kategori.map((k) => [k.id, `${ikonKategori(k)} ${k.nama}`]), ["promo", `<span class="ikon" data-lucide="tag"></span> Sedang Diskon`]], (v) => {
+chipSaring("chips", [["", `<span class="ikon" data-lucide="layout-grid"></span> Semua`], ...db.kategori.map((k) => [k.id, `${ikonKategori(k)} ${esc(k.nama)}`]), ["promo", `<span class="ikon" data-lucide="tag"></span> Sedang Diskon`]], (v) => {
   state.kat = v;
   render();
 }, state.kat);

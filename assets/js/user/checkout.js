@@ -18,7 +18,7 @@ const item = (i) => {
   const penuh = i.jumlah >= (p.stok || 0);
   return `<div class="row">
     <div class="thumb">${fotoHTML(p)}</div>
-    <div><b>${p.nama}</b><span>${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""} · Rak ${p.rak}${penuh ? ` · <b class="maks">Maks ${p.stok} unit</b>` : ""}</span><b class="subbaris">${rp(hargaJual(p) * i.jumlah)}</b></div>
+    <div><b>${esc(p.nama)}</b><span>${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""} · Rak ${esc(p.rak)}${penuh ? ` · <b class="maks">Maks ${p.stok} unit</b>` : ""}</span><b class="subbaris">${rp(hargaJual(p) * i.jumlah)}</b></div>
     <div class="qty">
       <button type="button" data-kurang="${p.id}" aria-label="Kurangi jumlah">−</button><b>${i.jumlah}</b><button type="button" data-tambah="${p.id}" aria-label="Tambah jumlah"${penuh ? " disabled" : ""}>＋</button>
       <button type="button" class="x" data-hapus="${p.id}" title="Hapus" aria-label="Hapus dari keranjang">✕</button>
@@ -44,13 +44,13 @@ function render() {
   el("buat").disabled = kosong;
 }
 
-isi("jam", db.toko.jam);
+el("jam").textContent = db.toko.jam;
 isi("infoOngkir", rp(ongkir) + " dalam kota");
-el("wa").href = "https://wa.me/" + db.toko.wa;
+el("wa").href = "https://wa.me/" + String(db.toko.wa || "").replace(/\D/g, "");
 el("wa").textContent = "+" + db.toko.wa;
-isi("toko", `${db.toko.nama} — ${db.toko.alamat}`);
-isi("rek", db.toko.rekening.map((r) => `<li><b>${r.bank}</b><span>${r.nomor}</span><span>a.n. ${r.atasNama}</span></li>`).join(""));
-isi("kasirToko", `<li><b>Kasir ${db.toko.nama}</b><span>${db.toko.alamat}</span><span>${db.toko.jam}</span></li>`);
+isi("toko", `${esc(db.toko.nama)} — ${esc(db.toko.alamat)}`);
+isi("rek", db.toko.rekening.map((r) => `<li><b>${esc(r.bank)}</b><span>${esc(r.nomor)}</span><span>a.n. ${esc(r.atasNama)}</span></li>`).join(""));
+isi("kasirToko", `<li><b>Kasir ${esc(db.toko.nama)}</b><span>${esc(db.toko.alamat)}</span><span>${esc(db.toko.jam)}</span></li>`);
 
 /* alamat terisi dari profil akun */
 el("alamat").value = db.akun.alamat || "";
@@ -58,12 +58,13 @@ el("alamat").value = db.akun.alamat || "";
 el("items").addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
+  const sebelum = keranjang.map((x) => ({ ...x }));
   const id = +(b.dataset.tambah || b.dataset.kurang || b.dataset.hapus);
   const i = keranjang.find((x) => x.produk === id);
   if (b.dataset.hapus) keranjang.splice(keranjang.indexOf(i), 1);
   else if (b.dataset.tambah) i.jumlah = Math.min(produkById(id).stok, i.jumlah + 1);
   else i.jumlah = Math.max(1, i.jumlah - 1);
-  simpanKeranjang();
+  if (!simpanKeranjang()) keranjang.splice(0, keranjang.length, ...sebelum);
   render();
 });
 
@@ -97,9 +98,16 @@ el("buat").onclick = async () => {
     + (state.cara === "antar" ? " (termasuk ongkir)." : "."), "Ya, Buat Pesanan");
   if (!yakin) return;
 
+  if (!keranjang.length || keranjang.some((i) => !Number.isInteger(i.jumlah) || i.jumlah < 1 || i.jumlah > (produkById(i.produk).stok || 0))) {
+    return notif("Stok tidak mencukupi. Periksa kembali keranjang Anda.");
+  }
   const mulai = Math.max(0, ...db.pesanan.map((o) => o.id)) + 1;
+  const checkoutId = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
   const dibuat = keranjang.map((i, n) => ({
     id: mulai + n,
+    checkoutId,
+    pesananId: mulai,
+    ongkir: n === 0 && state.cara === "antar" ? ongkir : 0,
     produk: i.produk,
     pembeli_id: db.akun.id,
     pembeli: db.akun.nama,
@@ -107,7 +115,7 @@ el("buat").onclick = async () => {
     /* harga jual dikunci saat pesanan dibuat — diskon belakangan tidak mengubah riwayat */
     harga: hargaJual(produkById(i.produk)),
     status: "Menunggu",
-    tanggal: new Date().toISOString().slice(0, 10),
+    tanggal: tanggalLokal(new Date()),
     cara: state.cara,
     bayar: state.bayar,
     alamat: state.cara === "antar" ? el("alamat").value.trim() : "",
@@ -132,7 +140,7 @@ el("buat").onclick = async () => {
   }
 
   keranjang.length = 0;
-  simpanKeranjang();
+  if (!simpanKeranjang()) notif("Pesanan tersimpan, tetapi keranjang gagal dikosongkan.");
   /* ?baru=1 → notif sukses di pesan.html */
   location.href = "pesan.html?id=" + dibuat[0].id + "&baru=1";
 };

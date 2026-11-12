@@ -1,6 +1,6 @@
 /* Beranda admin — ringkasan penjualan dan pengawasan data toko. */
 
-isi("nama", db.akun.nama);
+el("nama").textContent = db.akun.nama;
 el("sapa").innerHTML = avatarHTML(db.akun);
 
 /* sambutan bisa ditutup dengan × — disembunyikan sampai besok */
@@ -13,14 +13,14 @@ el("sapTutup").onclick = () => {
 };
 
 const lunas = db.pesanan.filter((o) => o.lunas);
-const belum = db.pesanan.filter((o) => !o.lunas);
+const belum = transaksi(db.pesanan).filter((o) => !o.lunas);
 const nilaiSemua = db.pesanan.reduce((n, o) => n + nilaiPesanan(o), 0);
 const pendapatan = lunas.reduce((n, o) => n + nilaiPesanan(o), 0);
 const menipis = (p) => p.stok > 0 && p.stok <= 3;
 
 /* kartu angka kunci: bulan ini, yang menunggu, dan yang perlu perhatian */
 const kunciBulan = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
-const pendapatanBulanIni = lunas.filter((o) => o.tanggal.startsWith(kunciBulan)).reduce((n, o) => n + nilaiPesanan(o), 0);
+const pendapatanBulanIni = lunas.filter((o) => tanggalBayar(o).startsWith(kunciBulan)).reduce((n, o) => n + nilaiPesanan(o), 0);
 
 isi("stats", [
   ["trending-up", "Pendapatan bulan ini", rp(pendapatanBulanIni), true],
@@ -34,7 +34,7 @@ isi("stats", [
 
 /* Perlu Tindakan: pintasan sesuai jumlah */
 const itemTindakan = [
-  ["clipboard-check", "Pesanan menunggu dikonfirmasi", db.pesanan.filter((o) => o.status === "Menunggu").length, "pesanan.html?status=Menunggu"],
+  ["clipboard-check", "Pesanan menunggu dikonfirmasi", transaksi(db.pesanan).filter((o) => o.status === "Menunggu").length, "pesanan.html?status=Menunggu"],
   ["credit-card", "Pesanan belum dibayar", belum.length, "pesanan.html?status=belum"],
   ["triangle-alert", "Stok menipis (≤ 3) — lengkapi di Kelola Barang", db.produk.filter(menipis).length, "produk.html"],
   ["triangle-alert", "Stok habis — lengkapi di Kelola Barang", db.produk.filter((p) => p.stok < 1).length, "produk.html"]
@@ -63,7 +63,7 @@ db.pesanan.forEach((o) => {
   bulan[b].nilai += v;
   bulan[b][o.lunas ? "lunas" : "belum"] += v;
   bulan[b].unit += o.jumlah;
-  bulan[b].pesanan += 1;
+  if (!o.pesananId || !db.pesanan.some((x) => x.pesananId === o.pesananId && x.pembeli_id === o.pembeli_id && x.id < o.id)) bulan[b].pesanan += 1;
 });
 
 const nmBulan = "Januari Februari Maret April Mei Juni Juli Agustus September Oktober November Desember".split(" ");
@@ -89,7 +89,7 @@ const puncak = Math.max(1, ...rekap.map((v) => v.nilai));
     </div><label>${v.label.slice(0, 3)}</label></div>`).join(""));
 
   const lunas = rekap.reduce((n, v) => n + v.lunas, 0);
-  isi("total", `${db.pesanan.length} pesanan · ${rp(lunas)} sudah dibayar · ${rp(nilaiSemua - lunas)} belum`);
+  isi("total", `${transaksi(db.pesanan).length} pesanan · ${rp(pendapatan)} sudah dibayar · ${rp(nilaiSemua - pendapatan)} belum`);
 })();
 
 /* laporan: hanya bulan yang benar-benar ada pesanan, terbaru dulu */
@@ -98,7 +98,7 @@ isi("lapor", (() => {
   return ada.length ? ada.map((v) => `<div class="lapor">
   <div>
     <b>${v.label} ${v.kunci.slice(0, 4)}</b>
-    <span>${v.pesanan} pesanan · ${v.unit} unit · rak sibuk ${rakSibuk(v.kunci)}</span>
+    <span>${v.pesanan} pesanan · ${v.unit} unit · rak sibuk ${esc(rakSibuk(v.kunci))}</span>
     <div class="bar"><i style="width:${Math.round((v.nilai / puncak) * 100)}%"></i></div>
   </div>
   <em>${rp(v.nilai)}</em>
@@ -112,7 +112,7 @@ isi("laris", Object.entries(terjual).sort((a, b) => b[1] - a[1]).slice(0, 5).map
   const p = produkById(+id);
   return `<div class="row">
     <div class="thumb">${fotoHTML(p)}</div>
-    <div><b>${p.nama || "-"}</b><span>${kat(p)} · rak ${p.rak || "-"} · ${rp(hargaJual(p) * unit)}</span></div>
+    <div><b>${esc(p.nama || "-")}</b><span>${esc(kat(p))} · rak ${esc(p.rak || "-")} · ${rp(hargaJual(p) * unit)}</span></div>
     <em class="proc">${unit} unit</em>
   </div>`;
 }).join("") || pesanKosong("wallet", "Belum ada penjualan."));
@@ -121,7 +121,7 @@ isi("belum", belum.length ? [...belum].sort((a, b) => b.tanggal.localeCompare(a.
   const p = produkById(o.produk);
   return `<a class="row" href="pesanan.html">
     <div class="thumb">${fotoHTML(p)}</div>
-    <div><b>${p.nama || "-"}</b><span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${o.pembeli || "-"} · ${o.bayar}</span></div>
-    <em class="wait">${rp(nilaiPesanan(o))}</em>
+    <div><b>${esc(p.nama || "-")}</b><span>${kodePesanan(o)} · ${tglID(o.tanggal)} · ${esc(o.pembeli || "-")} · ${esc(o.bayar)}</span></div>
+    <em class="wait">${rp(totalTransaksi(o))}</em>
   </a>`;
 }).join("") : pesanKosong("clock", "Semua pesanan sudah dibayar."));

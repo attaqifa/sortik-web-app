@@ -1,107 +1,94 @@
-/* Kelola pesanan — konfirmasi bayar, lihat bukti transfer, ubah status.
-   Bersama: dipakai staff/pesanan.html dan admin/pesanan.html. */
-
-/* ?status= preset filter (dipakai kartu Perlu Tindakan) */
+/* Kelola transaksi bersama untuk staff dan admin. */
 let status = new URLSearchParams(location.search).get("status") || "";
-
-const jmlStatus = (s) => db.pesanan.filter((o) => (s === "belum" ? !o.lunas : o.status === s)).length;
-
+const semua = () => transaksi(db.pesanan);
+const jmlStatus = (s) => semua().filter((o) => s === "belum" ? !o.lunas : o.status === s).length;
 const baris = (o) => {
-  const p = produkById(o.produk);
-  /* cek stok: kurang dari jumlah yang diminta = merah (jangan dipromes) */
-  const kurang = p.stok != null && p.stok < o.jumlah;
+  const items = itemPesanan(o);
+  const kurang = !o.lunas && items.some((x) => {
+    const p = produkById(x.produk);
+    return !p.id || !Number.isInteger(p.stok) || p.stok < x.jumlah;
+  });
+  const rincian = items.map((x) => {
+    const p = produkById(x.produk);
+    return `<span>${esc(p.nama || "Produk tidak tersedia")} · ${x.jumlah} unit · ${rp(subtotalPesanan(x))}${p.rak ? ` · Rak ${esc(labelRak(p.rak))}` : ""}${!o.lunas ? ` · stok ${Number.isInteger(p.stok) ? p.stok : 0}` : ""}</span>`;
+  }).join("");
+  const tahap = ALUR.indexOf(o.status);
   return `<div class="row">
-    <button class="thumb" type="button" data-foto="${o.id}" title="Perbesar foto barang">${fotoHTML(p)}</button>
-    <div>
-      <b>${p.nama || "-"}</b>
-      <span>${kodePesanan(o)} · ${o.pembeli || "-"} · ${tglID(o.tanggal)}</span>
-      <span>${o.jumlah} unit · ${rp(nilaiPesanan(o))} · ${o.cara === "antar" ? "Antar ke " + (o.alamat || "-") : "Ambil di tempat"}</span>
-      <div class="rowinfo">
-        ${tagStatus(o.status)}
-        ${p.rak ? `<span class="tag ikonnya biru" title="Lokasi rak barang ini"><span class="ikon" data-lucide="warehouse"></span>Rak ${esc(labelRak(p.rak))}</span>` : ""}
-        ${p.stok != null ? `<span class="tag ikonnya ${kurang ? "habis" : "abu"}" title="${kurang ? "Stok tidak cukup — jangan dipromes dulu" : "Sisa stok barang ini"}"><span class="ikon" data-lucide="boxes"></span>Stok ${p.stok}${kurang ? ` — kurang dari ${o.jumlah} unit` : " tersisa"}</span>` : ""}
-        ${tagBayar(o)}
-        ${o.bukti
-          ? `<button class="btn bukti" type="button" data-bukti="${o.id}"><span class="ikon" data-lucide="receipt"></span>Lihat bukti transfer</button>`
-          : !o.lunas && o.bayar === "Transfer ke admin" ? `<span class="tag belum">Belum ada bukti</span>` : ""}
-      </div>
-    </div>
+    <button class="thumb" type="button" data-foto="${o.id}" title="Perbesar foto barang">${fotoHTML(produkById(o.produk))}</button>
+    <div><b>${kodePesanan(o)} · ${esc(o.pembeli || "-")}</b><span>${tglID(o.tanggal)} · ${rp(totalTransaksi(o))} · ${o.cara === "antar" ? "Antar ke " + esc(o.alamat || "-") : "Ambil di tempat"}</span>
+      ${rincian}<div class="rowinfo">${tagStatus(o.status)}${tagBayar(o)}
+      ${kurang ? '<span class="tag habis">Stok tidak cukup</span>' : ""}
+      ${o.bukti ? `<button class="btn bukti" type="button" data-bukti="${o.id}">Lihat bukti transfer</button>` : !o.lunas && o.bayar === "Transfer ke admin" ? '<span class="tag belum">Belum ada bukti</span>' : ""}</div></div>
     <div class="btns">
-      ${o.lunas ? "" : `<button class="btn" type="button" data-lunas="${o.id}">${o.bayar === "Bayar di kasir" ? "Tandai Dibayar" : "Konfirmasi Transfer"}</button>`}
-      <select class="statuspilih" data-status="${o.id}" title="Ubah status pesanan" aria-label="Ubah status pesanan">
-        ${ALUR.map((s) => `<option value="${s}"${s === o.status ? " selected" : ""}>${s}</option>`).join("")}
-      </select>
-    </div>
-  </div>`;
+      ${o.lunas ? "" : `<button class="btn" type="button" data-lunas="${o.id}"${kurang ? ' disabled title="Stok tidak cukup"' : ""}>${o.bayar === "Bayar di kasir" ? "Tandai Dibayar" : "Konfirmasi Transfer"}</button>`}
+      <select class="statuspilih" data-status="${o.id}" aria-label="Ubah status pesanan">
+        ${ALUR.map((s, i) => `<option value="${s}"${s === o.status ? " selected" : ""}${i !== tahap && (!o.lunas || i !== tahap + 1) ? " disabled" : ""}>${s}</option>`).join("")}
+      </select></div></div>`;
 };
-
 function daftar() {
-  const hasil = db.pesanan
-    .filter((o) => !status || (status === "belum" ? !o.lunas : o.status === status))
+  const hasil = semua().filter((o) => !status || (status === "belum" ? !o.lunas : o.status === status))
     .sort((a, b) => b.tanggal.localeCompare(a.tanggal));
   const belum = hasil.filter((o) => !o.lunas).length;
   isi("hasil", `${hasil.length} pesanan${belum ? ` · ${belum} belum dibayar` : " · semua sudah dibayar"}`);
-  isi("list", hasil.length ? hasil.map(baris).join("")
-    : pesanKosong(status === "belum" ? "credit-card" : "receipt",
-      status === "belum" ? "Semua pesanan sudah dibayar." : "Belum ada pesanan dengan status ini."));
+  isi("list", hasil.length ? hasil.map(baris).join("") : pesanKosong("receipt", "Belum ada pesanan dengan status ini."));
   segarChip();
 }
-
-/* label chip: ikon status + hitungan */
 function segarChip() {
   const label = [["", "Semua"], ...ALUR.map((s) => [s, s]), ["belum", "Belum dibayar"]];
   el("chips").querySelectorAll("button").forEach((b, i) => {
     const [nilai, teks] = label[i];
     const ikon = nilai === "belum" ? '<span class="ikon" data-lucide="credit-card"></span>' : nilai ? ikonStatus(nilai) : "";
-    b.innerHTML = `${ikon}${teks} (${nilai ? jmlStatus(nilai) : db.pesanan.length})`;
+    b.innerHTML = `${ikon}${teks} (${nilai ? jmlStatus(nilai) : semua().length})`;
   });
   gambarIkon();
 }
-
-chipSaring("chips", [["", "Semua"], ...ALUR.map((s) => [s, s]), ["belum", "Belum dibayar"]],
-  (v) => { status = v; daftar(); }, status);
-
-el("list").addEventListener("click", (e) => {
+chipSaring("chips", [["", "Semua"], ...ALUR.map((s) => [s, s]), ["belum", "Belum dibayar"]], (v) => { status = v; daftar(); }, status);
+el("list").addEventListener("click", async (e) => {
   const b = e.target.closest("button");
   if (!b) return;
-  if (b.dataset.foto) {
-    const o = db.pesanan.find((x) => x.id === +b.dataset.foto);
-    const p = o ? produkById(o.produk) : {};
-    const sumber = galeriProduk(p)[0];
-    if (sumber) lihatGambar(sumber, p.nama);
-    else notif("Barang ini belum punya foto.");
-    return;
-  }
-  if (b.dataset.bukti) {
-    const o = db.pesanan.find((x) => x.id === +b.dataset.bukti);
-    if (o && o.bukti) lihatGambar(o.bukti, `Bukti transfer ${kodePesanan(o)}`);
-    return;
-  }
-  if (!b.dataset.lunas) return;
-  const o = db.pesanan.find((x) => x.id === +b.dataset.lunas);
+  const o = db.pesanan.find((x) => x.id === +(b.dataset.foto || b.dataset.bukti || b.dataset.lunas));
   if (!o) return;
-  o.lunas = true;
-  o.staff = db.akun.nama;
-  if (o.status === "Menunggu") o.status = "Diproses";
-  /* stok otomatis: barang benar-benar keluar saat pembayaran sah —
-     (pembatalan hanya boleh sebelum lunas, jadi stok tidak perlu dikembalikan) */
-  const p = produkById(o.produk);
-  if (p.id) { p.stok = Math.max(0, p.stok - o.jumlah); simpan("produk"); }
-  simpan("pesanan");
-  notif(`Pembayaran dikonfirmasi — stok ${p.nama || "barang"} −${o.jumlah}`);
+  if (b.dataset.foto) { const p = produkById(o.produk), sumber = galeriProduk(p)[0]; if (sumber) lihatGambar(sumber, p.nama); else notif("Barang ini belum punya foto."); return; }
+  if (b.dataset.bukti) { if (o.bukti) lihatGambar(o.bukti, `Bukti transfer ${kodePesanan(o)}`); return; }
+  if (!b.dataset.lunas) return;
+  const items = itemPesanan(o);
+  if (items.some((x) => x.lunas)) return notif("Pesanan sudah dibayar atau memiliki status pembayaran tidak konsisten.");
+  const kebutuhan = new Map();
+  for (const x of items) kebutuhan.set(x.produk, (kebutuhan.get(x.produk) || 0) + x.jumlah);
+  for (const [id, jumlah] of kebutuhan) {
+    const p = produkById(id);
+    if (!p.id || !Number.isInteger(jumlah) || jumlah < 1 || !Number.isInteger(p.stok) || p.stok < jumlah)
+      return notif("Stok tidak cukup. Pembayaran belum dikonfirmasi.");
+  }
+  b.disabled = true;
+  const sebelum = items.map((x) => ({ ...x }));
+  const stokLama = [...kebutuhan].map(([id]) => [produkById(id), produkById(id).stok]);
+  const sekarang = new Date();
+  const kini = sekarang.toISOString();
+  items.forEach((x) => { x.lunas = true; x.staff = db.akun.nama; x.dibayarPada = kini; x.tanggalDibayar = tanggalLokal(sekarang); if (x.status === "Menunggu") x.status = "Diproses"; });
+  kebutuhan.forEach((jumlah, id) => { produkById(id).stok -= jumlah; });
+  if (!await simpan("pesanan")) {
+    items.forEach((x, i) => { Object.keys(x).forEach((k) => delete x[k]); Object.assign(x, sebelum[i]); });
+    stokLama.forEach(([p, stok]) => { p.stok = stok; });
+    b.disabled = false; return;
+  }
+  notif("Pembayaran dikonfirmasi dan stok diperbarui.");
   daftar();
 });
-
-/* status diubah lewat pilihan */
-el("list").addEventListener("change", (e) => {
+el("list").addEventListener("change", async (e) => {
   const pilih = e.target.closest("select[data-status]");
   if (!pilih) return;
   const o = db.pesanan.find((x) => x.id === +pilih.dataset.status);
-  if (!o) return;
-  o.status = pilih.value;
-  simpan("pesanan");
-  notif(`${kodePesanan(o)} → ${o.status}`);
-  daftar();
+  if (!o || pilih.value === o.status) return;
+  const items = itemPesanan(o), tahap = ALUR.indexOf(o.status);
+  if (!items.every((x) => x.lunas && x.status === o.status) || tahap < 0 || ALUR.indexOf(pilih.value) !== tahap + 1) {
+    pilih.value = o.status; return notif("Pesanan harus lunas dan diproses sesuai urutan status.");
+  }
+  const lama = o.status;
+  const tujuan = pilih.value;
+  pilih.disabled = true;
+  items.forEach((x) => { x.status = tujuan; });
+  if (!await simpan("pesanan")) { items.forEach((x) => { x.status = lama; }); pilih.value = lama; pilih.disabled = false; return; }
+  notif(`${kodePesanan(o)} → ${tujuan}`); daftar();
 });
-
 daftar();
