@@ -2,7 +2,7 @@
 
 /* ---------- etalase depan: sapaan + nama toko + produk unggulan ---------- */
 const terjual = {};
-db.pesanan.forEach((o) => (terjual[o.produk] = (terjual[o.produk] || 0) + o.jumlah));
+db.pesanan.filter((o) => !batal(o)).forEach((o) => (terjual[o.produk] = (terjual[o.produk] || 0) + o.jumlah));
 const adaStok = db.produk.filter((p) => p.stok > 0)
   .sort((a, b) => (terjual[b.id] || 0) - (terjual[a.id] || 0) || b.id - a.id);
 /* slide banner: produk diskon dulu, dilanjutkan terlaris — maks 3, wajib punya foto */
@@ -56,7 +56,7 @@ isi("promo", promo.map(kartu).join(""));
 
 /* ---------- ringkasan akun ---------- */
 const punyaku = transaksi(pesananku());
-const jalan = punyaku.filter((o) => o.status !== "Selesai").sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+const jalan = punyaku.filter(aktif).sort((a, b) => b.tanggal.localeCompare(a.tanggal));
 
 isi("stats", [
   ["shopping-cart", "Pesanan aktif", jalan.length],

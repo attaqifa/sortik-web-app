@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/jpeg" href="../assets/img/SortikLogo.jpeg">
   <title>Daftar — SORTIK</title>
@@ -27,6 +28,8 @@
   <section class="form">
     <h2>Buat akun baru</h2>
     <p>Daftar sebagai Pembeli — gratis, cukup satu menit.</p>
+
+    <p class="mode-demo" role="note"><b>Mode demo lokal.</b> Data hanya tersimpan di browser ini dan tidak dibagikan ke perangkat lain. Jangan masukkan data atau kata sandi sungguhan.</p>
 
     <form method="post" action="#">
       <label for="nama">Nama Lengkap</label>
@@ -54,7 +57,7 @@
   </section>
 
 </main>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="../assets/vendor/lucide.min.js"></script>
 <script src="../assets/js/core/koneksi.js"></script>
 <script src="../assets/js/core/data.js"></script>
 <script src="../assets/js/login.js"></script>

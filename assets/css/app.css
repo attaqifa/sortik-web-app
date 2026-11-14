@@ -188,6 +188,7 @@ button.thumb:focus-visible { outline: 2px solid var(--biru); outline-offset: 2px
 .proc { color: #1e40af; background: #dbeafe; }
 .ok { color: #166534; background: #dcfce7; }
 .done { color: #374151; background: #eef0f4; }
+.batal { color: #b91c1c; background: #fee2e2; }
 
 .tag { display: inline-block; margin-top: 5px; padding: 3px 10px; font-size: 11.5px; font-weight: 600; border-radius: 999px; }
 /* tag tetap sekeping di baris */
@@ -836,18 +837,18 @@ input[type="file"]::file-selector-button:hover { background: #e2ecff; border-col
 /* ---------- mikro-interaksi ---------- */
 /* kartu produk muncul berurutan (maks 12) */
 .grid .pcard { animation: naik .32s ease backwards; }
-.grid .pcard:nth-child(1) { animation-delay: 0s; }
-.grid .pcard:nth-child(2) { animation-delay: .03s; }
-.grid .pcard:nth-child(3) { animation-delay: .06s; }
-.grid .pcard:nth-child(4) { animation-delay: .09s; }
-.grid .pcard:nth-child(5) { animation-delay: .12s; }
-.grid .pcard:nth-child(6) { animation-delay: .15s; }
-.grid .pcard:nth-child(7) { animation-delay: .18s; }
-.grid .pcard:nth-child(8) { animation-delay: .21s; }
-.grid .pcard:nth-child(9) { animation-delay: .24s; }
-.grid .pcard:nth-child(10) { animation-delay: .27s; }
-.grid .pcard:nth-child(11) { animation-delay: .3s; }
-.grid .pcard:nth-child(12) { animation-delay: .33s; }
+.grid .kartu:nth-child(1) .pcard { animation-delay: 0s; }
+.grid .kartu:nth-child(2) .pcard { animation-delay: .03s; }
+.grid .kartu:nth-child(3) .pcard { animation-delay: .06s; }
+.grid .kartu:nth-child(4) .pcard { animation-delay: .09s; }
+.grid .kartu:nth-child(5) .pcard { animation-delay: .12s; }
+.grid .kartu:nth-child(6) .pcard { animation-delay: .15s; }
+.grid .kartu:nth-child(7) .pcard { animation-delay: .18s; }
+.grid .kartu:nth-child(8) .pcard { animation-delay: .21s; }
+.grid .kartu:nth-child(9) .pcard { animation-delay: .24s; }
+.grid .kartu:nth-child(10) .pcard { animation-delay: .27s; }
+.grid .kartu:nth-child(11) .pcard { animation-delay: .3s; }
+.grid .kartu:nth-child(12) .pcard { animation-delay: .33s; }
 @keyframes naik { from { opacity: 0; transform: translateY(8px); } }
 
 /* ---------- branding: nama perusahaan + "with SORTIK" ---------- */
@@ -953,9 +954,12 @@ input[type="file"]::file-selector-button:hover { background: #e2ecff; border-col
 .ptanda.diskon { left: auto; right: 8px; }
 
 /* tombol keranjang cepat di sudut foto kartu */
-.belicepat { position: absolute; right: 8px; bottom: 8px; z-index: 1; display: grid; place-items: center; width: 34px; height: 34px; color: var(--biru-tua); background: rgba(255,255,255,.92); border: 1px solid var(--garis); border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,.14); cursor: pointer; transition: transform var(--cepat), background var(--cepat), color var(--cepat); }
-.belicepat:hover { color: #fff; background: var(--biru); transform: scale(1.08); }
-.belicepat .ikon { width: 17px; height: 17px; }
+/* .kartu membungkus kartu (tautan) dan tombol; tombol ditaruh di sudut foto 4:3 */
+.kartu { position: relative; display: flex; container-type: inline-size; }
+.kartu > .pcard { flex: 1; min-width: 0; }
+.kartu-beli { position: absolute; right: 8px; top: calc(75cqw - 43px); z-index: 1; padding: 0; display: grid; place-items: center; width: 34px; height: 34px; color: var(--biru-tua); background: rgba(255,255,255,.92); border: 1px solid var(--garis); border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,.14); cursor: pointer; transition: transform var(--cepat), background var(--cepat), color var(--cepat); }
+.kartu-beli:hover { color: #fff; background: var(--biru); transform: scale(1.08); }
+.kartu-beli .ikon { width: 17px; height: 17px; }
 
 /* kartu stok habis diredupkan */
 .pcard.habis .pimg img { filter: grayscale(.9); opacity: .55; }

@@ -53,6 +53,15 @@ const baca = (k, nilaiKosong = []) => {
   try { return JSON.parse(localStorage.getItem(VERSI + k)) ?? nilaiKosong; } catch { return nilaiKosong; }
 };
 
+/* Batalkan pesanan Menunggu yang belum dibayar lewat batas waktu dan kembalikan stoknya. */
+async function batalkanKedaluwarsa() {
+  const basi = transaksi(db.pesanan).map((o) => itemPesanan(o)).filter((items) => items.every(kedaluwarsa));
+  if (!basi.length) return;
+  const alasan = `Tidak dibayar dalam ${HARI_TAHAN} hari`;
+  const urungkan = basi.map((items) => batalkanItem(items, alasan));
+  if (!await simpan("pesanan")) urungkan.reverse().forEach((f) => f());
+}
+
 async function muatData() {
   const bacaAwal = () => { muatDB(); return localStorage.getItem(KUNCI_DB); };
   const mentah = navigator.locks ? await navigator.locks.request("sortik-db", bacaAwal) : bacaAwal();
@@ -68,6 +77,7 @@ async function muatData() {
   db.pengguna = data.pengguna || [];
   db.pesan = (data.pesan || []).filter((m) => m.peran !== "bot");
   db.keuangan = data.keuangan || { pengeluaran: [] };
+  await batalkanKedaluwarsa();
 
   const profil = db.pengguna.find((u) => u.id === bacaSesi());
   if (!profil) {
@@ -155,7 +165,7 @@ const MENU = {
   ]
 };
 
-const LUCIDE = "https://unpkg.com/lucide@latest/dist/umd/lucide.min.js";
+const LUCIDE = "../assets/vendor/lucide.min.js";
 function muatLucide() {
   if (window.lucide) return gambarIkon();
   const s = document.createElement("script");
@@ -178,7 +188,7 @@ function gambarSidebar() {
 <a class="keluar" href="../auth/login.html" title="Keluar"><span class="ikon" data-lucide="log-out"></span><span class="lengkap">Keluar</span></a></div>`);
   /* badge pesanan aktif milik akun ini (menu pembeli) */
   const jmlPesan = el("jmlPesan");
-  if (jmlPesan) jmlPesan.textContent = transaksi(pesananku()).filter((o) => o.status !== "Selesai").length || "";
+  if (jmlPesan) jmlPesan.textContent = transaksi(pesananku()).filter(aktif).length || "";
 }
 
 async function mulaiAplikasi(mulai) {

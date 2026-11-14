@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/jpeg" href="../assets/img/SortikLogo.jpeg">
   <title>Tata Rak — SORTIK</title>
@@ -53,9 +54,10 @@
 <!-- halaman ini memakai skrip yang sama dengan staff/rak.html -->
 <script src="../assets/js/core/koneksi.js"></script>
 <script src="../assets/js/core/data.js"></script>
+<script src="../assets/js/core/domain.js"></script>
 <script src="../assets/js/core/ui.js"></script>
 <script src="../assets/js/core/store.js"></script>
 <script src="../assets/js/core/kelola.js"></script>
-<script>mulaiAplikasi(() => { const halaman = document.createElement('script'); halaman.src = '../assets/js/toko/rak.js'; document.body.append(halaman); });</script>
+<script src="../assets/js/core/mulai.js" data-halaman="../assets/js/toko/rak.js"></script>
 </body>
 </html>

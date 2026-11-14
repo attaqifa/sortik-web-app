@@ -5,11 +5,18 @@
 
    Reset data awal: jalankan localStorage.removeItem("sortik-db") di Console,
    lalu muat ulang halaman.
-   Masuk: email salah satu akun contoh di DATA_AWAL (kata sandi bebas,
-   tidak dipakai di mode lokal). */
+   MODE DEMO: tidak ada server, jadi pemeriksaan peran dan kata sandi hanya
+   berjalan di browser dan bisa dilewati lewat Console. Jangan dipakai untuk
+   data sungguhan.
+   Masuk: email akun contoh di DATA_AWAL dengan kata sandi demo (lihat README). */
 
 const KUNCI_DB = "sortik-db";
 const KUNCI_SESI = "sortik-sesi";
+const KUNCI_GAGAL = "sortik-gagal";
+
+/* Hash kata sandi demo (PBKDF2) untuk akun contoh; kata sandinya ada di README. */
+const SANDI_DEMO = "p1$736f7274696b2d64656d6f2d73616c74$9e9ca9f9236aafc5e0600babb98dcb340c2010220569a6913cde625a2c36b90b";
+const AKUN_DEMO = ["u-admin", "u-staff", "u-budi", "u-sari", "u-lama"];
 
 /* foto contoh: tautan Unsplash — stabil, https, bebas hotlink */
 const fotoUnsplash = (id) => `https://images.unsplash.com/${id}?fm=jpg&q=70&w=1200&auto=format&fit=crop`;
@@ -61,11 +68,11 @@ const DATA_AWAL = () => ({
     { id: 10, nama: "Powerbank 20000mAh", kategori: "smartphone", harga: 349000, diskon: 0, stok: 30, rak: "A1", ikon: "", foto: fotoUnsplash("photo-1609091839311-d5365f9ff1c5"), deskripsi: "Output 22.5W, isi ulang 3 perangkat sekaligus.", galeri: [fotoUnsplash("photo-1583863788434-e58a36330cf0")] }
   ],
   pengguna: [
-    { id: "u-admin", nama: "Admin Toko", role: "admin", status: "aktif", email: "admin@sortik.id", telepon: "6281234567891", alamat: "", avatar: "" },
-    { id: "u-staff", nama: "Staff Toko", role: "staff", status: "aktif", email: "staff@sortik.id", telepon: "6281234567892", alamat: "", avatar: "" },
-    { id: "u-budi", nama: "Budi Pembeli", role: "pembeli", status: "aktif", email: "budi@sortik.id", telepon: "6281234567893", alamat: "Jl. Kenanga No. 5, Malang", avatar: "" },
-    { id: "u-sari", nama: "Sari Pembeli", role: "pembeli", status: "aktif", email: "sari@sortik.id", telepon: "6281234567894", alamat: "Jl. Melati No. 9, Malang", avatar: "" },
-    { id: "u-lama", nama: "Akun Lama", role: "pembeli", status: "nonaktif", email: "lama@sortik.id", telepon: "", alamat: "", avatar: "" }
+    { id: "u-admin", sandi: SANDI_DEMO, nama: "Admin Toko", role: "admin", status: "aktif", email: "admin@sortik.id", telepon: "6281234567891", alamat: "", avatar: "" },
+    { id: "u-staff", sandi: SANDI_DEMO, nama: "Staff Toko", role: "staff", status: "aktif", email: "staff@sortik.id", telepon: "6281234567892", alamat: "", avatar: "" },
+    { id: "u-budi", sandi: SANDI_DEMO, nama: "Budi Pembeli", role: "pembeli", status: "aktif", email: "budi@sortik.id", telepon: "6281234567893", alamat: "Jl. Kenanga No. 5, Malang", avatar: "" },
+    { id: "u-sari", sandi: SANDI_DEMO, nama: "Sari Pembeli", role: "pembeli", status: "aktif", email: "sari@sortik.id", telepon: "6281234567894", alamat: "Jl. Melati No. 9, Malang", avatar: "" },
+    { id: "u-lama", sandi: SANDI_DEMO, nama: "Akun Lama", role: "pembeli", status: "nonaktif", email: "lama@sortik.id", telepon: "", alamat: "", avatar: "" }
   ],
   pesanan: [
     { id: 1, produk: 6, pembeli_id: "u-budi", pembeli: "Budi Pembeli", jumlah: 2, status: "Selesai", tanggal: "2026-10-30", cara: "ambil", bayar: "Bayar di kasir", alamat: "", lunas: true, staff: "Staff Toko", harga: 239200, bukti: "", buktiPada: null },
@@ -93,9 +100,18 @@ const muatDB = () => {
   let d = null;
   try { d = JSON.parse(localStorage.getItem(KUNCI_DB)); } catch {}
   if (!d) { d = DATA_AWAL(); simpanDB(d); }
-  else if ((d.pesan || []).some((m) => m.peran === "bot")) {
-    /* sisa pesan SORTIK Bot dari versi lama dibuang sekali di sini */
-    d.pesan = d.pesan.filter((m) => m.peran !== "bot");
+  else {
+    let berubah = false;
+    if ((d.pesan || []).some((m) => m.peran === "bot")) {
+      /* sisa pesan SORTIK Bot dari versi lama dibuang sekali di sini */
+      d.pesan = d.pesan.filter((m) => m.peran !== "bot");
+      berubah = true;
+    }
+    /* akun contoh lama tanpa kata sandi (dulu menerima sandi apa pun) diberi sandi demo */
+    (d.pengguna || []).forEach((u) => {
+      if (!u.sandi && AKUN_DEMO.includes(u.id)) { u.sandi = SANDI_DEMO; berubah = true; }
+    });
+    if (berubah) simpanDB(d);
   }
   return d;
 };
@@ -104,28 +120,81 @@ const muatDB = () => {
 const bacaSesi = () => localStorage.getItem(KUNCI_SESI);
 const simpanSesi = (id) => id ? localStorage.setItem(KUNCI_SESI, id) : localStorage.removeItem(KUNCI_SESI);
 
-/* hash kata sandi mode lokal: SHA-256 bila origin aman, cadangan FNV-1a.
-   shortcut: hash di sisi browser, bukan pengaman server — cukup untuk data
-   localStorage satu browser; ganti dengan auth server saat ada backend. */
-async function hashSandi(sandi) {
+/* hash kata sandi mode lokal: PBKDF2-SHA256 (100 ribu iterasi) dengan garam acak
+   per akun, format "p1$garam$hash". Bila origin tidak aman (tanpa crypto.subtle)
+   dipakai hash lama (SHA-256/FNV tanpa garam). Tetap pengaman di sisi browser,
+   bukan pengaman server — ganti dengan auth server saat ada backend. */
+const ITERASI_SANDI = 100000;
+const heks = (b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
+const dariHeks = (h) => new Uint8Array((h.match(/../g) || []).map((x) => parseInt(x, 16)));
+async function turunkanSandi(sandi, garam) {
+  const kunci = await crypto.subtle.importKey("raw", new TextEncoder().encode(sandi), "PBKDF2", false, ["deriveBits"]);
+  return heks(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: garam, iterations: ITERASI_SANDI }, kunci, 256));
+}
+async function hashLama(sandi) {
   const t = new TextEncoder().encode("sortik:" + sandi);
-  if (crypto.subtle) {
-    const b = await crypto.subtle.digest("SHA-256", t);
-    return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
-  }
+  if (crypto.subtle) return heks(await crypto.subtle.digest("SHA-256", t));
   let h = 2166136261;
   for (const b of t) h = Math.imul(h ^ b, 16777619) >>> 0;
   return "fnv" + h.toString(16);
 }
+async function hashSandi(sandi) {
+  if (!crypto.subtle) return hashLama(sandi);
+  const garam = crypto.getRandomValues(new Uint8Array(16));
+  return `p1$${heks(garam)}$${await turunkanSandi(sandi, garam)}`;
+}
+async function cocokSandi(sandi, tersimpan) {
+  if (String(tersimpan).startsWith("p1$")) {
+    if (!crypto.subtle) return false;
+    const [, garam, hash] = tersimpan.split("$");
+    return await turunkanSandi(sandi, dariHeks(garam)) === hash;
+  }
+  return tersimpan === await hashLama(sandi);
+}
 
-/* masuk: email harus terdaftar; akun lama tanpa sandi menerima sandi apa pun
-   sampai admin memasang sandi baru dari Kelola Pengguna. */
+/* pembatas percobaan masuk (di browser, hanya menahan tebakan iseng):
+   5 kegagalan berturut-turut untuk satu email → jeda 60 detik. */
+const BATAS_GAGAL = 5;
+const JEDA_GAGAL = 60000;
+const bacaGagal = () => { try { return JSON.parse(localStorage.getItem(KUNCI_GAGAL)) || {}; } catch { return {}; } };
+const tulisGagal = (g) => { try { localStorage.setItem(KUNCI_GAGAL, JSON.stringify(g)); } catch {} };
+const sisaJeda = (email) => {
+  const c = bacaGagal()[email];
+  return c && c.n >= BATAS_GAGAL ? Math.max(0, Math.ceil((c.sampai - Date.now()) / 1000)) : 0;
+};
+const catatGagal = (email) => {
+  const g = bacaGagal();
+  const c = g[email] && (g[email].n < BATAS_GAGAL || g[email].sampai > Date.now()) ? g[email] : { n: 0 };
+  c.n += 1;
+  if (c.n >= BATAS_GAGAL) c.sampai = Date.now() + JEDA_GAGAL;
+  g[email] = c;
+  tulisGagal(g);
+};
+const bersihGagal = (email) => { const g = bacaGagal(); delete g[email]; tulisGagal(g); };
+
+/* masuk: email harus terdaftar dan kata sandi harus cocok. Akun tanpa sandi
+   tidak bisa masuk sampai admin memasangnya dari Kelola Pengguna. */
 const masukLokal = async (email, sandi = "") => {
+  const kunciEmail = String(email).trim().toLowerCase();
+  const jeda = sisaJeda(kunciEmail);
+  if (jeda) return { data: null, error: `Terlalu banyak percobaan salah — coba lagi dalam ${jeda} detik.` };
   const d = muatDB();
-  const u = (d.pengguna || []).find((r) => String(r.email || "").toLowerCase() === String(email).toLowerCase());
-  if (!u) return { data: null, error: "Email tidak terdaftar — daftar dulu atau pakai akun contoh." };
+  const u = (d.pengguna || []).find((r) => String(r.email || "").toLowerCase() === kunciEmail);
+  if (!u) { catatGagal(kunciEmail); return { data: null, error: "Email tidak terdaftar — daftar dulu atau pakai akun contoh." }; }
   if (u.status !== "aktif") return { data: u, error: "Akun ini nonaktif — hubungi admin toko." };
-  if (u.sandi && u.sandi !== await hashSandi(sandi)) return { data: null, error: "Kata sandi salah — coba lagi." };
+  if (!u.sandi) return { data: null, error: "Akun ini belum punya kata sandi — minta admin memasangnya dari Kelola Pengguna." };
+  if (!await cocokSandi(sandi, u.sandi)) { catatGagal(kunciEmail); return { data: null, error: "Kata sandi salah — coba lagi." }; }
+  bersihGagal(kunciEmail);
+  /* hash lama otomatis ditingkatkan ke PBKDF2 saat berhasil masuk */
+  if (!String(u.sandi).startsWith("p1$") && crypto.subtle) {
+    const baru = await hashSandi(sandi);
+    const tulis = () => {
+      const data = muatDB();
+      const r = (data.pengguna || []).find((x) => x.id === u.id);
+      if (r) { r.sandi = baru; simpanDB(data); }
+    };
+    try { if (navigator.locks) await navigator.locks.request("sortik-db", tulis); else tulis(); } catch {}
+  }
   simpanSesi(u.id);
   return { data: u, error: null };
 };

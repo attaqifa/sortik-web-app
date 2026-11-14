@@ -6,7 +6,7 @@ function gambar(p) {
   const habis = p.stok < 1;
   const tipis = p.stok > 0 && p.stok <= 3;
   /* ikon cadangan tampil bila foto gagal (onerror) */
-  const foto = (src) => `${ikonCadangan(p)}<img src="${urlGambar(src)}" alt="${esc(p.nama)}" onerror="this.remove()">`;
+  const foto = (src) => `${ikonCadangan(p)}<img src="${urlGambar(src)}" alt="${esc(p.nama)}" data-cadangan>`;
 
   /* galeri: foto utama + thumbnail */
   const semua = galeriProduk(p);

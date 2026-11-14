@@ -13,8 +13,9 @@ el("sapTutup").onclick = () => {
 };
 
 const lunas = db.pesanan.filter((o) => o.lunas);
-const belum = transaksi(db.pesanan).filter((o) => !o.lunas);
-const nilaiSemua = db.pesanan.reduce((n, o) => n + nilaiPesanan(o), 0);
+const berjalan = db.pesanan.filter((o) => !batal(o));
+const belum = transaksi(db.pesanan).filter((o) => !o.lunas && !batal(o));
+const nilaiSemua = berjalan.reduce((n, o) => n + nilaiPesanan(o), 0);
 const pendapatan = lunas.reduce((n, o) => n + nilaiPesanan(o), 0);
 const menipis = (p) => p.stok > 0 && p.stok <= 3;
 
@@ -48,7 +49,7 @@ isi("tindakan", darurat.length
 /* rak tersibuk satu bulan */
 function rakSibuk(b) {
   const hitung = {};
-  db.pesanan.filter((o) => o.tanggal.startsWith(b)).forEach((o) => {
+  berjalan.filter((o) => o.tanggal.startsWith(b)).forEach((o) => {
     const r = produkById(o.produk).rak;
     if (r) hitung[r] = (hitung[r] || 0) + o.jumlah;
   });
@@ -56,7 +57,7 @@ function rakSibuk(b) {
 }
 
 const bulan = {};
-db.pesanan.forEach((o) => {
+berjalan.forEach((o) => {
   const b = o.tanggal.slice(0, 7);
   bulan[b] = bulan[b] || { nilai: 0, lunas: 0, belum: 0, unit: 0, pesanan: 0 };
   const v = nilaiPesanan(o);
@@ -89,7 +90,7 @@ const puncak = Math.max(1, ...rekap.map((v) => v.nilai));
     </div><label>${v.label.slice(0, 3)}</label></div>`).join(""));
 
   const lunas = rekap.reduce((n, v) => n + v.lunas, 0);
-  isi("total", `${transaksi(db.pesanan).length} pesanan · ${rp(pendapatan)} sudah dibayar · ${rp(nilaiSemua - pendapatan)} belum`);
+  isi("total", `${transaksi(berjalan).length} pesanan · ${rp(pendapatan)} sudah dibayar · ${rp(nilaiSemua - pendapatan)} belum`);
 })();
 
 /* laporan: hanya bulan yang benar-benar ada pesanan, terbaru dulu */
@@ -106,7 +107,7 @@ isi("lapor", (() => {
 })());
 
 const terjual = {};
-db.pesanan.forEach((o) => (terjual[o.produk] = (terjual[o.produk] || 0) + o.jumlah));
+berjalan.forEach((o) => (terjual[o.produk] = (terjual[o.produk] || 0) + o.jumlah));
 
 isi("laris", Object.entries(terjual).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, unit]) => {
   const p = produkById(+id);

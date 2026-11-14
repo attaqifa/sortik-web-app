@@ -1,7 +1,7 @@
 /* Cari produk & rak — filter kata kunci, kategori, dan denah rak. */
 
 const state = {
-  q: "",
+  q: new URLSearchParams(location.search).get("q") || "",
   kat: new URLSearchParams(location.search).get("kat") || "",
   rak: new URLSearchParams(location.search).get("rak") || "",
   urut: ""
@@ -60,6 +60,7 @@ el("filter").addEventListener("click", (e) => {
   render();
 });
 
+el("q").value = state.q; /* ?q=kata mengisi kolom cari */
 el("q").addEventListener("input", (e) => { state.q = e.target.value; render(); });
 el("urut").addEventListener("change", (e) => { state.urut = e.target.value; render(); });
 

@@ -12,7 +12,7 @@ el("sapTutup").onclick = () => {
   try { localStorage.setItem(VERSI + "sapa", hariSapa); } catch {}
 };
 
-const jalan = transaksi(db.pesanan).filter((o) => o.status !== "Selesai");
+const jalan = transaksi(db.pesanan).filter(aktif);
 const belumBayar = jalan.filter((o) => !o.lunas);
 const tipis = db.produk.filter((p) => p.stok <= 5);
 const terbaru = (daftar) => [...daftar].sort((a, b) => b.tanggal.localeCompare(a.tanggal)).slice(0, 5);

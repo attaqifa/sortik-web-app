@@ -98,31 +98,12 @@ el("buat").onclick = async () => {
     + (state.cara === "antar" ? " (termasuk ongkir)." : "."), "Ya, Buat Pesanan");
   if (!yakin) return;
 
-  if (!keranjang.length || keranjang.some((i) => !Number.isInteger(i.jumlah) || i.jumlah < 1 || i.jumlah > (produkById(i.produk).stok || 0))) {
-    return notif("Stok tidak mencukupi. Periksa kembali keranjang Anda.");
-  }
-  const mulai = Math.max(0, ...db.pesanan.map((o) => o.id)) + 1;
-  const checkoutId = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
-  const dibuat = keranjang.map((i, n) => ({
-    id: mulai + n,
-    checkoutId,
-    pesananId: mulai,
-    ongkir: n === 0 && state.cara === "antar" ? ongkir : 0,
-    produk: i.produk,
-    pembeli_id: db.akun.id,
-    pembeli: db.akun.nama,
-    jumlah: i.jumlah,
-    /* harga jual dikunci saat pesanan dibuat — diskon belakangan tidak mengubah riwayat */
-    harga: hargaJual(produkById(i.produk)),
-    status: "Menunggu",
-    tanggal: tanggalLokal(new Date()),
-    cara: state.cara,
-    bayar: state.bayar,
-    alamat: state.cara === "antar" ? el("alamat").value.trim() : "",
-    lunas: false,
-    staff: ""
-  }));
-  db.pesanan.push(...dibuat);
+  const hasil = buatPesanan({
+    keranjang, akun: db.akun, cara: state.cara, bayar: state.bayar,
+    alamat: el("alamat").value.trim(), ongkir
+  });
+  if (hasil.error) return notif(hasil.error);
+  const { baris: dibuat, urungkan } = hasil;
 
   const tombol = el("buat");
   const labelTombol = tombol.textContent;
@@ -131,8 +112,8 @@ el("buat").onclick = async () => {
 
   const tersimpan = await simpan("pesanan");
   if (!tersimpan) {
-    /* pembatalan: buang baris optimis agar tidak dobel saat dicoba lagi */
-    db.pesanan = db.pesanan.filter((o) => !dibuat.includes(o));
+    /* pembatalan: buang baris optimis dan kembalikan stok agar tidak dobel saat dicoba lagi */
+    urungkan();
     tombol.disabled = false;
     tombol.textContent = labelTombol;
     render();

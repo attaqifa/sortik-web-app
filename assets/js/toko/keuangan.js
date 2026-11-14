@@ -4,8 +4,6 @@
    staff/keuangan.html (hanya lihat) dan admin/keuangan.html (bisa mencatat). */
 
 const pengeluaran = () => db.keuangan.pengeluaran || [];
-const totalPendapatan = () => db.pesanan.filter((o) => o.lunas).reduce((n, o) => n + nilaiPesanan(o), 0);
-const totalPiutang = () => db.pesanan.filter((o) => !o.lunas).reduce((n, o) => n + nilaiPesanan(o), 0);
 const totalKeluar = () => pengeluaran().reduce((n, x) => n + (+x.jumlah || 0), 0);
 const kategoriKeluar = () => [...new Set(pengeluaran().map((x) => x.kategori).filter(Boolean))];
 
@@ -50,7 +48,7 @@ function gambarGrafik() {
 let saringKat = "";
 
 function gambarChips() {
-  chipSaring("chips", [["", "Semua"], ...kategoriKeluar().map((k) => [k, k])], (nilai) => {
+  chipSaring("chips", [["", "Semua"], ...kategoriKeluar().map((k) => [k, esc(k)])], (nilai) => {
     saringKat = nilai;
     gambarKas();
   }, saringKat);

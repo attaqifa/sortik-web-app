@@ -1,16 +1,17 @@
 /* Kelola transaksi bersama untuk staff dan admin. */
 let status = new URLSearchParams(location.search).get("status") || "";
 const semua = () => transaksi(db.pesanan);
-const jmlStatus = (s) => semua().filter((o) => s === "belum" ? !o.lunas : o.status === s).length;
+const jmlStatus = (s) => semua().filter((o) => s === "belum" ? !o.lunas && !batal(o) : o.status === s).length;
+const STATUS_FILTER = [...ALUR, "Dibatalkan"];
 const baris = (o) => {
   const items = itemPesanan(o);
-  const kurang = !o.lunas && items.some((x) => {
+  const kurang = !o.lunas && !batal(o) && butuhStok(items).some((x) => {
     const p = produkById(x.produk);
     return !p.id || !Number.isInteger(p.stok) || p.stok < x.jumlah;
   });
   const rincian = items.map((x) => {
     const p = produkById(x.produk);
-    return `<span>${esc(p.nama || "Produk tidak tersedia")} · ${x.jumlah} unit · ${rp(subtotalPesanan(x))}${p.rak ? ` · Rak ${esc(labelRak(p.rak))}` : ""}${!o.lunas ? ` · stok ${Number.isInteger(p.stok) ? p.stok : 0}` : ""}</span>`;
+    return `<span>${esc(p.nama || "Produk tidak tersedia")} · ${x.jumlah} unit · ${rp(subtotalPesanan(x))}${p.rak ? ` · Rak ${esc(labelRak(p.rak))}` : ""}${!o.lunas && !batal(o) && !x.stokDipesan ? ` · stok ${Number.isInteger(p.stok) ? p.stok : 0}` : ""}</span>`;
   }).join("");
   const tahap = ALUR.indexOf(o.status);
   return `<div class="row">
@@ -20,21 +21,21 @@ const baris = (o) => {
       ${kurang ? '<span class="tag habis">Stok tidak cukup</span>' : ""}
       ${o.bukti ? `<button class="btn bukti" type="button" data-bukti="${o.id}">Lihat bukti transfer</button>` : !o.lunas && o.bayar === "Transfer ke admin" ? '<span class="tag belum">Belum ada bukti</span>' : ""}</div></div>
     <div class="btns">
-      ${o.lunas ? "" : `<button class="btn" type="button" data-lunas="${o.id}"${kurang ? ' disabled title="Stok tidak cukup"' : ""}>${o.bayar === "Bayar di kasir" ? "Tandai Dibayar" : "Konfirmasi Transfer"}</button>`}
-      <select class="statuspilih" data-status="${o.id}" aria-label="Ubah status pesanan">
+      ${o.lunas || batal(o) ? "" : `<button class="btn" type="button" data-lunas="${o.id}"${kurang ? ' disabled title="Stok tidak cukup"' : ""}>${o.bayar === "Bayar di kasir" ? "Tandai Dibayar" : "Konfirmasi Transfer"}</button>`}
+      ${batal(o) ? "" : `<select class="statuspilih" data-status="${o.id}" aria-label="Ubah status pesanan">
         ${ALUR.map((s, i) => `<option value="${s}"${s === o.status ? " selected" : ""}${i !== tahap && (!o.lunas || i !== tahap + 1) ? " disabled" : ""}>${s}</option>`).join("")}
-      </select></div></div>`;
+      </select>`}</div></div>`;
 };
 function daftar() {
-  const hasil = semua().filter((o) => !status || (status === "belum" ? !o.lunas : o.status === status))
+  const hasil = semua().filter((o) => !status || (status === "belum" ? !o.lunas && !batal(o) : o.status === status))
     .sort((a, b) => b.tanggal.localeCompare(a.tanggal));
-  const belum = hasil.filter((o) => !o.lunas).length;
+  const belum = hasil.filter((o) => !o.lunas && !batal(o)).length;
   isi("hasil", `${hasil.length} pesanan${belum ? ` · ${belum} belum dibayar` : " · semua sudah dibayar"}`);
   isi("list", hasil.length ? hasil.map(baris).join("") : pesanKosong("receipt", "Belum ada pesanan dengan status ini."));
   segarChip();
 }
 function segarChip() {
-  const label = [["", "Semua"], ...ALUR.map((s) => [s, s]), ["belum", "Belum dibayar"]];
+  const label = [["", "Semua"], ...STATUS_FILTER.map((s) => [s, s]), ["belum", "Belum dibayar"]];
   el("chips").querySelectorAll("button").forEach((b, i) => {
     const [nilai, teks] = label[i];
     const ikon = nilai === "belum" ? '<span class="ikon" data-lucide="credit-card"></span>' : nilai ? ikonStatus(nilai) : "";
@@ -42,7 +43,7 @@ function segarChip() {
   });
   gambarIkon();
 }
-chipSaring("chips", [["", "Semua"], ...ALUR.map((s) => [s, s]), ["belum", "Belum dibayar"]], (v) => { status = v; daftar(); }, status);
+chipSaring("chips", [["", "Semua"], ...STATUS_FILTER.map((s) => [s, s]), ["belum", "Belum dibayar"]], (v) => { status = v; daftar(); }, status);
 el("list").addEventListener("click", async (e) => {
   const b = e.target.closest("button");
   if (!b) return;
@@ -52,24 +53,11 @@ el("list").addEventListener("click", async (e) => {
   if (b.dataset.bukti) { if (o.bukti) lihatGambar(o.bukti, `Bukti transfer ${kodePesanan(o)}`); return; }
   if (!b.dataset.lunas) return;
   const items = itemPesanan(o);
-  if (items.some((x) => x.lunas)) return notif("Pesanan sudah dibayar atau memiliki status pembayaran tidak konsisten.");
-  const kebutuhan = new Map();
-  for (const x of items) kebutuhan.set(x.produk, (kebutuhan.get(x.produk) || 0) + x.jumlah);
-  for (const [id, jumlah] of kebutuhan) {
-    const p = produkById(id);
-    if (!p.id || !Number.isInteger(jumlah) || jumlah < 1 || !Number.isInteger(p.stok) || p.stok < jumlah)
-      return notif("Stok tidak cukup. Pembayaran belum dikonfirmasi.");
-  }
+  const hasil = bayarPesanan(items, db.akun.nama);
+  if (hasil.error) return notif(hasil.error);
   b.disabled = true;
-  const sebelum = items.map((x) => ({ ...x }));
-  const stokLama = [...kebutuhan].map(([id]) => [produkById(id), produkById(id).stok]);
-  const sekarang = new Date();
-  const kini = sekarang.toISOString();
-  items.forEach((x) => { x.lunas = true; x.staff = db.akun.nama; x.dibayarPada = kini; x.tanggalDibayar = tanggalLokal(sekarang); if (x.status === "Menunggu") x.status = "Diproses"; });
-  kebutuhan.forEach((jumlah, id) => { produkById(id).stok -= jumlah; });
   if (!await simpan("pesanan")) {
-    items.forEach((x, i) => { Object.keys(x).forEach((k) => delete x[k]); Object.assign(x, sebelum[i]); });
-    stokLama.forEach(([p, stok]) => { p.stok = stok; });
+    hasil.urungkan();
     b.disabled = false; return;
   }
   notif("Pembayaran dikonfirmasi dan stok diperbarui.");

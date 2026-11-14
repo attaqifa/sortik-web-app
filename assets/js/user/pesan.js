@@ -4,7 +4,7 @@ const AMBIL = { ambil: "Ambil di Tempat", antar: "Antar ke Alamat" };
 const mode = document.body.dataset.status || "";
 let status = "";
 
-const tampil = (o) => (mode === "Selesai" ? o.status === "Selesai" : o.status !== "Selesai");
+const tampil = (o) => (mode === "Selesai" ? !aktif(o) : aktif(o));
 const pesanan = () => transaksi([...pesananku()]).sort((a, b) => b.tanggal.localeCompare(a.tanggal));
 
 const baris = (o) => {
@@ -38,7 +38,8 @@ const rincian = (o) => {
   <div class="sum"><span>Pengambilan</span><b>${AMBIL[o.cara] || AMBIL.ambil}${o.alamat ? " — " + esc(o.alamat) : ""}</b></div>
   <div class="sum"><span>Pembayaran</span><b>${esc(o.bayar || "Transfer ke admin")}</b></div>
   <div class="sum"><span>Status bayar</span><b>${tagBayar(o)}</b></div>
-  ${transfer ? `<div class="bukti-blok">
+  ${batal(o) ? `<div class="sum"><span>Status</span><b>Dibatalkan${o.alasanBatal ? " — " + esc(o.alasanBatal) : ""}</b></div>` : ""}
+  ${transfer && !batal(o) ? `<div class="bukti-blok">
     <label class="lbl">Bukti transfer</label>
     ${o.bukti
       ? `<button class="bukti-gambar" type="button" data-lihatbukti="${o.id}" title="Perbesar bukti transfer">
@@ -46,7 +47,7 @@ const rincian = (o) => {
       </button>
       <p class="note">Bukti sudah diunggah${o.buktiPada ? " pada " + tglID(o.buktiPada.slice(0, 10)) : ""} — tinggal menunggu konfirmasi staff.</p>`
       : `<p class="note">Belum ada bukti transfer. Unggah foto/screenshot bukti transfer agar pesanan bisa dikonfirmasi.</p>`}
-    ${o.lunas ? "" : `<div class="unggah">
+    ${o.lunas || batal(o) ? "" : `<div class="unggah">
       <input type="file" id="buktiFile" accept="image/*" aria-label="Pilih foto bukti transfer">
       <button class="primary garis" id="kirimBukti" type="button">${o.bukti ? "Ganti Bukti Transfer" : "Unggah Bukti Transfer"}</button>
     </div>`}
@@ -133,13 +134,13 @@ function buka(id) {
     const yakin = await konfirmasi("Batalkan pesanan ini?", `${kodePesanan(o)} beserta ${items.length} produk akan dibatalkan.`);
     if (!yakin) return;
     /* Checkout versi lama belum dikelola sebagai satu transaksi. */
-    const lain = !o.pesananId && o.checkoutId && o.ongkir && db.pesanan.filter((x) => x !== o && x.checkoutId === o.checkoutId);
+    const lain = !o.pesananId && o.checkoutId && o.ongkir && db.pesanan.filter((x) => x !== o && x.checkoutId === o.checkoutId && !batal(x));
     const penerima = lain && lain.find((x) => !x.lunas);
     if (lain && lain.length && !penerima) return notif("Ongkir terkait pesanan yang sudah lunas. Hubungi toko untuk pembatalan.");
-    if (penerima) penerima.ongkir = (+penerima.ongkir || 0) + o.ongkir;
-    const sebelumnya = [...db.pesanan];
-    db.pesanan = db.pesanan.filter((x) => !items.includes(x));
-    if (!await simpan("pesanan")) { db.pesanan = sebelumnya; if (penerima) penerima.ongkir -= o.ongkir; return; }
+    const ongkirLama = o.ongkir;
+    if (penerima) { penerima.ongkir = (+penerima.ongkir || 0) + o.ongkir; o.ongkir = 0; }
+    const urungkan = batalkanItem(items, "Dibatalkan pembeli");
+    if (!await simpan("pesanan")) { urungkan(); if (penerima) { penerima.ongkir -= ongkirLama; o.ongkir = ongkirLama; } return; }
     gambarSidebar();
     notif("Pesanan dibatalkan");
     el("detail").hidden = true;

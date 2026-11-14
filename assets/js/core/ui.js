@@ -24,18 +24,6 @@ function gambarIkon() {
   /* hapus penanda agar tidak diproses ulang */
   document.querySelectorAll("svg[data-lucide]").forEach((s) => s.removeAttribute("data-lucide"));
 }
-const produkById = (id) => db.produk.find((p) => p.id === id) || {};
-/* harga jual = harga − diskon% (0–100, dibulatkan ke ratusan agar rapi) */
-const hargaJual = (p) => {
-  const diskon = Math.max(0, Math.min(100, (p && p.diskon) || 0));
-  return Math.round(((p && p.harga) || 0) * (1 - diskon / 100) / 100) * 100;
-};
-/* nilaiPesanan: pesanan baru menyimpan harga saat pesanan dibuat (o.harga) —
-   ubah diskon/harga tidak mengubah riwayat; pesanan lama pakai harga kini */
-const subtotalPesanan = (o) => (o.harga != null ? o.harga : hargaJual(produkById(o.produk))) * o.jumlah;
-const nilaiPesanan = (o) => subtotalPesanan(o) + (+o.ongkir || 0);
-/* total unit terjual satu produk (dari seluruh pesanan) — untuk badge/urutan Terlaris */
-const jmlTerjual = (id) => db.pesanan.reduce((n, o) => n + (o.produk === id ? o.jumlah : 0), 0);
 /* ---------- lantai & rak ---------- */
 /* denah kini bisa beberapa lantai: db.rak.lantai = [{ nama, lebar, tinggi,
    pintu: { sisi, pos }, daftar: [rak] }]; db.rak.aktif = lantai yang tampil */
@@ -63,30 +51,11 @@ const urlGambar = (value) => {
 
 const bln = "Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des".split(" ");
 const tglID = (s) => { const [y, m, d] = String(s).split("-"); return `${d} ${bln[m - 1]} ${y}`; };
-const kodePesanan = (o) => `BK-${o.tanggal.slice(0, 4)}-${String(o.pesananId || o.id).padStart(3, "0")}`;
-/* Baris lama tetap berdiri sendiri. Pesanan baru memakai pesananId bersama. */
-const itemPesanan = (o) => o.pesananId
-  ? db.pesanan.filter((x) => x.pesananId === o.pesananId && x.pembeli_id === o.pembeli_id)
-  : [o];
-const transaksi = (daftar) => {
-  const seen = new Set();
-  return daftar.filter((o) => {
-    const kunci = o.pesananId ? `baru:${o.pembeli_id}:${o.pesananId}` : `lama:${o.id}`;
-    if (seen.has(kunci)) return false;
-    seen.add(kunci); return true;
-  });
-};
-const totalTransaksi = (o) => itemPesanan(o).reduce((n, x) => n + nilaiPesanan(x), 0);
-const tanggalLokal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-/* Pesanan lama tidak menyimpan tanggal pembayaran; tanggal pesanan jadi perkiraan. */
-const tanggalBayar = (o) => o.tanggalDibayar || (o.dibayarPada ? tanggalLokal(new Date(o.dibayarPada)) : o.tanggal);
 
 /* kelas warna status pesanan: Menunggu → wait, dst. */
-const STATUS = { Menunggu: "wait", Diproses: "proc", Siap: "ok", Selesai: "done" };
-/* urutan status pesanan */
-const ALUR = ["Menunggu", "Diproses", "Siap", "Selesai"];
+const STATUS = { Menunggu: "wait", Diproses: "proc", Siap: "ok", Selesai: "done", Dibatalkan: "batal" };
 /* ikon Lucide per status — penanda visual di daftar & chip */
-const IKON_STATUS = { Menunggu: "clock", Diproses: "loader", Siap: "package-check", Selesai: "circle-check" };
+const IKON_STATUS = { Menunggu: "clock", Diproses: "loader", Siap: "package-check", Selesai: "circle-check", Dibatalkan: "circle-x" };
 const ikonStatus = (s) => `<span class="ikon" data-lucide="${IKON_STATUS[s] || "circle"}"></span>`;
 const tagStatus = (s) => `<em class="${STATUS[s] || ""}">${ikonStatus(s)}${esc(s)}</em>`;
 const tagBayar = (o) => (o.lunas
@@ -98,6 +67,11 @@ const pesanKosong = (ikon, teks, tombol) =>
   `<p class="kosong"><span class="ikon" data-lucide="${ikon}"></span>${teks}${tombol ? `<a class="btn" href="${tombol[0]}">${tombol[1]}</a>` : ""}</p>`;
 
 /* ---------- foto produk ---------- */
+/* foto yang gagal dimuat dibuang agar ikon cadangan terlihat (pengganti onerror inline) */
+document.addEventListener("error", (e) => {
+  if (e.target && e.target.hasAttribute && e.target.hasAttribute("data-cadangan")) e.target.remove();
+}, true);
+
 /* foto produk: utama dulu, lalu detail; bisa tautan atau unggahan */
 const galeriProduk = (p) => [p && p.foto, ...((p && p.galeri) || [])].filter(Boolean);
 
@@ -112,18 +86,18 @@ const fotoHTML = (p) => {
   const utama = galeriProduk(p)[0];
   const alt = esc((p && p.nama) || "Foto produk");
   if (!utama) return ikonCadangan(p);
-  return `${ikonCadangan(p)}<img src="${urlGambar(utama)}" alt="${alt}" loading="lazy" onerror="this.remove()">`;
+  return `${ikonCadangan(p)}<img src="${urlGambar(utama)}" alt="${alt}" loading="lazy" data-cadangan>`;
 };
 
-const kartu = (p) => `<a class="pcard${p.stok ? "" : " habis"}" href="produk.html?id=${p.id}">
-  <div class="pimg">${jmlTerjual(p.id) ? `<span class="ptanda laris">Terlaris</span>` : ""}${p.diskon ? `<span class="ptanda diskon">−${p.diskon}%</span>` : ""}${fotoHTML(p)}${p.stok ? `<span class="belicepat" data-beli="${p.id}" role="button" title="Tambah ke keranjang"><span class="ikon" data-lucide="shopping-cart"></span></span>` : ""}</div>
+const kartu = (p) => `<div class="kartu"><a class="pcard${p.stok ? "" : " habis"}" href="produk.html?id=${p.id}">
+  <div class="pimg">${jmlTerjual(p.id) ? `<span class="ptanda laris">Terlaris</span>` : ""}${p.diskon ? `<span class="ptanda diskon">−${p.diskon}%</span>` : ""}${fotoHTML(p)}</div>
   <div class="pbody">
     <span class="pcat">${esc(kat(p))}</span>
     <h3>${esc(p.nama)}</h3>
     <b>${rp(hargaJual(p))}${p.diskon ? `<s class="hargalama">${rp(p.harga)}</s>` : ""}</b>
     <span class="pstok${p.stok ? "" : " habis"}">${p.stok ? `Stok ${p.stok} · Rak ${esc(labelRak(p.rak))}` : "Stok habis"}</span>
   </div>
-</a>`;
+</a>${p.stok ? `<button class="kartu-beli" type="button" data-beli="${p.id}" aria-label="Tambah ${esc(p.nama)} ke keranjang" title="Tambah ke keranjang"><span class="ikon" data-lucide="shopping-cart"></span></button>` : ""}</div>`;
 
 /* tombol cepat "+ keranjang" di kartu — delegasi global agar berlaku di
    semua halaman yang memakai kartu (beranda, cari, produk serupa) */
@@ -163,24 +137,41 @@ function notif(teks, aksi) {
 /* dipakai: if (!await konfirmasi(...)) return; */
 function konfirmasi(judul, teks, labelYa = "Ya, Hapus") {
   return new Promise((jawab) => {
+    const sebelumnya = document.activeElement;
     const kotak = document.createElement("div");
     kotak.className = "konfirmasi";
-    kotak.innerHTML = `<div class="kotak" role="dialog" aria-modal="true">
-    <h3>${esc(judul)}</h3><p>${esc(teks)}</p>
+    kotak.innerHTML = `<div class="kotak" role="dialog" aria-modal="true" aria-labelledby="konfirmasi-judul" aria-describedby="konfirmasi-teks">
+    <h3 id="konfirmasi-judul">${esc(judul)}</h3><p id="konfirmasi-teks">${esc(teks)}</p>
     <div class="btns">
       <button class="primary garis" type="button" data-tidak>Batal</button>
       <button class="primary bahaya" type="button" data-ya>${esc(labelYa)}</button>
     </div></div>`;
-    const tutup = (ok) => { kotak.remove(); document.removeEventListener("keydown", esc); jawab(ok); };
-    const esc = (e) => { if (e.key === "Escape") tutup(false); };
+    const tutup = (ok) => {
+      kotak.remove();
+      document.removeEventListener("keydown", tombol);
+      if (sebelumnya && sebelumnya.isConnected && sebelumnya.focus) sebelumnya.focus();
+      jawab(ok);
+    };
+    /* Esc menutup; Tab berputar di antara tombol dialog */
+    const tombol = (e) => {
+      if (e.key === "Escape") return tutup(false);
+      if (e.key !== "Tab") return;
+      const daftar = [...kotak.querySelectorAll("button")];
+      if (!daftar.length) return;
+      const i = daftar.indexOf(document.activeElement);
+      const tujuan = e.shiftKey ? daftar[(i <= 0 ? daftar.length : i) - 1] : daftar[(i + 1) % daftar.length];
+      e.preventDefault();
+      tujuan.focus();
+    };
     kotak.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (b) tutup(b.dataset.ya != null);
       else if (e.target === kotak) tutup(false);
     });
-    document.addEventListener("keydown", esc);
+    document.addEventListener("keydown", tombol);
     document.body.append(kotak);
-    kotak.querySelector("[data-ya]").focus();
+    /* fokus awal di "Batal" agar Enter tidak langsung menghapus */
+    kotak.querySelector("[data-tidak]").focus();
   });
 }
 
@@ -303,7 +294,8 @@ function gayaPintu(L, g) {
   return { gaya, sisi, pos };
 }
 
-/* chip filter — opsi = [[nilai, label]]; awal = nilai terpilih */
+/* chip filter — opsi = [[nilai, label]]; awal = nilai terpilih.
+   label dipasang sebagai HTML: pemanggil wajib esc() untuk teks dari data pengguna. */
 function chipSaring(wadah, opsi, terapkan, awal = "") {
   let pilih = awal;
   isi(wadah, opsi.map(([nilai, label]) => `<button type="button" data-nilai="${esc(nilai)}">${label}</button>`).join(""));
