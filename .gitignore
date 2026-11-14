@@ -1,10 +1,6 @@
-.freebuff/project-id
 tools/static-server.ps1
-supabase/setelah-akun.sql
-supabase/baca-saja.sql
-supabase/hapus-data-demo.sql
-supabase/setup.sql
-supabase/aktifkan-tulis.sql
-supabase/setup.sql
+
 tests
 tests/prioritas-tinggi.test.cjs
+.impeccable/config.json
+docs/rancangan-backend.md

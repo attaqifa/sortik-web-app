@@ -56,7 +56,7 @@ function gambar(p) {
       <div class="totalbeli"><span>Total</span><b id="totalBeli">${rp(hargaJual(p))}</b></div>
     </div>
     <div class="beli-aksi">
-      <button class="primary" id="keranjang" type="button"${habis ? " disabled" : ""}>${habis ? "Stok Habis" : "Tambah ke Keranjang"}</button>
+      <button class="primary" id="keranjang" type="button"${habis ? " disabled" : ""}>${habis ? "Stok Habis" : `<span class="ikon" data-lucide="shopping-cart"></span><span class="lengkap">Tambah ke Keranjang</span><span class="pendek">Keranjang</span>`}</button>
       <button class="primary garis" id="beli" type="button"${habis ? " disabled" : ""}>Beli Sekarang</button>
     </div>
   </div>`);
@@ -79,7 +79,10 @@ function gambar(p) {
 
   el("kurang").onclick = () => { n = batas(n - 1); tampil(); };
   el("tambah").onclick = () => { n = batas(n + 1); tampil(); };
-  el("keranjang").onclick = () => { if (masuk()) el("keranjang").textContent = "✓ Masuk keranjang"; };
+  el("keranjang").onclick = () => {
+    if (!masuk()) return;
+    isi("keranjang", `<span class="ikon" data-lucide="check"></span><span class="lengkap">Masuk keranjang</span><span class="pendek">Masuk</span>`);
+  };
   el("beli").onclick = () => { if (masuk()) location.href = "checkout.html"; };
 
   const serupa = db.produk.filter((x) => x.kategori === p.kategori && x.id !== p.id).slice(0, 4);
