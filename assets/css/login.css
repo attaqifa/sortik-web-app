@@ -81,6 +81,7 @@ body {
 
 /* kartu pilihan peran */
 .roles {
+  position: relative;   /* jangkar input radio tersembunyi — tanpa ini halaman melebar ke samping */
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 14px;

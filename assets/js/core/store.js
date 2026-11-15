@@ -143,8 +143,8 @@ const MENU = {
     ]],
     ["Penjualan", [
       ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"],
-      ["message-square", "Pesan Grup", "pesan.html", "", "Pesan"],
-      ["wallet", "Keuangan", "keuangan.html", "", "Uang"]
+      ["message-square", "Chat Tim", "pesan.html", "", "Chat"],
+      ["wallet", "Keuangan", "keuangan.html", "", "Keuangan"]
     ]]
   ],
   admin: [
@@ -155,14 +155,19 @@ const MENU = {
     ]],
     ["Penjualan", [
       ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"],
-      ["message-square", "Pesan Grup", "pesan.html", "", "Pesan"],
-      ["wallet", "Keuangan", "keuangan.html", "", "Uang"]
+      ["message-square", "Chat Tim", "pesan.html", "", "Chat"],
+      ["wallet", "Keuangan", "keuangan.html", "", "Keuangan"]
     ]],
     ["Administrasi", [
       ["users", "Kelola Pengguna", "pengguna.html", "", "Pengguna"],
-      ["settings", "Pengaturan Toko", "pengaturan.html", "", "Toko"]
+      ["settings", "Pengaturan Toko", "pengaturan.html", "", "Pengaturan"]
     ]]
   ]
+};
+/* bar bawah HP hanya muat 4–5 tab: menu di luar daftar ini masuk lembar "Lainnya" */
+const MENU_UTAMA = {
+  staff: ["index.html", "pesanan.html", "produk.html", "rak.html"],
+  admin: ["index.html", "pesanan.html", "produk.html", "rak.html"]
 };
 
 const LUCIDE = "../assets/vendor/lucide.min.js";
@@ -179,16 +184,38 @@ function gambarSidebar() {
   const berkas = location.pathname.split("/").pop() || "index.html";
   const akun = db.akun || { nama: "Memuat…", role: peran };
   const tautanProfil = (html) => `<a class="profil" href="akun.html" title="Akun saya">${html}</a>`;
+  const utama = MENU_UTAMA[peran];
+  const lain = utama ? MENU[peran].flatMap(([, item]) => item).filter(([, , href]) => !utama.includes(href)) : [];
   isi("side", `<a class="logo" href="index.html">
   <img src="${db.toko.logo ? urlGambar(db.toko.logo) : "../assets/img/SortikLogo.jpeg"}" alt="Logo toko" width="34"><span class="namatoko"><b>${esc(db.toko.nama || "SORTIK")}</b><i>with SORTIK</i></span>
 </a>
 <nav>${MENU[peran].map(([grup, item]) => `<div class="navgrup"><span class="navjudul">${grup}</span>${item.map(([ikon, label, href, ekstra = "", singkat = label]) =>
-    `<a${href === berkas ? ' class="on"' : ""} href="${href}"><span class="ikon" data-lucide="${ikon}"></span><span class="lengkap">${label}</span><span class="pendek">${singkat}</span> ${ekstra}</a>`).join("")}</div>`).join("")}</nav>
+    `<a class="${[href === berkas && "on", utama && !utama.includes(href) && "sekunder"].filter(Boolean).join(" ")}" href="${href}"${href === berkas ? ' aria-current="page"' : ""}><span class="ikon" data-lucide="${ikon}"></span><span class="lengkap">${label}</span><span class="pendek">${singkat}</span> ${ekstra}</a>`).join("")}</div>`).join("")}
+${lain.length ? `<button type="button" class="lainnya${lain.some(([, , href]) => href === berkas) ? " on" : ""}" id="tombolLainnya" aria-expanded="false" aria-controls="lembarLainnya"><span class="ikon" data-lucide="layout-grid"></span><span class="pendek">Lainnya</span></button>
+<div class="lembar" id="lembarLainnya" hidden><span class="navjudul">Menu lainnya</span>${lain.map(([ikon, label, href]) =>
+    `<a${href === berkas ? ' class="on" aria-current="page"' : ""} href="${href}"><span class="ikon" data-lucide="${ikon}"></span><span>${label}</span></a>`).join("")}</div>` : ""}</nav>
 <div class="me">${tautanProfil(`<div class="avatar">${avatarHTML(akun)}</div><div class="siapa"><b>${esc(akun.nama)}</b><span>${labelPeran(akun.role)}</span></div>`)}
 <a class="keluar" href="../auth/login.html" title="Keluar"><span class="ikon" data-lucide="log-out"></span><span class="lengkap">Keluar</span></a></div>`);
+  pasangLainnya();
   /* badge pesanan aktif milik akun ini (menu pembeli) */
   const jmlPesan = el("jmlPesan");
   if (jmlPesan) jmlPesan.textContent = transaksi(pesananku()).filter(aktif).length || "";
+}
+
+/* lembar "Lainnya" di bar bawah HP: buka/tutup, Esc & ketuk di luar menutup */
+let tutupLainnya = null;
+function pasangLainnya() {
+  const tombol = el("tombolLainnya"), lembar = el("lembarLainnya");
+  if (tutupLainnya) document.removeEventListener("click", tutupLainnya), document.removeEventListener("keydown", tutupLainnya);
+  if (!tombol || !lembar) return;
+  const atur = (buka) => { lembar.hidden = !buka; tombol.setAttribute("aria-expanded", String(buka)); };
+  tombol.addEventListener("click", (e) => { e.stopPropagation(); atur(lembar.hidden); if (!lembar.hidden) lembar.querySelector("a")?.focus(); });
+  tutupLainnya = (e) => {
+    if (lembar.hidden) return;
+    if (e.type === "keydown" ? e.key === "Escape" : !lembar.contains(e.target)) { atur(false); if (e.type === "keydown") tombol.focus(); }
+  };
+  document.addEventListener("click", tutupLainnya);
+  document.addEventListener("keydown", tutupLainnya);
 }
 
 async function mulaiAplikasi(mulai) {

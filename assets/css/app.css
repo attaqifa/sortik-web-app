@@ -61,6 +61,8 @@ body {
 
 .side nav { display: flex; flex-direction: column; gap: 10px; }
 .side nav .pendek { display: none; }
+/* tombol & lembar "Lainnya" hanya untuk bar bawah HP */
+.side nav .lainnya, .side nav .lembar { display: none; }
 /* kelompok menu menurut fungsi */
 .side nav .navgrup { display: flex; flex-direction: column; gap: 4px; }
 .side nav .navjudul { padding: 2px 12px; font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--tinta-4); }
@@ -805,6 +807,20 @@ input[type="file"]::file-selector-button:hover { background: #e2ecff; border-col
   /* kelompok jadi tanpa pembungkus & judul di bar bawah */
   .side nav .navgrup { display: contents; }
   .side nav .navjudul { display: none; }
+
+  /* staff/admin: 4 tab utama + "Lainnya" — bar tidak perlu digeser */
+  .side nav a.sekunder { display: none; }
+  .side nav .lainnya { position: relative; display: flex; flex: 1 0 auto; flex-direction: column; align-items: center; gap: 3px; min-width: 64px; padding: 7px 6px 5px; font: inherit; font-size: 10.5px; color: var(--tinta-2); background: none; border: 0; border-radius: 10px; cursor: pointer; }
+  .side nav .lainnya .ikon { width: 20px; height: 20px; }
+  .side nav .lainnya.on, .side nav .lainnya[aria-expanded="true"] { color: var(--biru-tua); background: var(--biru-muda); font-weight: 600; }
+  .side nav .lembar:not([hidden]) {
+    position: fixed; left: 10px; right: 10px; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 36;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 10px;
+    background: var(--kertas); border: 1px solid var(--garis); border-radius: var(--r); box-shadow: var(--melayang);
+  }
+  .side nav .lembar .navjudul { display: block; grid-column: 1 / -1; padding: 2px 6px 4px; }
+  .side nav .lembar a { flex-direction: row; min-width: 0; gap: 10px; padding: 12px; font-size: 14px; }
+  .side nav .lembar a .ikon { width: 18px; height: 18px; }
   .me { flex: none; margin: 0 0 0 auto; padding-top: 0; border-top: 0; gap: 8px; }
   .me .avatar { width: 30px; height: 30px; font-size: 11px; }
   .me .siapa { max-width: 92px; }
