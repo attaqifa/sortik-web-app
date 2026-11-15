@@ -18,7 +18,7 @@ const item = (i) => {
   const penuh = i.jumlah >= (p.stok || 0);
   return `<div class="row">
     <div class="thumb">${fotoHTML(p)}</div>
-    <div><b>${esc(p.nama)}</b><span>${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""} · Rak ${esc(p.rak)}${penuh ? ` · <b class="maks">Maks ${p.stok} unit</b>` : ""}</span><b class="subbaris">${rp(hargaJual(p) * i.jumlah)}</b></div>
+    <div><b>${esc(p.nama)}</b><span>${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""}${p.rak ? " " + tagRak(p.rak) : ""}${penuh ? ` · <b class="maks">Maks ${p.stok} unit</b>` : ""}</span><b class="subbaris">${rp(hargaJual(p) * i.jumlah)}</b></div>
     <div class="qty">
       <button type="button" data-kurang="${p.id}" aria-label="Kurangi jumlah">−</button><b>${i.jumlah}</b><button type="button" data-tambah="${p.id}" aria-label="Tambah jumlah"${penuh ? " disabled" : ""}>＋</button>
       <button type="button" class="x" data-hapus="${p.id}" title="Hapus" aria-label="Hapus dari keranjang">✕</button>
@@ -29,7 +29,7 @@ const item = (i) => {
 function render() {
   const kosong = !keranjang.length;
   isi("items", kosong
-    ? pesanKosong("shopping-cart", "Keranjang masih kosong — pilih barang dulu.", ["cari.html", "Cari Produk"])
+    ? pesanKosong("shopping-cart", "Keranjang masih kosong — ayo golek barang e dulu.", ["cari.html", "Cari Produk"])
     : keranjang.map(item).join(""));
 
   const ong = state.cara === "antar" ? ongkir : 0;

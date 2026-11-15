@@ -35,7 +35,7 @@ function gambar(p) {
   <div class="chipstat">
     <span class="stok${habis ? " habis" : tipis ? " menipis" : ""}"><span class="ikon" data-lucide="${habis ? "triangle-alert" : tipis ? "triangle-alert" : "package"}"></span>${habis ? "Stok habis" : tipis ? `Stok menipis — ${p.stok} unit` : `Stok ${p.stok} unit`}</span>
     ${p.diskon ? `<span class="promo"><span class="ikon" data-lucide="tag"></span>Diskon ${p.diskon}% — hemat ${rp(p.harga - hargaJual(p))}</span>` : ""}
-    <a href="cari.html?rak=${encodeURIComponent(p.rak)}" title="Lihat produk di rak ini"><span class="ikon" data-lucide="warehouse"></span>Rak ${esc(p.rak)}</a>
+    <a href="#letakWrap" title="Lihat letak rak di denah toko"><span class="ikon" data-lucide="map-pin"></span>Rak ${esc(labelRak(p.rak))}</a>
     <a href="cari.html?kat=${encodeURIComponent(p.kategori)}" title="Lihat kategori ini"><span class="ikon" data-lucide="layout-grid"></span>${esc(kat(p))}</a>
   </div>
 
@@ -85,9 +85,30 @@ function gambar(p) {
   };
   el("beli").onclick = () => { if (masuk()) location.href = "checkout.html"; };
 
+  letak(p);
+
   const serupa = db.produk.filter((x) => x.kategori === p.kategori && x.id !== p.id).slice(0, 4);
   isi("serupa", serupa.length ? serupa.map(kartu).join("") : pesanKosong("package", "Belum ada produk lain di kategori ini."));
   el("serupaWrap").hidden = !serupa.length;
+}
+
+/* denah mini: semua rak berisi tampil berwarna kategori, rak produk ini disorot —
+   pembeli tahu harus berjalan ke mana sebelum datang ke toko */
+function letak(p) {
+  const lantai = lantaiDari(p.rak);
+  el("letakWrap").hidden = lantai < 0;
+  if (lantai < 0) return;
+  db.rak.aktif = lantai;   /* tampilkan lantai tempat rak berada — bukan perubahan data */
+  const jumlah = {};
+  db.produk.filter((x) => x.stok > 0 && x.rak).forEach((x) => {
+    const h = jumlah[x.rak] = jumlah[x.rak] || { n: 0, kategori: x.kategori };
+    h.n++;
+  });
+  const banyakLantai = db.rak.lantai.length > 1;
+  isi("letakKet", `<b>Iki lo barang e!</b> Cari rak <mark class="rakmini"><i aria-hidden="true"></i>${esc(p.rak)}</mark>
+    yang ditandai biru${banyakLantai ? ` di <b>${esc(db.rak.lantai[lantai].nama)}</b>` : ""} — garis hijau adalah pintu masuk.
+    <a href="cari.html?rak=${encodeURIComponent(p.rak)}">Barang lain di rak ini</a>`);
+  denahToko("letak", jumlah, { klik: false, aktif: p.rak, piksel: 16 });
 }
 
 if (p.id) {

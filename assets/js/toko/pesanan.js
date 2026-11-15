@@ -43,7 +43,7 @@ const baris = (o) => {
   });
   const rincian = items.map((x) => {
     const p = produkById(x.produk);
-    return `<span>${esc(p.nama || "Produk tidak tersedia")} · ${x.jumlah} unit · ${rp(subtotalPesanan(x))}${p.rak ? ` · Rak ${esc(labelRak(p.rak))}` : ""}${!o.lunas && !batal(o) && !x.stokDipesan ? ` · stok ${Number.isInteger(p.stok) ? p.stok : 0}` : ""}</span>`;
+    return `<span>${esc(p.nama || "Produk tidak tersedia")} · ${x.jumlah} unit · ${rp(subtotalPesanan(x))}${!o.lunas && !batal(o) && !x.stokDipesan ? ` · stok ${Number.isInteger(p.stok) ? p.stok : 0}` : ""}${p.rak ? " " + tagRak(p.rak) : ""}</span>`;
   }).join("");
   const tujuan = lanjutan(o);
   const aksi = batal(o) ? ""

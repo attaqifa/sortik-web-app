@@ -89,13 +89,17 @@ const fotoHTML = (p) => {
   return `${ikonCadangan(p)}<img src="${urlGambar(utama)}" alt="${alt}" loading="lazy" data-cadangan>`;
 };
 
+/* tag lokasi rak bermotif petak denah — kartu produk, keranjang, detail & antrean pesanan.
+   <mark>, bukan <span>: aturan ".row span" dkk. tidak ikut menimpa gayanya */
+const tagRak = (kode) => `<mark class="rakmini" title="Lokasi di denah toko"><i aria-hidden="true"></i>Rak ${esc(labelRak(kode))}</mark>`;
+
 const kartu = (p) => `<div class="kartu"><a class="pcard${p.stok ? "" : " habis"}" href="produk.html?id=${p.id}">
   <div class="pimg">${jmlTerjual(p.id) ? `<span class="ptanda laris">Terlaris</span>` : ""}${p.diskon ? `<span class="ptanda diskon">−${p.diskon}%</span>` : ""}${fotoHTML(p)}</div>
   <div class="pbody">
     <span class="pcat">${esc(kat(p))}</span>
     <h3>${esc(p.nama)}</h3>
     <b>${rp(hargaJual(p))}${p.diskon ? `<s class="hargalama">${rp(p.harga)}</s>` : ""}</b>
-    <span class="pstok${p.stok ? "" : " habis"}">${p.stok ? `Stok ${p.stok} · Rak ${esc(labelRak(p.rak))}` : "Stok habis"}</span>
+    <span class="pstok${p.stok ? "" : " habis"}">${p.stok ? `Stok ${p.stok}${p.rak ? tagRak(p.rak) : ""}` : "Stok habis"}</span>
   </div>
 </a>${p.stok ? `<button class="kartu-beli" type="button" data-beli="${p.id}" aria-label="Tambah ${esc(p.nama)} ke keranjang" title="Tambah ke keranjang"><span class="ikon" data-lucide="shopping-cart"></span></button>` : ""}</div>`;
 

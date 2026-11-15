@@ -23,7 +23,7 @@ function render() {
     : hasil;
 
   isi("hasil", `${hasil.length} dari ${db.produk.length} produk${state.rak ? ` di rak ${esc(labelRak(state.rak))}` : ""}`);
-  isi("produk", daftar.length ? daftar.map(kartu).join("") : pesanKosong("search-x", "Produk tidak ditemukan. Coba kata kunci, kategori, atau rak lain.", ["index.html", "Kembali ke Beranda"]));
+  isi("produk", daftar.length ? daftar.map(kartu).join("") : pesanKosong("search-x", "Waduh, barang e durung ketemu. Coba kata kunci, kategori, atau rak lain.", ["index.html", "Kembali ke Beranda"]));
 
   /* baris filter aktif: ✕ melepas satu, Reset semua */
   const nameKat = state.kat === "promo" ? "Sedang Diskon"

@@ -18,17 +18,31 @@ const baris = (o) => {
   </button>`;
 };
 
+/* kartu pengambilan: penutup alur checkout untuk pesanan "ambil di tempat" */
+const ambilKartu = (o) => {
+  if (o.cara === "antar" || batal(o) || o.status === "Selesai") return "";
+  const kasir = !o.lunas && o.bayar === "Bayar di kasir" ? " Bayar sekalian di kasir." : "";
+  return o.status === "Siap"
+    ? `<div class="ambilkartu siap"><span class="ikon" data-lucide="package-check"></span><div>
+        <b>Siap diambil — iki lo barang e!</b>
+        <span>Tunjukkan kode <b>${kodePesanan(o)}</b> di kasir ${esc(db.toko.nama)}.${kasir}</span></div></div>`
+    : `<div class="ambilkartu"><span class="ikon" data-lucide="store"></span><div>
+        <b>Ambil di kasir ${esc(db.toko.nama)}</b>
+        <span>Barang sedang kami siapkan. Datang saat status berubah jadi <b>Siap</b>${db.toko.jam ? ` · ${esc(db.toko.jam)}` : ""}.</span></div></div>`;
+};
+
 const rincian = (o) => {
   const p = produkById(o.produk);
   const n = ALUR.indexOf(o.status);
   const transfer = o.bayar === "Transfer ke admin";
   return `<a class="back" href="#">← Kembali ke daftar</a>
   <ol class="steps">${ALUR.map((s, i) => `<li data-n="${i + 1}"${i <= n ? ' class="on"' : ""}>${s}</li>`).join("")}</ol>
+  ${ambilKartu(o)}
   ${itemPesanan(o).map((item) => {
     const produk = produkById(item.produk);
     return `<div class="produk-ringkas">
       <button class="foto" type="button" data-fotoproduk="${produk.id}" title="Perbesar foto produk">${fotoHTML(produk)}</button>
-      <div class="ket"><b>${esc(produk.nama || "-")}</b><span>${esc(kat(produk))} · ${item.jumlah} unit · Rak ${esc(produk.rak || "-")}</span>
+      <div class="ket"><b>${esc(produk.nama || "-")}</b><span>${esc(kat(produk))} · ${item.jumlah} unit</span>${produk.rak ? tagRak(produk.rak) : ""}
       <span>${rp(subtotalPesanan(item))}</span></div></div>`;
   }).join("")}
   <div class="sum"><span>Nomor pesanan</span><b>${kodePesanan(o)} · ${tglID(o.tanggal)}</b></div>
