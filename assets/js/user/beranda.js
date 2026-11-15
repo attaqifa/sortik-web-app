@@ -36,8 +36,12 @@ if (banner && slideBanner.length > 1) {
   const ganti = (i) => {
     n = (i + slide.length) % slide.length;
     slide.forEach((s, k) => s.classList.toggle("on", k === n));
-    dot.forEach((d, k) => d.classList.toggle("on", k === n));
+    dot.forEach((d, k) => {
+      d.classList.toggle("on", k === n);
+      if (k === n) d.setAttribute("aria-current", "true"); else d.removeAttribute("aria-current");
+    });
   };
+  ganti(0);   /* titik pertama langsung ditandai aktif */
   const jalanTimer = () => {
     if (!matchMedia("(prefers-reduced-motion: reduce)").matches)
       timer = setInterval(() => ganti(n + 1), 4000);

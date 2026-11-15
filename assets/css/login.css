@@ -8,7 +8,7 @@
   --biru-garis: #dbe6fd;
   --tinta: #111827;
   --tinta-2: #374151;
-  --tinta-3: #6b7280;
+  --tinta-3: #5f6777;
   --garis: #e5e8ef;
   --bidang: #d7dce3;
   --fokus: 0 0 0 3px rgba(37, 99, 235, .15);
@@ -161,7 +161,7 @@ body {
 /* kolom sandi */
 .sandi { position: relative; margin-bottom: 22px; }
 .sandi input { margin-bottom: 0; padding-right: 52px; }
-.sandi .lihat { position: absolute; top: 35%; right: 6px; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; color: var(--tinta-3); background: none; border: 0; border-radius: 9px; cursor: pointer; transform: translateY(-50%); transition: color var(--cepat), background var(--cepat); }
+.sandi .lihat { position: absolute; top: 35%; right: 6px; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; color: var(--tinta-3); background: none; border: 0; border-radius: 9px; cursor: pointer; transform: translateY(-50%); transition: color var(--cepat), background var(--cepat); }
 .sandi .lihat:hover { color: var(--biru); background: var(--biru-muda); }
 .sandi .lihat .ikon { width: 18px; height: 18px; }
 .sandi .lihat .tertutup, .sandi.terlihat .terbuka { display: none; }
@@ -192,4 +192,5 @@ body {
 }
 
 /* penanda mode demo (tanpa server) */
-.mode-demo { margin: 0 0 16px; padding: 10px 12px; font-size: 12.5px; line-height: 1.45; color: #92400e; background: #fef3c7; border-radius: 10px; }
+/* .form > .mode-demo: mengalahkan warna abu dari ".form > p" */
+.form > .mode-demo, .mode-demo { margin: 0 0 16px; padding: 10px 12px; font-size: 12.5px; line-height: 1.45; color: #92400e; background: #fef3c7; border-radius: 10px; }
