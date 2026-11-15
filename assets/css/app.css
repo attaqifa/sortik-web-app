@@ -210,6 +210,10 @@ button.row:hover, button.row:focus-visible { background: #fafbfe; }
 .btns { display: flex; flex-wrap: wrap; gap: 6px; }
 .btn { padding: 8px 12px; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--biru-tua); background: var(--biru-muda); border: 1px solid var(--biru-garis); border-radius: var(--r-s); cursor: pointer; transition: background var(--cepat), border-color var(--cepat), color var(--cepat); text-decoration: none; }
 .btn:hover { background: #e2ecff; border-color: #bfd3fb; }
+/* satu aksi utama per baris (langkah berikutnya) */
+.btn.utama { display: inline-flex; align-items: center; gap: 6px; padding: 10px 14px; font-size: 13px; color: #fff; background: var(--biru); border-color: var(--biru); }
+.btn.utama:hover { background: var(--biru-tua); border-color: var(--biru-tua); }
+.btn.utama:disabled { opacity: .5; cursor: not-allowed; }
 .btn.danger { color: #b91c1c; background: #fee2e2; border-color: #fecaca; }
 .btn.danger:hover { background: #fdd6d6; border-color: #fca5a5; }
 
@@ -227,7 +231,10 @@ button.row:hover, button.row:focus-visible { background: #fafbfe; }
 .toolbar .lbl { margin: 0; }
 .toolbar input, .form input, .form select { width: 100%; padding: 11px 13px; font: inherit; font-size: 14px; background: var(--kertas); border: 1px solid var(--bidang); border-radius: var(--r); transition: border-color var(--cepat), box-shadow var(--cepat); }
 .toolbar input[type="number"] { width: 88px; }
-.toolbar input:focus, .form input:focus, .form select:focus, .row select:focus, textarea:focus { outline: 0; border-color: var(--biru); box-shadow: var(--fokus); }
+.toolbar select { width: auto; padding: 11px 13px; font: inherit; font-size: 14px; background: var(--kertas); border: 1px solid var(--bidang); border-radius: var(--r); transition: border-color var(--cepat), box-shadow var(--cepat); }
+/* antrean pesanan: cari + saring bayar di atas chip status */
+.toolbar.antrean { padding-top: 0; margin-bottom: 12px; }
+.toolbar select:focus, .toolbar input:focus, .form input:focus, .form select:focus, .row select:focus, textarea:focus { outline: 0; border-color: var(--biru); box-shadow: var(--fokus); }
 .row select { width: auto; padding: 9px 11px; font: inherit; font-size: 13px; background: var(--kertas); border: 1px solid var(--bidang); border-radius: var(--r-s); transition: border-color var(--cepat), box-shadow var(--cepat); }
 
 textarea { width: 100%; padding: 12px 14px; font: inherit; font-size: 14px; background: var(--kertas); border: 1px solid var(--bidang); border-radius: var(--r); resize: vertical; transition: border-color var(--cepat), box-shadow var(--cepat); }
@@ -703,8 +710,9 @@ input[type="file"]::file-selector-button:hover { background: #e2ecff; border-col
 
 .rowinfo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 7px; }
 .rowinfo .tag { margin-top: 0; }
-.btn.bukti { display: inline-flex; align-items: center; gap: 6px; color: #6d28d9; background: #f3e8ff; border-color: #e9d5ff; }
-.btn.bukti:hover { background: #ece0ff; }
+/* aksi sekunder netral: tidak bersaing dengan tombol langkah berikutnya */
+.btn.bukti { display: inline-flex; align-items: center; gap: 6px; color: var(--tinta-2); background: var(--kertas); border-color: var(--bidang); }
+.btn.bukti:hover { background: var(--sorot); border-color: #c8d2e8; }
 .btn .ikon { width: 15px; height: 15px; flex: none; }
 
 /* daftar pesanan pembeli: foto barang lebih jelas */
@@ -848,6 +856,10 @@ input[type="file"]::file-selector-button:hover { background: #e2ecff; border-col
   .pesanan .row { grid-template-columns: 76px minmax(0, 1fr); }
   .pesanan .row .thumb { width: 76px; height: 76px; }
   .pesanan .row .btns { max-width: none; justify-content: flex-start; }
+  /* chip status antrean satu baris, digeser mendatar (tidak memakan 4 baris) */
+  .pesanan .chips { flex-wrap: nowrap; margin: 0 -22px 10px; padding: 0 22px 4px; overflow-x: auto; scrollbar-width: none; }
+  .pesanan .chips::-webkit-scrollbar { display: none; }
+  .pesanan .chips button { flex: none; }
 }
 
 @media (max-width: 560px) {
