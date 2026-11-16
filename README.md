@@ -1,102 +1,188 @@
+<div align="center">
+
 # SORTIK
 
-Sistem Sortir & Katalog Elektronik — aplikasi web toko elektronik dengan tiga peran:
-**pembeli**, **staff toko**, dan **admin toko**.
+**Sistem Sortir & Katalog Elektronik**
 
-Data, sesi, dan keranjang disimpan di server (PHP + PostgreSQL); browser tidak menyimpan data apa pun.
-Rancangan backend: `docs/rancangan-backend.md`.
+Aplikasi web toko elektronik untuk mengelola katalog, lokasi rak, pesanan, dan keuangan dalam satu sistem.
 
-## Menjalankan (lokal)
+![PHP](https://img.shields.io/badge/PHP-8.3-777BB4?logo=php&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-vanilla-F7DF1E?logo=javascript&logoColor=black)
+![Tanpa framework](https://img.shields.io/badge/framework-none-2563EB)
 
-Butuh PHP 8.3 (ekstensi `pdo_pgsql`) dan PostgreSQL.
+[Fitur](#fitur) · [Memulai](#memulai) · [Alur Pesanan](#alur-pesanan) · [Struktur Proyek](#struktur-proyek) · [Keamanan](#keamanan) · [Deployment](#deployment)
 
-1. Buat database `sortik_dev` di PostgreSQL (mis. lewat pgAdmin), lalu jalankan
-   `backend/db/skema.sql` dan setelah itu `backend/db/seed.sql` di Query Tool.
-2. Buat berkas `.env` di akar repo (tidak ikut git):
+</div>
 
+---
+
+## Tentang
+
+SORTIK menjawab tiga pertanyaan harian sebuah toko elektronik: **barang apa yang tersedia**, **di rak mana
+letaknya**, dan **bagaimana status pesanannya**. Pembeli memesan lewat web, staff memprosesnya, dan admin
+memantau penjualan serta keuangan.
+
+Seluruh data (akun, sesi, keranjang, pesanan, foto) disimpan di server dan PostgreSQL. Browser tidak
+menyimpan data apa pun, sehingga akun dan pesanan yang sama dapat dibuka dari perangkat mana pun.
+
+## Fitur
+
+**Pembeli**
+- Pencarian dan filter produk dengan lokasi rak pada denah toko
+- Detail produk: galeri foto, diskon, stok
+- Keranjang, checkout (ambil di toko atau antar), unggah bukti transfer
+- Pantau status pesanan, batalkan pesanan yang belum dibayar, riwayat pesanan
+
+**Staff**
+- Antrean pesanan: konfirmasi pembayaran dan ubah status
+- Kelola produk dan kategori, termasuk foto
+- Editor denah rak per lantai
+
+**Admin**
+- Semua fitur staff
+- Keuangan: pendapatan, piutang, pengeluaran, laba bersih, grafik 6 bulan, ekspor CSV
+- Kelola pengguna dan peran
+- Pengaturan toko: info, ongkos kirim, rekening, logo
+
+## Teknologi
+
+| Lapisan | Teknologi |
+|---|---|
+| Frontend | HTML, CSS, JavaScript murni (tanpa framework dan tanpa proses build) |
+| Backend | PHP 8.3 native, API JSON di `/api` |
+| Basis data | PostgreSQL (PDO, prepared statement) |
+| Ikon | [Lucide](https://lucide.dev), disimpan lokal |
+
+## Memulai
+
+### Prasyarat
+
+- PHP 8.3 dengan ekstensi `pdo_pgsql`, `pgsql`, dan `fileinfo`
+- PostgreSQL
+
+Tidak membutuhkan Docker, Composer, atau Node.js untuk menjalankan aplikasi.
+
+### Instalasi
+
+1. Buat database, misalnya `sortik_dev`.
+2. Jalankan berkas SQL berurutan pada database tersebut:
+
+   ```bash
+   psql -d sortik_dev -f backend/db/skema.sql
+   psql -d sortik_dev -f backend/db/seed.sql
    ```
+
+   Bisa juga lewat Query Tool di pgAdmin.
+
+3. Salin konfigurasi dan isi kata sandi database:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   ```env
    DB_HOST=127.0.0.1
    DB_PORT=5432
    DB_NAME=sortik_dev
    DB_USER=postgres
-   DB_PASS=kata_sandi_anda
+   DB_PASS=
    ```
 
-3. Jalankan dari akar repo, lalu buka <http://127.0.0.1:8080/>:
+4. Jalankan server dari akar repo:
 
    ```bash
    php -S 127.0.0.1:8080 -t public backend/dev-router.php
    ```
 
-Halaman (folder `public/`) dan API disajikan satu alamat (`/api/...`), jadi tidak perlu CORS. Membuka
-halaman lewat server statis biasa (mis. `python -m http.server`) tidak akan jalan
-karena `/api` tidak ada di sana.
+5. Buka <http://127.0.0.1:8080/>.
 
-## Akun awal
+### Akun awal
 
-Berkas `seed.sql` membuat akun awal. Ganti kata sandinya sebelum dipakai sungguhan. Kata sandi awal: `Sortik#2026`
+Dibuat oleh `seed.sql`. Kata sandi semua akun: `Sortik#2026`.
 
-| Peran   | Email              |
-|---------|--------------------|
-| Admin   | admin@sortik.id    |
-| Staff   | staff@sortik.id    |
-| Pembeli | budi@sortik.id     |
-| Pembeli | sari@sortik.id     |
+| Peran | Email |
+|---|---|
+| Admin | `admin@sortik.id` |
+| Staff | `staff@sortik.id` |
+| Pembeli | `budi@sortik.id`, `sari@sortik.id` |
 
-Pembeli baru bisa mendaftar sendiri dari halaman Daftar (kata sandi minimal 8 karakter).
-Mereset data: hapus lalu buat ulang database, atau jalankan ulang `skema.sql` dan `seed.sql`.
+> Ganti kata sandi dan hapus akun contoh sebelum dipakai di server sungguhan.
 
-## Alur pesanan
+## Alur Pesanan
 
-1. Pembeli memasukkan barang ke keranjang lalu checkout. **Stok langsung dicadangkan.**
-2. Status pesanan: `Menunggu` → `Diproses` → `Siap` → `Selesai`.
-3. Transfer: pembeli mengunggah bukti; staff mengonfirmasi pembayaran (pesanan menjadi `Diproses`).
-4. Pesanan `Menunggu` yang belum dibayar **dibatalkan otomatis setelah 2 hari**
-   (cron: `php backend/cron/batal_kedaluwarsa.php` tiap jam; daftar pesanan juga memeriksanya). Pembeli juga
-   bisa membatalkan sendiri selama belum dibayar. Pembatalan tidak menghapus data: statusnya
-   menjadi `Dibatalkan`, stok dikembalikan, dan pesanan tetap muncul di riwayat.
+```
+Checkout ──► stok dicadangkan ──► konfirmasi bayar ──► Menunggu → Diproses → Siap → Selesai
+                  │
+                  └─► belum dibayar > 2 hari / dibatalkan pembeli ──► Dibatalkan (stok kembali)
+```
+
+- Stok dikurangi saat checkout dan dilindungi penguncian baris, sehingga tidak terjual ganda.
+- Pembayaran lewat transfer (unggah bukti) atau di kasir, dikonfirmasi staff atau admin.
+- Pesanan yang belum dibayar dibatalkan otomatis setelah 2 hari (cron per jam). Pesanan yang dibatalkan
+  tetap tercatat dengan status `Dibatalkan`.
+- Pesanan lunas dihitung sebagai pendapatan, yang belum lunas sebagai piutang.
+
+## Struktur Proyek
+
+```
+.
+├── public/                  Frontend (satu-satunya folder yang disajikan web server)
+│   ├── auth/                Masuk dan daftar
+│   ├── user/                Halaman pembeli
+│   ├── staff/               Halaman staff
+│   ├── admin/               Halaman admin
+│   └── assets/              CSS, JS, gambar
+│       └── js/core/         Klien API, state tampilan, komponen UI
+├── backend/
+│   ├── public/index.php     Router API
+│   ├── src/                 Autentikasi, koneksi DB, dan endpoint (src/api/)
+│   ├── db/                  skema.sql, seed.sql, migrasi/
+│   ├── cron/                Pembatalan pesanan kedaluwarsa
+│   ├── tests/               Tes balapan stok
+│   └── uploads/             Foto dan bukti transfer (tidak ikut git)
+└── .env.example
+```
 
 ## Keamanan
 
-- Kata sandi di-hash dengan Argon2id di server; sesi memakai cookie `HttpOnly` + `SameSite=Lax`
-  (`Secure` otomatis di HTTPS).
-- Percobaan masuk dibatasi di server (5 kali salah → jeda 60 detik per email + IP).
-- Peran dicek di server (`wajib_peran()`), permintaan pengubah data wajib JSON dan diperiksa `Origin`.
-- Semua query memakai prepared statement. Galat ke klien bersifat umum, rincian masuk log server.
-- `Content-Security-Policy` membatasi skrip hanya dari origin sendiri; ikon Lucide
-  disimpan lokal di `assets/vendor/`, tanpa CDN.
-- Hanya folder `public/` yang disajikan web server; `backend/`, `.env`, dan `.git/` berada di luarnya.
+- Kata sandi di-hash dengan Argon2id; sesi memakai cookie `HttpOnly` dan `SameSite=Lax` (`Secure` di HTTPS).
+- Percobaan masuk dibatasi: 5 kali salah menahan percobaan berikutnya selama 60 detik per email dan IP.
+- Peran diperiksa di server pada setiap endpoint; permintaan pengubah data wajib JSON dan diperiksa `Origin`.
+- Prepared statement untuk semua query, `esc()` untuk teks pengguna, dan Content-Security-Policy tanpa skrip inline.
+- Unggahan divalidasi dari isi berkas (JPG, PNG, WebP, maks. 2 MB) dan disimpan di luar folder web.
+  Bukti transfer hanya dapat dibuka pemiliknya, staff, dan admin.
+- Hanya `public/` yang disajikan; `backend/`, `.env`, dan `.git/` berada di luarnya.
 
-## Struktur kode
+## Pengujian
 
-```
-public/               frontend (admin/, auth/, staff/, user/, assets/, index.html)
-backend/
-  public/index.php   router API (/api)
-  src/               http.php (JSON, galat), db.php (PDO), auth.php (sesi, peran), api/ (endpoint)
-  db/                skema.sql, seed.sql
-  dev-router.php     router untuk `php -S` (lokal)
-public/assets/js/core/
-  api.js      klien API tipis ({ data, error })
-  data.js     wadah data `db` (cache tampilan yang diisi dari server)
-  domain.js   logika tampilan: harga jual, status (logika pesanan dipindah ke server di B3)
-  ui.js       komponen tampilan & util (esc, kartu, notif, konfirmasi, denah rak)
-  store.js    memuat data dari API, sesi dari server, sidebar
-  kelola.js   mesin daftar + form tambah/ubah/hapus
-  mulai.js    pemuat skrip halaman; daftar `HALAMAN_TERSAMBUNG` mencatat halaman yang sudah pindah
-public/assets/js/{user,staff,admin,toko}/  skrip per halaman
-```
-
-Teks dari data pengguna wajib lewat `esc()` sebelum masuk `innerHTML`.
-
-## Tes
-
-```bash
-for f in tests/*.test.cjs; do node "$f"; done
-```
-
-Tes frontend berjalan di `vm` dengan DOM tiruan (hanya Node). Tes balapan stok (butuh server berjalan):
+Tes balapan stok mengirim checkout serentak pada produk berstok kecil dan memastikan stok tidak pernah
+negatif atau terjual ganda. Tes ini membuat akun uji (`@sortik.test`), jadi jalankan hanya pada database
+pengembangan:
 
 ```bash
 node backend/tests/balapan-stok.cjs http://127.0.0.1:8080
 ```
+
+## Deployment
+
+Susunan yang disarankan di server Linux:
+
+- Nginx menyajikan `public/` dan meneruskan `/api/` ke `backend/public/index.php` lewat PHP-FPM.
+- `.env` berada di luar folder web dengan hak akses terbatas; gunakan user database khusus, bukan `postgres`.
+- `backend/uploads/` dapat ditulis oleh user PHP-FPM dan berada di luar folder web.
+- Aktifkan HTTPS.
+- Jadwalkan pembatalan pesanan kedaluwarsa:
+
+  ```cron
+  0 * * * * php /var/www/sortik/backend/cron/batal_kedaluwarsa.php
+  ```
+
+## Pemecahan Masalah
+
+| Gejala | Solusi |
+|---|---|
+| `php` tidak dikenali | Tambahkan PHP ke `PATH`, lalu buka terminal baru. |
+| Halaman tidak ditemukan | Jalankan server dengan `-t public`, bukan `-t .`. |
+| "Data gagal dimuat" | Periksa `.env` dan pastikan PostgreSQL berjalan; lihat log di terminal server. |
+| Tidak bisa masuk | Pastikan `seed.sql` sudah dijalankan; tunggu 60 detik bila terkena pembatas. |
