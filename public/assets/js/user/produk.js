@@ -1,0 +1,108 @@
+/* Deskripsi produk — produk.html?id=<id>. */
+
+const p = produkById(+new URLSearchParams(location.search).get("id"));
+
+function gambar(p) {
+  const habis = p.stok < 1;
+  const tipis = p.stok > 0 && p.stok <= 3;
+  /* ikon cadangan tampil bila foto gagal (onerror) */
+  const foto = (src) => `${ikonCadangan(p)}<img src="${urlGambar(src)}" alt="${esc(p.nama)}" data-cadangan>`;
+
+  /* galeri: foto utama + thumbnail */
+  const semua = galeriProduk(p);
+  if (semua.length) {
+    isi("galeri", `<div class="galeri-utama" id="galeriGambar" title="Klik untuk memperbesar">${foto(semua[0])}</div>` +
+      (semua.length > 1 ? `<div class="galeri-thumb" id="galeriThumb">${semua.map((s, i) =>
+        `<button type="button" data-src="${urlGambar(s)}" class="${i ? "" : "on"}" title="Foto ${i + 1}">${foto(s)}</button>`).join("")}</div>` : ""));
+    const utama = el("galeriGambar");
+    utama.onclick = () => lihatGambar(semua[0], p.nama);
+
+    const thumb = el("galeriThumb");
+    if (thumb) thumb.onclick = (e) => {
+      const b = e.target.closest("button[data-src]");
+      if (!b) return;
+      isi("galeriGambar", foto(b.dataset.src));
+      utama.onclick = () => lihatGambar(b.dataset.src, p.nama);
+      thumb.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+    };
+  } else {
+    isi("galeri", `<div class="galeri-utama">${ikonCadangan(p)}</div>`);
+  }
+
+  isi("info", `<span class="kodeproduk">PRD-${String(p.id).padStart(3, "0")}</span>
+  <h2>${esc(p.nama)}</h2>
+  <b class="harga">${rp(hargaJual(p))}${p.diskon ? `<s class="hargalama">${rp(p.harga)}</s>` : ""}</b>
+
+  <div class="chipstat">
+    <span class="stok${habis ? " habis" : tipis ? " menipis" : ""}"><span class="ikon" data-lucide="${habis ? "triangle-alert" : tipis ? "triangle-alert" : "package"}"></span>${habis ? "Stok habis" : tipis ? `Stok menipis — ${p.stok} unit` : `Stok ${p.stok} unit`}</span>
+    ${p.diskon ? `<span class="promo"><span class="ikon" data-lucide="tag"></span>Diskon ${p.diskon}% — hemat ${rp(p.harga - hargaJual(p))}</span>` : ""}
+    <a href="#letakWrap" title="Lihat letak rak di denah toko"><span class="ikon" data-lucide="map-pin"></span>Rak ${esc(labelRak(p.rak))}</a>
+    <a href="cari.html?kat=${encodeURIComponent(p.kategori)}" title="Lihat kategori ini"><span class="ikon" data-lucide="layout-grid"></span>${esc(kat(p))}</a>
+  </div>
+
+  <p class="desc">${esc(p.deskripsi || "Belum ada deskripsi produk.")}</p>
+
+  <div class="beli">
+    <div class="beli-atas">
+      <div class="qty">
+        <button type="button" id="kurang" aria-label="Kurangi jumlah">−</button><b id="jumlah">1</b><button type="button" id="tambah" aria-label="Tambah jumlah">＋</button>
+      </div>
+      <div class="totalbeli"><span>Total</span><b id="totalBeli">${rp(hargaJual(p))}</b></div>
+    </div>
+    <div class="beli-aksi">
+      <button class="primary" id="keranjang" type="button"${habis ? " disabled" : ""}>${habis ? "Stok Habis" : `<span class="ikon" data-lucide="shopping-cart"></span><span class="lengkap">Tambah ke Keranjang</span><span class="pendek">Keranjang</span>`}</button>
+      <button class="primary garis" id="beli" type="button"${habis ? " disabled" : ""}>Beli Sekarang</button>
+    </div>
+  </div>`);
+
+  let n = 1;
+  const batas = (v) => Math.max(1, Math.min(p.stok, v));
+  /* jumlah & total beli berubah bersama */
+  const tampil = () => {
+    el("jumlah").textContent = n;
+    el("totalBeli").textContent = rp(hargaJual(p) * n);
+  };
+  el("kurang").onclick = () => { n = batas(n - 1); tampil(); };
+  el("tambah").onclick = () => { n = batas(n + 1); tampil(); };
+  el("keranjang").onclick = async () => {
+    if (!await masukKeranjang(p.id, n)) return;
+    isi("keranjang", `<span class="ikon" data-lucide="check"></span><span class="lengkap">Masuk keranjang</span><span class="pendek">Masuk</span>`);
+    gambarIkon();
+  };
+  el("beli").onclick = async () => { if (await masukKeranjang(p.id, n)) location.href = "checkout.html"; };
+
+  letak(p);
+
+  const serupa = db.produk.filter((x) => x.kategori === p.kategori && x.id !== p.id).slice(0, 4);
+  isi("serupa", serupa.length ? serupa.map(kartu).join("") : pesanKosong("package", "Belum ada produk lain di kategori ini."));
+  el("serupaWrap").hidden = !serupa.length;
+}
+
+/* denah mini: semua rak berisi tampil berwarna kategori, rak produk ini disorot —
+   pembeli tahu harus berjalan ke mana sebelum datang ke toko */
+function letak(p) {
+  const lantai = lantaiDari(p.rak);
+  el("letakWrap").hidden = lantai < 0;
+  if (lantai < 0) return;
+  db.rak.aktif = lantai;   /* tampilkan lantai tempat rak berada — bukan perubahan data */
+  const jumlah = {};
+  db.produk.filter((x) => x.stok > 0 && x.rak).forEach((x) => {
+    const h = jumlah[x.rak] = jumlah[x.rak] || { n: 0, kategori: x.kategori };
+    h.n++;
+  });
+  const banyakLantai = db.rak.lantai.length > 1;
+  isi("letakKet", `<b>Iki lo barang e!</b> Cari rak <mark class="rakmini"><i aria-hidden="true"></i>${esc(p.rak)}</mark>
+    yang ditandai biru${banyakLantai ? ` di <b>${esc(db.rak.lantai[lantai].nama)}</b>` : ""} — garis hijau adalah pintu masuk.
+    <a href="cari.html?rak=${encodeURIComponent(p.rak)}">Barang lain di rak ini</a>`);
+  denahToko("letak", jumlah, { klik: false, aktif: p.rak, piksel: 16 });
+}
+
+if (p.id) {
+  document.title = p.nama + " — SORTIK";
+  isi("remah", `<a href="index.html">Beranda</a><span>/</span><a href="cari.html?kat=${encodeURIComponent(p.kategori)}">${esc(kat(p))}</a><span>/</span><b>${esc(p.nama)}</b>`);
+  gambar(p);
+} else {
+  isi("remah", `<a href="index.html">Beranda</a><span>/</span><b>Produk tidak ditemukan</b>`);
+  el("serupaWrap").hidden = true;
+  isi("detail", pesanKosong("search-x", "Produk tidak ditemukan.", ["cari.html", "Kembali ke pencarian"]));
+}

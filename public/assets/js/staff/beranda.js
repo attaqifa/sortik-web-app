@@ -1,0 +1,57 @@
+/* Beranda staff — ringkasan operasional toko. */
+
+el("nama").textContent = db.akun.nama;
+el("sapa").innerHTML = avatarHTML(db.akun);
+
+/* sambutan bisa ditutup dengan × (tanpa disimpan; muncul lagi saat halaman dibuka) */
+const sapa = document.querySelector(".hello");
+el("sapTutup").onclick = () => { sapa.hidden = true; };
+
+const jalan = db.pesanan.filter(aktif);
+const belumBayar = jalan.filter((o) => !o.lunas);
+const tipis = db.produk.filter((p) => p.stok <= 5);
+const terbaru = (daftar) => [...daftar].sort((a, b) => b.dibuat.localeCompare(a.dibuat)).slice(0, 5);
+
+isi("stats", [
+  ["package", "Barang terdaftar", db.produk.length],
+  ["triangle-alert", "Stok menipis", tipis.length],
+  ["receipt", "Pesanan berjalan", jalan.length],
+  ["clock", "Belum dibayar", belumBayar.length]
+].map(([ikon, label, nilai]) => `<div><span class="ikon" data-lucide="${ikon}"></span><b>${nilai}</b><span>${label}</span></div>`).join(""));
+
+/* Perlu Tindakan: pintasan sesuai jumlah */
+const itemTindakan = [
+  ["clipboard-check", "Pesanan menunggu dikonfirmasi", jalan.filter((o) => o.status === "Menunggu").length, "pesanan.html?status=Menunggu"],
+  ["credit-card", "Pesanan belum dibayar", belumBayar.length, "pesanan.html?status=belum"],
+  ["triangle-alert", "Stok habis — lengkapi di Kelola Barang", db.produk.filter((p) => p.stok < 1).length, "produk.html"]
+];
+const darurat = itemTindakan.filter(([, , n]) => n > 0);
+isi("tindakan", darurat.length
+  ? darurat.map(([ikon, label, n, href]) =>
+    `<a class="tindakanitem" href="${href}"><span class="ikon" data-lucide="${ikon}"></span><b>${n}</b><span>${label}</span><i>›</i></a>`).join("")
+  : `<p class="kosong"><span class="ikon" data-lucide="clipboard-check"></span>Semua beres — tidak ada yang perlu ditindak.</p>`);
+
+const kartuPesanan = (o) => {
+  const p = produkById(o.items[0].produk);
+  return `<a class="row" href="pesanan.html">
+    <div class="thumb">${fotoHTML(p)}</div>
+    <div><b>${esc(p.nama || "-")}${o.items.length > 1 ? ` + ${o.items.length - 1} produk` : ""}</b><span>${kodePesanan(o)} · ${esc(o.pembeli || "-")} · ${esc(o.bayar)}</span>${tagBayar(o)}</div>
+    ${tagStatus(o.status)}
+  </a>`;
+};
+isi("tindak", jalan.length ? terbaru(jalan).map(kartuPesanan).join("") : pesanKosong("receipt", "Tidak ada pesanan yang menunggu ditindak."));
+
+isi("tipis", tipis.length ? tipis.map((p) => `<a class="row" href="produk.html?id=${p.id}">
+  <div class="thumb">${fotoHTML(p)}</div>
+  <div><b>${esc(p.nama)}</b><span>${esc(kat(p))} · Rak ${esc(labelRak(p.rak))} · ${rp(p.harga)}</span></div>
+  <em class="${p.stok ? "wait" : "done"}">stok ${p.stok}</em>
+</a>`).join("") : pesanKosong("package", "Semua stok di atas 5 unit."));
+
+const hitung = {};
+db.produk.forEach((p) => {
+  /* { n, kategori } → warna rak mengikuti kategori barangnya */
+  const h = hitung[p.rak] = hitung[p.rak] || { n: 0, kategori: p.kategori };
+  h.n++;
+});
+isi("rakInfo", `${Object.keys(hitung).length} dari ${semuaRak().length} rak terisi (rak kosong ditandai samar).`);
+denahToko("denah", hitung, { klik: false, piksel: 20, tab: true });

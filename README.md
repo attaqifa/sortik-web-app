@@ -3,27 +3,38 @@
 Sistem Sortir & Katalog Elektronik — aplikasi web toko elektronik dengan tiga peran:
 **pembeli**, **staff toko**, dan **admin toko**.
 
-> **Mode demo lokal.** Tidak ada server: seluruh data (produk, pesanan, pengguna,
-> keuangan, denah rak) disimpan di `localStorage` browser. Data tidak dibagikan
-> antar perangkat, dan pemeriksaan peran/kata sandi hanya berjalan di browser
-> sehingga bisa dilewati lewat Console. Jangan dipakai untuk data sungguhan
-> sebelum ada backend.
+Data, sesi, dan keranjang disimpan di server (PHP + PostgreSQL); browser tidak menyimpan data apa pun.
+Rancangan backend: `docs/rancangan-backend.md`.
 
-## Menjalankan
+## Menjalankan (lokal)
 
-HTML, CSS, dan JavaScript murni tanpa proses build. Sajikan folder ini lewat server
-statis di `localhost` (penguncian data antar-tab butuh `localhost` atau HTTPS, jadi
-jangan buka lewat `file://`):
+Butuh PHP 8.3 (ekstensi `pdo_pgsql`) dan PostgreSQL.
 
-```bash
-python -m http.server 8000
-```
+1. Buat database `sortik_dev` di PostgreSQL (mis. lewat pgAdmin), lalu jalankan
+   `backend/db/skema.sql` dan setelah itu `backend/db/seed.sql` di Query Tool.
+2. Buat berkas `.env` di akar repo (tidak ikut git):
 
-Lalu buka <http://localhost:8000/>.
+   ```
+   DB_HOST=127.0.0.1
+   DB_PORT=5432
+   DB_NAME=sortik_dev
+   DB_USER=postgres
+   DB_PASS=kata_sandi_anda
+   ```
 
-## Akun contoh
+3. Jalankan dari akar repo, lalu buka <http://127.0.0.1:8080/>:
 
-Kata sandi semua akun contoh: `Sortik#2026`
+   ```bash
+   php -S 127.0.0.1:8080 -t public backend/dev-router.php
+   ```
+
+Halaman (folder `public/`) dan API disajikan satu alamat (`/api/...`), jadi tidak perlu CORS. Membuka
+halaman lewat server statis biasa (mis. `python -m http.server`) tidak akan jalan
+karena `/api` tidak ada di sana.
+
+## Akun awal
+
+Berkas `seed.sql` membuat akun awal. Ganti kata sandinya sebelum dipakai sungguhan. Kata sandi awal: `Sortik#2026`
 
 | Peran   | Email              |
 |---------|--------------------|
@@ -33,8 +44,7 @@ Kata sandi semua akun contoh: `Sortik#2026`
 | Pembeli | sari@sortik.id     |
 
 Pembeli baru bisa mendaftar sendiri dari halaman Daftar (kata sandi minimal 8 karakter).
-
-Mereset data: jalankan `localStorage.removeItem("sortik-db")` di Console, lalu muat ulang.
+Mereset data: hapus lalu buat ulang database, atau jalankan ulang `skema.sql` dan `seed.sql`.
 
 ## Alur pesanan
 
@@ -42,40 +52,42 @@ Mereset data: jalankan `localStorage.removeItem("sortik-db")` di Console, lalu m
 2. Status pesanan: `Menunggu` → `Diproses` → `Siap` → `Selesai`.
 3. Transfer: pembeli mengunggah bukti; staff mengonfirmasi pembayaran (pesanan menjadi `Diproses`).
 4. Pesanan `Menunggu` yang belum dibayar **dibatalkan otomatis setelah 2 hari**
-   (`HARI_TAHAN` di `assets/js/core/ui.js`). Pembeli juga bisa membatalkan sendiri selama
-   belum dibayar. Pembatalan tidak menghapus data: statusnya menjadi `Dibatalkan`, stok
-   dikembalikan, dan pesanan tetap muncul di riwayat. Pesanan yang dibatalkan tidak
-   dihitung di laporan keuangan.
+   (cron: `php backend/cron/batal_kedaluwarsa.php` tiap jam; daftar pesanan juga memeriksanya). Pembeli juga
+   bisa membatalkan sendiri selama belum dibayar. Pembatalan tidak menghapus data: statusnya
+   menjadi `Dibatalkan`, stok dikembalikan, dan pesanan tetap muncul di riwayat.
 
-## Keamanan (apa yang sudah dan belum)
+## Keamanan
 
-- Kata sandi di-hash dengan PBKDF2-SHA256 (garam acak per akun); hash lama otomatis
-  ditingkatkan saat berhasil masuk. Akun tanpa kata sandi tidak bisa masuk.
-- Percobaan masuk dibatasi (5 kali salah → jeda 60 detik) — hanya menahan tebakan iseng,
-  karena dijalankan di browser.
+- Kata sandi di-hash dengan Argon2id di server; sesi memakai cookie `HttpOnly` + `SameSite=Lax`
+  (`Secure` otomatis di HTTPS).
+- Percobaan masuk dibatasi di server (5 kali salah → jeda 60 detik per email + IP).
+- Peran dicek di server (`wajib_peran()`), permintaan pengubah data wajib JSON dan diperiksa `Origin`.
+- Semua query memakai prepared statement. Galat ke klien bersifat umum, rincian masuk log server.
 - `Content-Security-Policy` membatasi skrip hanya dari origin sendiri; ikon Lucide
-  disimpan lokal di `assets/vendor/` (versi 1.73.0), tanpa CDN.
-- **Belum aman untuk produksi:** otorisasi peran, validasi harga/stok, dan data semuanya
-  di sisi klien. Perlu backend (mis. Supabase Auth + Row Level Security) agar benar-benar aman.
+  disimpan lokal di `assets/vendor/`, tanpa CDN.
+- Hanya folder `public/` yang disajikan web server; `backend/`, `.env`, dan `.git/` berada di luarnya.
 
 ## Struktur kode
 
 ```
-assets/js/core/
-  koneksi.js  penyimpanan localStorage + masuk/daftar (hash sandi, pembatas percobaan)
-  data.js     wadah data kosong `db`
-  domain.js   logika data tanpa DOM: harga, transaksi, stok, buat/bayar/batalkan pesanan
+public/               frontend (admin/, auth/, staff/, user/, assets/, index.html)
+backend/
+  public/index.php   router API (/api)
+  src/               http.php (JSON, galat), db.php (PDO), auth.php (sesi, peran), api/ (endpoint)
+  db/                skema.sql, seed.sql
+  dev-router.php     router untuk `php -S` (lokal)
+public/assets/js/core/
+  api.js      klien API tipis ({ data, error })
+  data.js     wadah data `db` (cache tampilan yang diisi dari server)
+  domain.js   logika tampilan: harga jual, status (logika pesanan dipindah ke server di B3)
   ui.js       komponen tampilan & util (esc, kartu, notif, konfirmasi, denah rak)
-  store.js    sesi, simpan ke localStorage, sidebar, pembatalan otomatis
+  store.js    memuat data dari API, sesi dari server, sidebar
   kelola.js   mesin daftar + form tambah/ubah/hapus
-  mulai.js    pemuat skrip halaman (pengganti skrip inline)
-assets/js/{user,staff,admin,toko}/  skrip per halaman
+  mulai.js    pemuat skrip halaman; daftar `HALAMAN_TERSAMBUNG` mencatat halaman yang sudah pindah
+public/assets/js/{user,staff,admin,toko}/  skrip per halaman
 ```
 
-Aturan: logika yang mengubah data diletakkan di `domain.js` dan mengembalikan `urungkan()`
-bila perlu; halaman hanya memanggilnya, menyimpan (`simpan`), lalu menampilkan hasilnya.
-Teks dari data pengguna wajib lewat `esc()` sebelum masuk `innerHTML`; label `chipSaring`
-dipasang sebagai HTML.
+Teks dari data pengguna wajib lewat `esc()` sebelum masuk `innerHTML`.
 
 ## Tes
 
@@ -83,4 +95,8 @@ dipasang sebagai HTML.
 for f in tests/*.test.cjs; do node "$f"; done
 ```
 
-Tanpa dependensi (hanya Node). Tes berjalan di `vm` dengan DOM tiruan.
+Tes frontend berjalan di `vm` dengan DOM tiruan (hanya Node). Tes balapan stok (butuh server berjalan):
+
+```bash
+node backend/tests/balapan-stok.cjs http://127.0.0.1:8080
+```

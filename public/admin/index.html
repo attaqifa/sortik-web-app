@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/jpeg" href="../assets/img/SortikLogo.jpeg">
+  <title>Beranda Admin — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="side" id="side"></aside>
+
+  <main>
+    <header class="head">
+      <h1>Beranda Admin</h1>
+      <p>Ringkasan penjualan dan pengawasan data toko</p>
+    </header>
+
+    <section class="hello">
+      <div class="sapa">
+        <div class="avatar" id="sapa"></div>
+        <div>
+          <p>Selamat bertugas 👋</p>
+          <h2 id="nama"></h2>
+        </div>
+      </div>
+      <div class="acts">
+        <a href="pengguna.html">Kelola Pengguna</a>
+        <a href="pengaturan.html">Pengaturan Toko</a>
+      </div>
+      <button class="tutup" id="sapTutup" type="button" aria-label="Tutup sambutan" title="Tutup sambutan"><span class="ikon" data-lucide="x"></span></button>
+    </section>
+
+    <section class="stats" id="stats"></section>
+
+    <section class="card">
+      <h2>Perlu Tindakan</h2>
+      <div class="tindakanlist" id="tindakan"></div>
+    </section>
+
+    <!-- ringkasan bulanan: diisi assets/js/admin/beranda.js -->
+    <section class="card">
+      <h2>Ringkasan Bulanan <a href="pesanan.html">Kelola Pesanan</a>
+        <span class="grafikleg"><span class="tag biru">Sudah dibayar</span><span class="tag kuning">Belum dibayar</span></span>
+      </h2>
+      <p class="note">Ringkasan ini dikelompokkan berdasarkan bulan pesanan dibuat; arus kas menurut tanggal pembayaran tersedia di Keuangan.</p>
+      <div class="grafik" id="grafik"></div>
+      <p class="hasil" id="total"></p>
+      <div id="lapor"></div>
+    </section>
+
+    <section class="card">
+      <h2>Produk Terlaris <a href="produk.html">Kelola Barang</a></h2>
+      <div id="laris"></div>
+    </section>
+
+    <section class="card">
+      <h2>Pesanan Belum Dibayar <a href="pesanan.html">Tandai Dibayar</a></h2>
+      <div id="belum"></div>
+    </section>
+  </main>
+
+</div>
+<script src="../assets/js/core/api.js"></script>
+<script src="../assets/js/core/data.js"></script>
+<script src="../assets/js/core/domain.js"></script>
+<script src="../assets/js/core/ui.js"></script>
+<script src="../assets/js/core/store.js"></script>
+<script src="../assets/js/core/kelola.js"></script>
+<script src="../assets/js/core/mulai.js" data-halaman="../assets/js/admin/beranda.js"></script>
+</body>
+</html>

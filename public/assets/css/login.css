@@ -1,0 +1,190 @@
+/* SORTIK — gaya halaman masuk (flat, tanpa gradasi) */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --biru: #2563eb;
+  --biru-tua: #1d4ed8;
+  --biru-muda: #eef4ff;
+  --biru-garis: #dbe6fd;
+  --tinta: #111827;
+  --tinta-2: #374151;
+  --tinta-3: #5f6777;
+  --garis: #e5e8ef;
+  --bidang: #d7dce3;
+  --fokus: 0 0 0 3px rgba(37, 99, 235, .15);
+  --cepat: .16s ease;
+}
+
+body {
+  font-family: system-ui, "Segoe UI", Arial, sans-serif;
+  color: var(--tinta);
+  background: #f5f7fb;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { display: flex; min-height: 100vh; }
+
+/* ---------- panel kiri ---------- */
+.promo {
+  flex: 0 0 37%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 40px 44px;
+  color: #fff;
+  text-align: center;
+  /* foto toko + lapisan biru tua agar teks putih tetap terbaca
+     (login.css ada di assets/css/ → jalur gambar relatif: ../img/) */
+  background:
+    linear-gradient(rgba(17, 42, 108, .68), rgba(17, 42, 108, .68)),
+    url("../img/LoginBackground.png") center / cover no-repeat var(--biru);
+}
+
+.brand h1 { font-size: 40px; font-weight: 800; letter-spacing: 3px; line-height: 1; }
+.brand h1 .co { display: block; margin-top: 8px; font-size: 12.5px; font-weight: 700; font-style: normal; letter-spacing: 2.5px; text-transform: uppercase; opacity: .7; }
+.brand .brandlogo { display: block; width: 56px; height: 56px; object-fit: contain; margin: 0 auto 14px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.25)); }
+.brand p { margin-top: 8px; font-size: 13px; letter-spacing: .6px; opacity: .8; }
+
+/* pesan galat */
+.galat { margin-top: 4px; padding: 10px 14px; font-size: 13px; color: #b91c1c; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; }
+
+.hero h2 { font-size: clamp(30px, 3vw, 42px); margin-bottom: 18px; }
+.hero h2 span { color: #bfdbfe; }
+.hero p { max-width: 320px; margin: 0 auto; font-weight: 600; line-height: 1.55; opacity: .92; }
+
+.promo footer { font-size: 13px; opacity: .65; }
+
+.promo {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  align-self: flex-start;
+}
+
+/* ---------- panel kanan ---------- */
+.form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 32px;
+}
+
+.form > * { max-width: 515px; width: 100%; margin-inline: auto; }
+.form h2 { font-size: 34px; }
+.form > p { color: var(--tinta-3); margin: 8px auto 20px; }
+
+/* kartu pilihan peran */
+.roles {
+  position: relative;   /* jangkar input radio tersembunyi — tanpa ini halaman melebar ke samping */
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 30px;
+}
+.roles input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.roles label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  background: #fff;
+  border: 1px solid var(--bidang);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background var(--cepat), border-color var(--cepat);
+}
+.roles label:hover { border-color: #bfd3fb; background: #f8faff; }
+.roles label .ikon { width: 26px; height: 26px; color: var(--tinta-3); transition: color var(--cepat); }
+.roles label span { font-size: 14px; font-weight: 600; color: #374151; transition: color var(--cepat); }
+.roles input:checked + label { background: var(--biru-muda); border-color: var(--biru); }
+.roles input:checked + label .ikon { color: var(--biru); }
+.roles input:checked + label span { color: var(--biru-tua); }
+.roles input:focus-visible + label { outline: 2px solid var(--biru); outline-offset: 2px; }
+
+/* field + tombol; tautan masuk <-> daftar
+   (input sandi dibungkus .sandi — pakai selektor keturunan, bukan anak langsung) */
+.form form > label { display: block; margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--tinta-3); }
+.form form input {
+  width: 100%;
+  margin-bottom: 22px;
+  padding: 15px 18px;
+  font: inherit;
+  background: #fff;
+  border: 1px solid var(--bidang);
+  border-radius: 12px;
+  transition: border-color var(--cepat), box-shadow var(--cepat);
+}
+.form form input:focus { outline: 0; border-color: var(--biru); box-shadow: var(--fokus); }
+
+.form button {
+  width: 100%;
+  padding: 16px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--biru);
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background var(--cepat);
+}
+.form button:hover { background: var(--biru-tua); }
+
+.akun {
+  text-align: center;
+  margin-top: 18px;
+}
+
+.akun a{
+  color: var(--biru-tua);
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.akun a:hover{
+  color: #0b2670;
+  text-decoration: underline;
+}
+
+/* link pindah halaman */
+.form .switch { margin-top: 18px; text-align: center; font-size: 15px; color: var(--tinta-3); }
+.switch a { color: var(--biru); font-weight: 600; text-decoration: none; }
+.switch a:hover { text-decoration: underline; }
+
+/* kolom sandi */
+.sandi { position: relative; margin-bottom: 22px; }
+.sandi input { margin-bottom: 0; padding-right: 52px; }
+.sandi .lihat { position: absolute; top: 35%; right: 6px; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; color: var(--tinta-3); background: none; border: 0; border-radius: 9px; cursor: pointer; transform: translateY(-50%); transition: color var(--cepat), background var(--cepat); }
+.sandi .lihat:hover { color: var(--biru); background: var(--biru-muda); }
+.sandi .lihat .ikon { width: 18px; height: 18px; }
+.sandi .lihat .tertutup, .sandi.terlihat .terbuka { display: none; }
+.sandi.terlihat .tertutup { display: block; }
+.sandi .kaps { position: absolute; left: 4px; bottom: -20px; font-size: 12px; font-weight: 600; color: #92400e; }
+
+/* ---------- responsif ---------- */
+@media (max-width: 900px) {
+  .wrap { flex-direction: column; }
+  .promo {
+    position: static;
+    top: auto;
+    height: auto;
+    align-self: auto;
+    flex: none;
+    padding: 32px 24px; }
+  .form { padding: 40px 22px; height: auto; }
+}
+
+/* layar sempit: kartu peran menumpuk */
+@media (max-width: 380px) {
+  .roles { grid-template-columns: 1fr; }
+}
+
+/* hormati preferensi animasi sistem */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+

@@ -1,6 +1,32 @@
-tools/static-server.ps1
+# Rahasia dan konfigurasi lokal
+.env
+.env.*
+!.env.example
 
-tests
-tests/prioritas-tinggi.test.cjs
-.impeccable/config.json
-docs/rancangan-backend.md
+# Unggahan pengguna (bukti transfer, foto produk) — hanya folder kosongnya yang dilacak
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Cadangan dan dump database
+*.dump
+*.bak
+*.backup
+
+# Alat bantu dan editor lokal
+.claude/
+.impeccable/
+.local-tools/
+.vscode/
+.idea/
+graphify-out/
+
+# Pengujian dan dokumen internal (tes di akar saja; backend/tests tetap dilacak)
+/tests/
+docs/
+
+# Log dan berkas sistem
+*.log
+nohup.out
+.DS_Store
+Thumbs.db
+node_modules/

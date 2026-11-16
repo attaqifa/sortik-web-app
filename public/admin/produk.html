@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/jpeg" href="../assets/img/SortikLogo.jpeg">
+  <title>Kelola Barang — SORTIK</title>
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="side" id="side"></aside>
+
+  <main>
+    <header class="head">
+      <h1>Kelola Barang</h1>
+      <p>Daftar barang beserta foto, rak, stok, dan harganya — tambah, ubah, dan hapus dari sini</p>
+    </header>
+
+    <!-- dirender mesin kelola; kolom di assets/js/toko/produk.js -->
+    <section class="card" id="kelola"></section>
+
+    <!-- kategori barang: daftar + form dikelola mesin kelola (core/kelola.js) -->
+    <section class="card">
+      <h2>Kategori Produk</h2>
+      <div id="kategori"></div>
+    </section>
+  </main>
+
+</div>
+<!-- skrip sama dengan staff/produk.html -->
+<script src="../assets/js/core/api.js"></script>
+<script src="../assets/js/core/data.js"></script>
+<script src="../assets/js/core/domain.js"></script>
+<script src="../assets/js/core/ui.js"></script>
+<script src="../assets/js/core/store.js"></script>
+<script src="../assets/js/core/kelola.js"></script>
+<script src="../assets/js/core/mulai.js" data-halaman="../assets/js/toko/produk.js"></script>
+</body>
+</html>
