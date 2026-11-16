@@ -6,7 +6,6 @@ const db = {
   produk: [],
   pesanan: [],
   pengguna: [],
-  pesan: [],
   keuangan: { pengeluaran: [] },
   akun: null
 };

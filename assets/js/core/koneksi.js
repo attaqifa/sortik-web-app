@@ -1,5 +1,5 @@
 /* SORTIK — database lokal.
-   Seluruh data (kategori, toko, rak, produk, pesanan, pengguna, pesan,
+   Seluruh data (kategori, toko, rak, produk, pesanan, pengguna,
    keuangan) disimpan di localStorage browser — tidak ada server sama sekali.
    Perubahan bertahan antar muat halaman; data hanya ada di browser ini.
 
@@ -80,10 +80,6 @@ const DATA_AWAL = () => ({
     { id: 3, produk: 10, pembeli_id: "u-sari", pembeli: "Sari Pembeli", jumlah: 3, status: "Siap", tanggal: "2026-11-02", cara: "ambil", bayar: "Bayar di kasir", alamat: "", lunas: false, staff: "", harga: 349000, bukti: "", buktiPada: null },
     { id: 4, produk: 7, pembeli_id: "u-sari", pembeli: "Sari Pembeli", jumlah: 1, status: "Menunggu", tanggal: "2026-11-02", cara: "antar", bayar: "Transfer ke admin", alamat: "Jl. Melati No. 9, Malang", lunas: false, staff: "", harga: 4500000, bukti: "", buktiPada: null }
   ],
-  pesan: [
-    { id: 1, user_id: "u-sari", dari: "Sari Pembeli", peran: "pembeli", teks: "Halo, pesanan BK-2026-003 sudah siap diambil kapan saja?", waktu: "2026-11-02T08:30:00.000Z" },
-    { id: 2, user_id: "u-sari", dari: "Staff Toko", peran: "staff", teks: "Siap, sudah kami taruh di rak C2 — tunjukkan kode pesanan di kasir ya.", waktu: "2026-11-02T08:45:00.000Z" }
-  ],
   keuangan: { pengeluaran: [
     { id: 1, tanggal: "2026-10-28", keterangan: "Listrik & internet toko", kategori: "Operasional", jumlah: 750000 },
     { id: 2, tanggal: "2026-10-30", keterangan: "Karung & bubble wrap", kategori: "Pengemasan", jumlah: 120000 },
@@ -102,9 +98,9 @@ const muatDB = () => {
   if (!d) { d = DATA_AWAL(); simpanDB(d); }
   else {
     let berubah = false;
-    if ((d.pesan || []).some((m) => m.peran === "bot")) {
-      /* sisa pesan SORTIK Bot dari versi lama dibuang sekali di sini */
-      d.pesan = d.pesan.filter((m) => m.peran !== "bot");
+    if ("pesan" in d) {
+      /* fitur Chat Tim sudah dihapus — buang sisa datanya sekali di sini */
+      delete d.pesan;
       berubah = true;
     }
     /* akun contoh lama tanpa kata sandi (dulu menerima sandi apa pun) diberi sandi demo */

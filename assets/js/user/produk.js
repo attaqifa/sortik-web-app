@@ -29,7 +29,8 @@ function gambar(p) {
     isi("galeri", `<div class="galeri-utama">${ikonCadangan(p)}</div>`);
   }
 
-  isi("info", `<h2>${esc(p.nama)}</h2>
+  isi("info", `<span class="kodeproduk">PRD-${String(p.id).padStart(3, "0")}</span>
+  <h2>${esc(p.nama)}</h2>
   <b class="harga">${rp(hargaJual(p))}${p.diskon ? `<s class="hargalama">${rp(p.harga)}</s>` : ""}</b>
 
   <div class="chipstat">
@@ -40,13 +41,6 @@ function gambar(p) {
   </div>
 
   <p class="desc">${esc(p.deskripsi || "Belum ada deskripsi produk.")}</p>
-
-  <ul class="spec">
-    <li><span>Kode produk</span><b>PRD-${String(p.id).padStart(3, "0")}</b></li>
-    <li><span>Lokasi toko</span><b>${esc(db.toko.nama)}</b></li>
-    <li><span>Pengambilan</span><b>Ambil di tempat / antar</b></li>
-    <li><span>Pembayaran</span><b>Transfer ke admin / bayar di kasir</b></li>
-  </ul>
 
   <div class="beli">
     <div class="beli-atas">

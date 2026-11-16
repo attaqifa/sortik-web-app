@@ -27,7 +27,6 @@ isi("stats", [
   ["trending-up", "Pendapatan bulan ini", rp(pendapatanBulanIni), true],
   ["clipboard-check", "Pesanan menunggu", nTunggu()],
   ["triangle-alert", "Stok menipis (≤ 3)", db.produk.filter(menipis).length],
-  ["message-square", "Pesan grup belum dibaca", nPesanBaru()],
   ["user-round", "Pengguna aktif", db.pengguna.filter((u) => u.status === "aktif").length],
   ["package", "Barang terdaftar", db.produk.length]
 ].map(([ikon, label, nilai, kecil]) =>

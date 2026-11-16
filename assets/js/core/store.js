@@ -75,7 +75,6 @@ async function muatData() {
   db.produk = (data.produk || []).map((p) => ({ ...p, kategori: p.kategori || "", galeri: Array.isArray(p.galeri) ? p.galeri : [] }));
   db.pesanan = data.pesanan || [];
   db.pengguna = data.pengguna || [];
-  db.pesan = (data.pesan || []).filter((m) => m.peran !== "bot");
   db.keuangan = data.keuangan || { pengeluaran: [] };
   await batalkanKedaluwarsa();
 
@@ -120,7 +119,6 @@ const inisial = (nama) => String(nama || "?").split(" ").map((w) => w[0]).join("
 const avatarHTML = (u) => (u.avatar ? `<img src="${urlGambar(u.avatar)}" alt="">` : esc(inisial(u.nama)));
 const pesananku = () => db.pesanan.filter((o) => o.pembeli_id === db.akun.id);
 const nTunggu = () => transaksi(db.pesanan).filter((o) => o.status === "Menunggu").length;
-const nPesanBaru = () => 0;
 
 /* menu sidebar per peran, dikelompokkan menurut fungsinya */
 const MENU = {
@@ -143,7 +141,6 @@ const MENU = {
     ]],
     ["Penjualan", [
       ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"],
-      ["message-square", "Chat Tim", "pesan.html", "", "Chat"],
       ["wallet", "Keuangan", "keuangan.html", "", "Keuangan"]
     ]]
   ],
@@ -155,7 +152,6 @@ const MENU = {
     ]],
     ["Penjualan", [
       ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"],
-      ["message-square", "Chat Tim", "pesan.html", "", "Chat"],
       ["wallet", "Keuangan", "keuangan.html", "", "Keuangan"]
     ]],
     ["Administrasi", [
@@ -164,9 +160,9 @@ const MENU = {
     ]]
   ]
 };
-/* bar bawah HP hanya muat 4–5 tab: menu di luar daftar ini masuk lembar "Lainnya" */
+/* bar bawah HP hanya muat 5 tab: menu di luar daftar ini masuk lembar "Lainnya".
+   Staff cukup 5 menu, jadi semuanya tampil langsung tanpa "Lainnya". */
 const MENU_UTAMA = {
-  staff: ["index.html", "pesanan.html", "produk.html", "rak.html"],
   admin: ["index.html", "pesanan.html", "produk.html", "rak.html"]
 };
 

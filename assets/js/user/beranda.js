@@ -5,9 +5,10 @@ const terjual = {};
 db.pesanan.filter((o) => !batal(o)).forEach((o) => (terjual[o.produk] = (terjual[o.produk] || 0) + o.jumlah));
 const adaStok = db.produk.filter((p) => p.stok > 0)
   .sort((a, b) => (terjual[b.id] || 0) - (terjual[a.id] || 0) || b.id - a.id);
-/* slide banner: produk diskon dulu, dilanjutkan terlaris — maks 3, wajib punya foto */
-const slideBanner = [...adaStok.filter((p) => p.diskon > 0), ...adaStok.filter((p) => !p.diskon)]
-  .filter((p) => galeriProduk(p)[0]).slice(0, 3);
+/* satu sorotan tetap (bukan banner berputar): diskon terbesar, kalau tidak ada → terlaris;
+   wajib punya foto. Produk diskon lain sudah tampil di etalase "Sedang Diskon". */
+const sorotan = [...adaStok.filter((p) => p.diskon > 0).sort((a, b) => b.diskon - a.diskon), ...adaStok.filter((p) => !p.diskon)]
+  .find((p) => galeriProduk(p)[0]);
 
 isi("hero", `<div class="heroTeks">
   <span class="label">Selamat datang kembali 👋 <b>${esc(db.akun.nama)}</b></span>
@@ -18,40 +19,10 @@ isi("hero", `<div class="heroTeks">
     <a class="btn putih garis" href="pesan.html">Pesanan saya</a>
   </div>
 </div>
-${slideBanner.length ? `<div class="heroBanner" id="heroBanner">
-  ${slideBanner.map((p, i) => `<a class="slide${i ? "" : " on"}" href="produk.html?id=${p.id}" title="Lihat ${esc(p.nama)}">
-    <img src="${urlGambar(galeriProduk(p)[0])}" alt="${esc(p.nama)}">
-    <div class="heroTag"><span>${p.diskon ? `Diskon ${p.diskon}%` : "Pilihan toko"}</span><b>${esc(p.nama)}</b><em>${rp(hargaJual(p))}${p.diskon ? ` <s>${rp(p.harga)}</s>` : ""}</em></div>
-  </a>`).join("")}
-  ${slideBanner.length > 1 ? `<div class="dots">${slideBanner.map((_, i) =>
-    `<button type="button" data-n="${i}" aria-label="Banner ${i + 1}"></button>`).join("")}</div>` : ""}
-</div>` : ""}`);
-
-/* rotasi banner: ganti slide tiap 4 detik, berhenti saat kursor di atasnya */
-const banner = el("heroBanner");
-if (banner && slideBanner.length > 1) {
-  const slide = banner.querySelectorAll(".slide");
-  const dot = banner.querySelectorAll(".dots button");
-  let n = 0, timer;
-  const ganti = (i) => {
-    n = (i + slide.length) % slide.length;
-    slide.forEach((s, k) => s.classList.toggle("on", k === n));
-    dot.forEach((d, k) => {
-      d.classList.toggle("on", k === n);
-      if (k === n) d.setAttribute("aria-current", "true"); else d.removeAttribute("aria-current");
-    });
-  };
-  ganti(0);   /* titik pertama langsung ditandai aktif */
-  const jalanTimer = () => {
-    if (!matchMedia("(prefers-reduced-motion: reduce)").matches)
-      timer = setInterval(() => ganti(n + 1), 4000);
-  };
-  const berhenti = () => clearInterval(timer);
-  banner.onmouseenter = berhenti;
-  banner.onmouseleave = jalanTimer;
-  dot.forEach((d) => (d.onclick = () => { berhenti(); ganti(+d.dataset.n); jalanTimer(); }));
-  jalanTimer();
-}
+${sorotan ? `<a class="heroBanner" href="produk.html?id=${sorotan.id}" title="Lihat ${esc(sorotan.nama)}">
+  <img src="${urlGambar(galeriProduk(sorotan)[0])}" alt="${esc(sorotan.nama)}">
+  <div class="heroTag"><span>${sorotan.diskon ? `Diskon ${sorotan.diskon}%` : "Pilihan toko"}</span><b>${esc(sorotan.nama)}</b><em>${rp(hargaJual(sorotan))}${sorotan.diskon ? ` <s>${rp(sorotan.harga)}</s>` : ""}</em></div>
+</a>` : ""}`);
 
 /* ---------- etalase sedang diskon: paling besar diskon dulu ---------- */
 const promo = db.produk.filter((p) => p.diskon > 0).sort((a, b) => b.diskon - a.diskon);
