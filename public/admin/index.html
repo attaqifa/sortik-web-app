@@ -15,24 +15,16 @@
 
   <main>
     <header class="head">
-      <h1>Beranda Admin</h1>
-      <p>Ringkasan penjualan dan pengawasan data toko</p>
+      <div>
+        <span class="kodelabel" id="hariIni"></span>
+        <h1>Selamat bertugas, <span id="nama"></span></h1>
+      </div>
+      <div class="aksicepat">
+        <a class="btn" href="pengaturan.html"><span class="ikon" data-lucide="settings"></span>Pengaturan</a>
+        <a class="btn" href="keuangan.html"><span class="ikon" data-lucide="wallet"></span>Keuangan</a>
+        <a class="btn utama" href="pesanan.html"><span class="ikon" data-lucide="clipboard-check"></span>Kelola pesanan</a>
+      </div>
     </header>
-
-    <section class="hello">
-      <div class="sapa">
-        <div class="avatar" id="sapa"></div>
-        <div>
-          <p>Selamat bertugas 👋</p>
-          <h2 id="nama"></h2>
-        </div>
-      </div>
-      <div class="acts">
-        <a href="pengguna.html">Kelola Pengguna</a>
-        <a href="pengaturan.html">Pengaturan Toko</a>
-      </div>
-      <button class="tutup" id="sapTutup" type="button" aria-label="Tutup sambutan" title="Tutup sambutan"><span class="ikon" data-lucide="x"></span></button>
-    </section>
 
     <section class="stats" id="stats"></section>
 

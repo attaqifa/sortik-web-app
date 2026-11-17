@@ -14,37 +14,32 @@
   <aside class="side" id="side"></aside>
 
   <main>
-    <header class="head">
-      <h1>Beranda</h1>
-      <p>Katalog elektronik &amp; status pesanan Anda</p>
-    </header>
+    <h1 class="sr-only">Beranda</h1>
 
     <!-- etalase depan: toko + produk unggulan (diisi beranda.js) -->
     <section class="hero" id="hero"></section>
 
+    <!-- pesanan yang sedang berjalan — hanya tampil bila ada (beranda.js) -->
+    <section class="card" id="berjalanWrap" hidden>
+      <h2>Pesanan berjalan <a href="pesan.html">Semua pesanan</a></h2>
+      <div class="berjalan" id="pesanan"></div>
+    </section>
+
+    <section class="card">
+      <h2>Jelajahi kategori <a href="cari.html">Buka denah &amp; cari</a></h2>
+      <div class="cats" id="kategori"></div>
+    </section>
+
     <!-- etalase sedang diskon (beranda.js) -->
     <section class="card" id="promoWrap" hidden>
-      <h2>Sedang Diskon <a href="cari.html?kat=promo">Lihat Semua</a></h2>
+      <h2>Sedang diskon <a href="cari.html?kat=promo">Lihat semua</a></h2>
       <div class="grid" id="promo"></div>
     </section>
 
-    <section class="stats" id="stats"></section>
-
-    <section class="card">
-      <h2>Pesanan Terbaru <a href="pesan.html">Lihat Semua</a></h2>
-      <div id="pesanan"></div>
-    </section>
-
-    <!-- produk terbaru + pil kategori (beranda.js) -->
+    <!-- produk terbaru (beranda.js) -->
     <section class="card" id="baruWrap">
-      <h2 id="judulBaru"></h2>
-      <div class="chips" id="pilKat"></div>
+      <h2>Baru masuk rak <a href="cari.html">Lihat semua</a></h2>
       <div class="grid" id="baru"></div>
-    </section>
-
-    <section class="card">
-      <h2>Kategori Produk <a href="cari.html">Lihat Semua</a></h2>
-      <div class="cats" id="kategori"></div>
     </section>
   </main>
 

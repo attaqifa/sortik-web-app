@@ -135,6 +135,12 @@ function gambarSidebar() {
   const tautanProfil = (html) => `<a class="profil" href="akun.html" title="Akun saya">${html}</a>`;
   const utama = MENU_UTAMA[peran];
   const lain = utama ? MENU[peran].flatMap(([, item]) => item).filter(([, , href]) => !utama.includes(href)) : [];
+  /* peran di <body>: pembeli mendapat bar atas bergaya toko di layar lebar */
+  document.body.dataset.peran = peran;
+  /* kotak cari cepat di bar atas pembeli (halaman Cari sudah punya kolomnya sendiri) */
+  const cariCepat = peran === "pembeli" && berkas !== "cari.html"
+    ? `<form class="caribar" action="cari.html" method="get" role="search"><span class="ikon" data-lucide="search"></span><input type="search" name="q" placeholder="Cari produk atau kode rak…" aria-label="Cari produk"></form>`
+    : "";
   isi("side", `<a class="logo" href="index.html">
   <img src="${db.toko.logo ? urlGambar(db.toko.logo) : "../assets/img/SortikLogo.jpeg"}" alt="Logo toko" width="34"><span class="namatoko"><b>${esc(db.toko.nama || "SORTIK")}</b><i>with SORTIK</i></span>
 </a>
@@ -143,6 +149,7 @@ function gambarSidebar() {
 ${lain.length ? `<button type="button" class="lainnya${lain.some(([, , href]) => href === berkas) ? " on" : ""}" id="tombolLainnya" aria-expanded="false" aria-controls="lembarLainnya"><span class="ikon" data-lucide="layout-grid"></span><span class="pendek">Lainnya</span></button>
 <div class="lembar" id="lembarLainnya" hidden><span class="navjudul">Menu lainnya</span>${lain.map(([ikon, label, href]) =>
     `<a${href === berkas ? ' class="on" aria-current="page"' : ""} href="${href}"><span class="ikon" data-lucide="${ikon}"></span><span>${label}</span></a>`).join("")}</div>` : ""}</nav>
+${cariCepat}
 <div class="me">${tautanProfil(`<div class="avatar">${avatarHTML(akun)}</div><div class="siapa"><b>${esc(akun.nama)}</b><span>${labelPeran(akun.role)}</span></div>`)}
 <a class="keluar" href="../auth/login.html" title="Keluar"><span class="ikon" data-lucide="log-out"></span><span class="lengkap">Keluar</span></a></div>`);
   pasangLainnya();

@@ -45,8 +45,16 @@ function render() {
   if (state.rak) { const i = lantaiDari(state.rak); if (i >= 0) db.rak.aktif = i; }
   /* denah mini: kotak grid lebih kecil, rak berisi hasil cari ikut tersorot,
      ada tab lantai bila tokonya beberapa lantai */
-  denahToko("denah", jumlah, { aktif: state.rak, piksel: 20, tab: true });
+  /* ukuran petak menyesuaikan lebar kolom denah agar tidak perlu digeser */
+  const lebarKolom = el("denah").clientWidth || 440;
+  const piksel = Math.max(12, Math.min(22, Math.floor((lebarKolom - 2) / (lantaiIni().lebar || 24))));
+  denahToko("denah", jumlah, { aktif: state.rak, piksel, tab: true });
 }
+
+/* denah yang baru dibuka / layar berubah ukuran → gambar ulang dengan petak yang pas */
+el("denahWrap").addEventListener("toggle", () => { if (el("denahWrap").open) render(); });
+let jedaUkur;
+addEventListener("resize", () => { clearTimeout(jedaUkur); jedaUkur = setTimeout(render, 150); });
 
 el("filter").addEventListener("click", (e) => {
   const b = e.target.closest("button");
@@ -73,5 +81,21 @@ el("denah").addEventListener("click", (e) => {
   const c = e.target.closest(".prak");
   if (c) { state.rak = state.rak === c.dataset.rak ? "" : c.dataset.rak; render(); }
 });
+
+/* kursor/fokus di kartu produk → rak tempatnya menyala di denah */
+const sorotRak = (kode) => {
+  el("denah").querySelectorAll(".prak.sorot").forEach((r) => r.classList.remove("sorot"));
+  if (kode) el("denah").querySelector(`.prak[data-rak="${CSS.escape(kode)}"]`)?.classList.add("sorot");
+};
+const rakKartu = (t) => {
+  const a = t.closest && t.closest(".kartu a.pcard");
+  const id = a && +new URL(a.href).searchParams.get("id");
+  return id ? produkById(id).rak : "";
+};
+["mouseover", "focusin"].forEach((ev) => el("produk").addEventListener(ev, (e) => sorotRak(rakKartu(e.target))));
+el("produk").addEventListener("mouseleave", () => sorotRak(""));
+
+/* layar sempit: denah dilipat dulu agar hasil langsung terlihat */
+if (matchMedia("(max-width: 1100px)").matches) el("denahWrap").open = false;
 
 render();

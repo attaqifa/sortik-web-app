@@ -1,11 +1,7 @@
 /* Beranda admin — ringkasan penjualan dan pengawasan data toko. */
 
-el("nama").textContent = db.akun.nama;
-el("sapa").innerHTML = avatarHTML(db.akun);
-
-/* sambutan bisa ditutup dengan × (tanpa disimpan; muncul lagi saat halaman dibuka) */
-const sapa = document.querySelector(".hello");
-el("sapTutup").onclick = () => { sapa.hidden = true; };
+el("nama").textContent = db.akun.nama.split(" ")[0];
+el("hariIni").textContent = labelHariIni();
 
 const lunas = db.pesanan.filter((o) => o.lunas);
 const berjalan = db.pesanan.filter((o) => !batal(o));

@@ -1,59 +1,70 @@
-/* SORTIK — gaya halaman masuk (flat, tanpa gradasi) */
+/* SORTIK — gaya halaman masuk & daftar, tema "Denah" (token sama dengan app.css) */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --biru: #2563eb;
-  --biru-tua: #1d4ed8;
-  --biru-muda: #eef4ff;
-  --biru-garis: #dbe6fd;
-  --tinta: #111827;
-  --tinta-2: #374151;
-  --tinta-3: #5f6777;
-  --garis: #e5e8ef;
-  --bidang: #d7dce3;
-  --fokus: 0 0 0 3px rgba(37, 99, 235, .15);
+  --biru: #22426b;
+  --biru-tua: #162f4f;
+  --biru-navy: #14213d;
+  --biru-muda: #edf1f6;
+  --biru-garis: #d4dde8;
+  --aksen: #e2611c;
+  --aksen-isi: #fdeee3;
+  --tinta: #17202c;
+  --tinta-2: #444c58;
+  --tinta-3: #585e69;
+  --garis: #e4e0d7;
+  --bidang: #d5d0c5;
+  --sorot: #f8f6f1;
+  --kertas: #fffefb;
+  --fokus: 0 0 0 3px rgba(34, 66, 107, .16);
   --cepat: .16s ease;
+  --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --judul: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 }
 
 body {
-  font-family: system-ui, "Segoe UI", Arial, sans-serif;
+  font-family: var(--sans);
   color: var(--tinta);
-  background: #f5f7fb;
+  background: #f3f1ec;
   -webkit-font-smoothing: antialiased;
 }
+h1, h2 { font-family: var(--judul); letter-spacing: -.02em; }
 
 .wrap { display: flex; min-height: 100vh; }
 
-/* ---------- panel kiri ---------- */
+/* ---------- panel kiri: lembar cetak biru di atas foto toko ---------- */
 .promo {
-  flex: 0 0 37%;
+  flex: 0 0 40%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 32px;
   padding: 40px 44px;
   color: #fff;
-  text-align: center;
-  /* foto toko + lapisan biru tua agar teks putih tetap terbaca
+  text-align: left;
+  /* petak denah + lapisan tinta di atas foto toko agar teks putih terbaca
      (login.css ada di assets/css/ → jalur gambar relatif: ../img/) */
   background:
-    linear-gradient(rgba(17, 42, 108, .68), rgba(17, 42, 108, .68)),
-    url("../img/LoginBackground.png") center / cover no-repeat var(--biru);
+    linear-gradient(to right, rgba(255, 255, 255, .06) 1px, transparent 1px) -1px -1px / 28px 28px,
+    linear-gradient(to bottom, rgba(255, 255, 255, .06) 1px, transparent 1px) -1px -1px / 28px 28px,
+    linear-gradient(rgba(20, 33, 61, .9), rgba(20, 33, 61, .82)),
+    url("../img/LoginBackground.png") center / cover no-repeat var(--biru-navy);
 }
 
-.brand h1 { font-size: 40px; font-weight: 800; letter-spacing: 3px; line-height: 1; }
+.brand h1 { font-size: 26px; font-weight: 800; letter-spacing: 4px; line-height: 1; }
 .brand h1 .co { display: block; margin-top: 8px; font-size: 12.5px; font-weight: 700; font-style: normal; letter-spacing: 2.5px; text-transform: uppercase; opacity: .7; }
-.brand .brandlogo { display: block; width: 56px; height: 56px; object-fit: contain; margin: 0 auto 14px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.25)); }
-.brand p { margin-top: 8px; font-size: 13px; letter-spacing: .6px; opacity: .8; }
+.brand .brandlogo { display: block; width: 44px; height: 44px; object-fit: contain; margin: 0 0 14px; border-radius: 8px; }
+.brand p { margin-top: 10px; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #f6b48a; }
 
 /* pesan galat */
-.galat { margin-top: 4px; padding: 10px 14px; font-size: 13px; color: #b91c1c; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; }
+.galat { margin-top: 4px; padding: 10px 14px; font-size: 13px; color: #b0261b; background: #fbe3df; border: 1px solid #eeaaa1; border-radius: 8px; }
 
-.hero h2 { font-size: clamp(30px, 3vw, 42px); margin-bottom: 18px; }
-.hero h2 span { color: #bfdbfe; }
-.hero p { max-width: 320px; margin: 0 auto; font-weight: 600; line-height: 1.55; opacity: .92; }
+.hero h2 { font-size: clamp(32px, 3.4vw, 46px); font-weight: 700; line-height: 1.08; margin-bottom: 18px; }
+.hero h2 span { color: #fff; box-shadow: inset 0 -.32em 0 rgba(226, 97, 28, .75); }
+.hero p { max-width: 360px; line-height: 1.6; color: #d3dae6; }
 
-.promo footer { font-size: 13px; opacity: .65; }
+.promo footer { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #aab6c9; }
 
 .promo {
   position: sticky;
@@ -72,7 +83,7 @@ body {
 }
 
 .form > * { max-width: 515px; width: 100%; margin-inline: auto; }
-.form h2 { font-size: 34px; }
+.form h2 { font-size: 30px; font-weight: 700; }
 .form > p { color: var(--tinta-3); margin: 8px auto 20px; }
 
 /* kartu pilihan peran */
@@ -90,18 +101,18 @@ body {
   align-items: center;
   gap: 8px;
   padding: 16px 8px;
-  background: #fff;
+  background: var(--kertas);
   border: 1px solid var(--bidang);
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background var(--cepat), border-color var(--cepat);
 }
-.roles label:hover { border-color: #bfd3fb; background: #f8faff; }
+.roles label:hover { border-color: #bdb6a8; background: var(--sorot); }
 .roles label .ikon { width: 26px; height: 26px; color: var(--tinta-3); transition: color var(--cepat); }
-.roles label span { font-size: 14px; font-weight: 600; color: #374151; transition: color var(--cepat); }
-.roles input:checked + label { background: var(--biru-muda); border-color: var(--biru); }
-.roles input:checked + label .ikon { color: var(--biru); }
-.roles input:checked + label span { color: var(--biru-tua); }
+.roles label span { font-size: 14px; font-weight: 600; color: var(--tinta-2); transition: color var(--cepat); }
+.roles input:checked + label { background: var(--kertas); border-color: var(--biru-navy); box-shadow: inset 0 0 0 1px var(--biru-navy); }
+.roles input:checked + label .ikon { color: var(--aksen); }
+.roles input:checked + label span { color: var(--biru-navy); }
 .roles input:focus-visible + label { outline: 2px solid var(--biru); outline-offset: 2px; }
 
 /* field + tombol; tautan masuk <-> daftar
@@ -112,9 +123,9 @@ body {
   margin-bottom: 22px;
   padding: 15px 18px;
   font: inherit;
-  background: #fff;
+  background: var(--kertas);
   border: 1px solid var(--bidang);
-  border-radius: 12px;
+  border-radius: 10px;
   transition: border-color var(--cepat), box-shadow var(--cepat);
 }
 .form form input:focus { outline: 0; border-color: var(--biru); box-shadow: var(--fokus); }
@@ -126,9 +137,9 @@ body {
   font-size: 15px;
   font-weight: 700;
   color: #fff;
-  background: var(--biru);
+  background: var(--biru-navy);
   border: 0;
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background var(--cepat);
 }
@@ -146,7 +157,7 @@ body {
 }
 
 .akun a:hover{
-  color: #0b2670;
+  color: var(--biru-navy);
   text-decoration: underline;
 }
 
@@ -163,7 +174,7 @@ body {
 .sandi .lihat .ikon { width: 18px; height: 18px; }
 .sandi .lihat .tertutup, .sandi.terlihat .terbuka { display: none; }
 .sandi.terlihat .tertutup { display: block; }
-.sandi .kaps { position: absolute; left: 4px; bottom: -20px; font-size: 12px; font-weight: 600; color: #92400e; }
+.sandi .kaps { position: absolute; left: 4px; bottom: -20px; font-size: 12px; font-weight: 600; color: #8a4708; }
 
 /* ---------- responsif ---------- */
 @media (max-width: 900px) {

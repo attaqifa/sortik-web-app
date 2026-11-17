@@ -62,6 +62,11 @@ async function masukKeranjang(id, n = 1) {
 
 const bln = "Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des".split(" ");
 const tglID = (s) => { const [y, m, d] = String(s).split("-"); return `${d} ${bln[m - 1]} ${y}`; };
+/* label tanggal hari ini untuk kepala beranda, mis. "Senin · 16 Nov 2026" */
+const labelHariIni = () => {
+  const t = new Date();
+  return `${"Minggu Senin Selasa Rabu Kamis Jumat Sabtu".split(" ")[t.getDay()]} · ${t.getDate()} ${bln[t.getMonth()]} ${t.getFullYear()}`;
+};
 
 /* kelas warna status pesanan: Menunggu → wait, dst. */
 const STATUS = { Menunggu: "wait", Diproses: "proc", Siap: "ok", Selesai: "done", Dibatalkan: "batal" };

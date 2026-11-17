@@ -19,14 +19,15 @@
       <p>Pantau semua pesanan Anda yang sedang berjalan</p>
     </header>
 
-    <!-- chip + daftar (pesan.js) -->
-    <section class="card" id="daftar">
-      <div class="chips" id="chips"></div>
-      <div id="list"></div>
-    </section>
+    <!-- layar lebar: daftar di kiri, rincian di kanan; HP: bergantian (pesan.js) -->
+    <div class="pesanlayout" id="pesanlayout">
+      <section class="card" id="daftar">
+        <div class="chips" id="chips"></div>
+        <div id="list"></div>
+      </section>
 
-    <!-- detail satu pesanan, dibuka dari baris di atas -->
-    <section class="card" id="detail" hidden></section>
+      <section class="card" id="detail" hidden></section>
+    </div>
   </main>
 
 </div>

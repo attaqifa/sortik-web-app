@@ -53,7 +53,7 @@ const rincian = (o) => {
   <div class="sum"><span>Pembayaran</span><b>${esc(o.bayar || "Transfer ke admin")}</b></div>
   <div class="sum"><span>Status bayar</span><b>${tagBayar(o)}</b></div>
   ${batal(o) ? `<div class="sum"><span>Status</span><b>Dibatalkan${o.alasanBatal ? " — " + esc(o.alasanBatal) : ""}</b></div>` : ""}
-  ${transfer && !batal(o) ? `<div class="bukti-blok">
+  ${transfer && !batal(o) && (o.bukti || !o.lunas) ? `<div class="bukti-blok">
     <label class="lbl">Bukti transfer</label>
     ${o.bukti
       ? `<button class="bukti-gambar" type="button" data-lihatbukti="${o.id}" title="Perbesar bukti transfer">
@@ -79,19 +79,38 @@ const rincian = (o) => {
 
 function daftar() {
   const hasil = pesanan().filter((o) => tampil(o) && (!status || o.status === status));
+  /* layar lebar: rincian pesanan teratas langsung terbuka di samping */
+  if (lebar.matches && hasil.length && !hasil.some((o) => o.id === dibuka) && !new URLSearchParams(location.search).get("id")) setTimeout(() => buka(hasil[0].id));
   isi("list", hasil.length ? hasil.map(baris).join("")
     : status
       ? pesanKosong("receipt", `Belum ada pesanan berstatus ${status}.`)
       : pesanKosong("receipt", "Belum ada pesanan di sini.", ["cari.html", "Mulai belanja"]));
+  if (!hasil.length && dibuka) tutupRincian();
+  tandaiBaris();
 }
+
+/* layar lebar: daftar & rincian tampil berdampingan */
+const lebar = matchMedia("(min-width: 1100px)");
+let dibuka = 0;
+function tutupRincian() {
+  dibuka = 0;
+  el("detail").hidden = true;
+  el("daftar").hidden = false;
+  el("pesanlayout").classList.remove("dua");
+  tandaiBaris();
+}
+const tandaiBaris = () => el("list").querySelectorAll(".row").forEach((r) => r.classList.toggle("on", +r.dataset.id === dibuka));
 
 function buka(id) {
   const o = pesananku().find((x) => x.id === id);
   if (!o) return;
-  el("daftar").hidden = true;
+  dibuka = id;
+  el("pesanlayout").classList.add("dua");
+  el("daftar").hidden = !lebar.matches;
   el("detail").hidden = false;
   isi("detail", rincian(o));
-  el("detail").scrollIntoView();
+  tandaiBaris();
+  if (!lebar.matches) el("detail").scrollIntoView();
 
   const kirim = el("kirimBukti");
   if (kirim) kirim.onclick = async () => {
@@ -145,8 +164,7 @@ function buka(id) {
     if (!pr.error) db.produk = pr.data;
     gambarSidebar();
     notif("Pesanan dibatalkan");
-    el("detail").hidden = true;
-    el("daftar").hidden = false;
+    tutupRincian();
     daftar();
   };
 }
@@ -185,10 +203,12 @@ el("detail").addEventListener("click", (e) => {
   }
   if (e.target.closest(".back")) {
     e.preventDefault();
-    el("detail").hidden = true;
-    el("daftar").hidden = false;
+    tutupRincian();
   }
 });
+
+/* layar berubah lebar ↔ sempit: daftar ikut tampil/sembunyi bila rincian terbuka */
+lebar.addEventListener("change", () => { if (dibuka) el("daftar").hidden = !lebar.matches; });
 
 daftar();
 
