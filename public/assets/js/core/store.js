@@ -73,6 +73,7 @@ const avatarHTML = (u) => (u.avatar ? `<img src="${urlGambar(u.avatar)}" alt="">
 const pesananku = () => db.pesanan.filter((o) => o.pembeliId === db.akun.id);
 const nTunggu = () => db.pesanan.filter((o) => o.status === "Menunggu").length;
 const badgeAntrean = '<b class="badge" id="jmlAntrean"></b>';
+const badgeStok = '<b class="badge" id="jmlStok"></b>';
 let antreanPesanan = null;
 
 /* menu sidebar per peran, dikelompokkan menurut fungsinya */
@@ -92,7 +93,7 @@ const MENU = {
     ["Operasional", [
       ["house", "Beranda", "index.html", "", "Beranda"],
       ["warehouse", "Tata Rak", "rak.html", "", "Rak"],
-      ["package", "Kelola Barang", "produk.html", "", "Barang"]
+      ["package", "Kelola Barang", "produk.html", badgeStok, "Barang"]
     ]],
     ["Penjualan", [
       ["clipboard-check", "Kelola Pesanan", "pesanan.html", badgeAntrean, "Pesanan"],
@@ -103,7 +104,7 @@ const MENU = {
     ["Operasional", [
       ["house", "Beranda", "index.html", "", "Beranda"],
       ["warehouse", "Tata Rak", "rak.html", "", "Rak"],
-      ["package", "Kelola Barang", "produk.html", "", "Barang"]
+      ["package", "Kelola Barang", "produk.html", badgeStok, "Barang"]
     ]],
     ["Penjualan", [
       ["clipboard-check", "Kelola Pesanan", "pesanan.html", badgeAntrean, "Pesanan"],
@@ -161,6 +162,9 @@ ${cariCepat}
   if (jmlKeranjang) jmlKeranjang.textContent = (db.keranjang && nKeranjang()) || "";
   if (jmlPesan) jmlPesan.textContent = pesananku().filter(aktif).length || "";
   gambarBadgeAntrean();
+  /* badge barang yang stoknya menipis (≤ 3) atau habis (menu staff/admin) */
+  const jmlStok = el("jmlStok");
+  if (jmlStok) jmlStok.textContent = (db.produk || []).filter((p) => p.stok <= 3).length || "";
 }
 
 function gambarBadgeAntrean() {

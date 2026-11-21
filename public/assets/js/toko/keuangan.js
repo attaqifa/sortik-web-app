@@ -150,7 +150,7 @@ if (db.akun.role === "admin") {
 const adminKeuangan = db.akun.role === "admin";
 isi("eksport", `
   ${adminKeuangan ? '<button class="btn" type="button" id="unduhCsv"><span class="ikon" data-lucide="download"></span>Unduh CSV</button>' : ""}
-  <button class="btn" type="button" id="cetak"><span class="ikon" data-lucide="printer"></span>Cetak PDF</button>`);
+  <button class="btn" type="button" id="cetak"><span class="ikon" data-lucide="file-down"></span>Unduh PDF</button>`);
 
 if (adminKeuangan) {
   el("unduhCsv").onclick = () => {
@@ -177,46 +177,53 @@ if (adminKeuangan) {
   };
 }
 
-function siapkanLaporanCetak() {
+/* PDF dibuat langsung di browser (jsPDF), bukan lewat dialog cetak */
+el("cetak").onclick = () => {
+  if (!window.jspdf) return notif("Pustaka PDF belum termuat, muat ulang halaman.");
+  const rupiah = (n) => rp(n).replace(/ /g, " ");
+  const pdf = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const lebar = pdf.internal.pageSize.getWidth();
   const pendapatan = totalPendapatan();
   const keluar = totalKeluar();
-  const bulanan = ringkasanBulanan().map((b) => `
-    <tr><th scope="row">${b.label} ${b.tahun}</th><td class="angka">${rp(b.p)}</td>
-      <td class="angka">${rp(b.k)}</td><td class="angka">${rp(b.p - b.k)}</td></tr>`).join("");
-  const transaksi = arusKas().map((a) => `
-    <tr><td>${tglID(a.tanggal)}</td><td>${esc(a.keterangan)}</td><td>${esc(a.kategori)}</td>
-      <td class="angka">${a.masuk ? "+" : "−"} ${rp(a.jumlah)}</td></tr>`).join("");
+  const biru = [34, 66, 107];
 
-  el("laporan-cetak").innerHTML = `
-    <header>
-      <b>${esc(db.toko.nama || "SORTIK")}</b>
-      <h1>Laporan Keuangan</h1>
-      <p>Seluruh periode · Dicetak ${tglID(hariIni())}</p>
-    </header>
-    <h2>Ringkasan</h2>
-    <dl>
-      <div><dt>Pendapatan</dt><dd>${rp(pendapatan)}</dd></div>
-      <div><dt>Piutang</dt><dd>${rp(totalPiutang())}</dd></div>
-      <div><dt>Pengeluaran</dt><dd>${rp(keluar)}</dd></div>
-      <div><dt>Laba bersih</dt><dd>${rp(pendapatan - keluar)}</dd></div>
-    </dl>
-    <h2>Arus Kas 6 Bulan Terakhir</h2>
-    <table>
-      <thead><tr><th scope="col">Bulan</th><th scope="col" class="angka">Pendapatan</th>
-        <th scope="col" class="angka">Pengeluaran</th><th scope="col" class="angka">Laba bersih</th></tr></thead>
-      <tbody>${bulanan}</tbody>
-    </table>
-    <p class="catatan-cetak">Tanggal pesanan digunakan jika tanggal pembayaran tidak tercatat.</p>
-    <h2>Rincian Arus Kas</h2>
-    <table class="transaksi-cetak">
-      <colgroup><col class="tanggal-cetak"><col><col class="kategori-cetak"><col class="jumlah-cetak"></colgroup>
-      <thead><tr><th scope="col">Tanggal</th><th scope="col">Keterangan</th>
-        <th scope="col">Kategori</th><th scope="col" class="angka">Jumlah</th></tr></thead>
-      <tbody>${transaksi || '<tr><td colspan="4">Belum ada transaksi arus kas.</td></tr>'}</tbody>
-    </table>`;
-}
-window.addEventListener("beforeprint", siapkanLaporanCetak);
-el("cetak").onclick = () => window.print();
+  pdf.setTextColor(...biru).setFont("helvetica", "bold").setFontSize(11).text(db.toko.nama || "SORTIK", 14, 16);
+  pdf.setTextColor(23, 32, 44).setFontSize(20).text("Laporan Keuangan", 14, 25);
+  pdf.setTextColor(68, 76, 88).setFont("helvetica", "normal").setFontSize(9).text(`Seluruh periode · Dibuat ${tglID(hariIni())}`, 14, 31);
+  pdf.setDrawColor(...biru).setLineWidth(0.6).line(14, 34, lebar - 14, 34);
+
+  const gaya = { theme: "grid", styles: { fontSize: 9, cellPadding: 2, lineColor: [212, 221, 232], textColor: [23, 32, 44] }, headStyles: { fillColor: biru, textColor: 255 }, margin: { left: 14, right: 14 } };
+  const kanan = { halign: "right" };
+  const bagian = (judul, y) => pdf.setTextColor(23, 32, 44).setFont("helvetica", "bold").setFontSize(12).text(judul, 14, y);
+
+  bagian("Ringkasan", 42);
+  pdf.autoTable({ ...gaya, startY: 45,
+    head: [["Pendapatan", "Piutang", "Pengeluaran", "Laba bersih"]],
+    body: [[rupiah(pendapatan), rupiah(totalPiutang()), rupiah(keluar), rupiah(pendapatan - keluar)]] });
+
+  bagian("Arus Kas 6 Bulan Terakhir", pdf.lastAutoTable.finalY + 10);
+  pdf.autoTable({ ...gaya, startY: pdf.lastAutoTable.finalY + 13,
+    head: [["Bulan", "Pendapatan", "Pengeluaran", "Laba bersih"]],
+    body: ringkasanBulanan().map((b) => [`${b.label} ${b.tahun}`, rupiah(b.p), rupiah(b.k), rupiah(b.p - b.k)]),
+    columnStyles: { 1: kanan, 2: kanan, 3: kanan } });
+  pdf.setTextColor(68, 76, 88).setFont("helvetica", "normal").setFontSize(8)
+    .text("Tanggal pesanan digunakan jika tanggal pembayaran tidak tercatat.", 14, pdf.lastAutoTable.finalY + 5);
+
+  bagian("Rincian Arus Kas", pdf.lastAutoTable.finalY + 14);
+  const kas = arusKas();
+  pdf.autoTable({ ...gaya, startY: pdf.lastAutoTable.finalY + 17,
+    head: [["Tanggal", "Keterangan", "Kategori", "Jumlah"]],
+    body: kas.length ? kas.map((a) => [tglID(a.tanggal), a.keterangan, a.kategori, `${a.masuk ? "+" : "-"} ${rupiah(a.jumlah)}`]) : [[{ content: "Belum ada transaksi arus kas.", colSpan: 4 }]],
+    columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 32 }, 3: { ...kanan, cellWidth: 36 } } });
+
+  const n = pdf.getNumberOfPages();
+  for (let i = 1; i <= n; i++) {
+    pdf.setPage(i).setTextColor(68, 76, 88).setFont("helvetica", "normal").setFontSize(8)
+      .text(`${i} / ${n}`, lebar - 14, 290, { align: "right" });
+  }
+  pdf.save(`laporan-keuangan-sortik-${hariIni()}.pdf`);
+  notif("Laporan PDF diunduh.");
+};
 
 function segarkan() {
   gambarStats();
