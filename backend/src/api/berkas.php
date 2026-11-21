@@ -1,19 +1,11 @@
 <?php
 declare(strict_types=1);
 
-/* Unggahan: simpan di backend/uploads (di luar folder publik), sajikan lewat /api/berkas. */
+/* Unggahan: disimpan di tabel `berkas` (PostgreSQL), disajikan lewat /api/berkas.
+   Disk server tidak dipakai, jadi aman di hosting yang disknya hilang saat redeploy. */
 
 const MIME_GAMBAR = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
 const MAKS_UNGGAHAN = 2 * 1024 * 1024;
-
-function folder_unggahan(string $jenis): string
-{
-    $d = dirname(__DIR__, 2) . '/uploads/' . $jenis;
-    if (!is_dir($d) && !mkdir($d, 0775, true) && !is_dir($d)) {
-        throw new RuntimeException("Folder unggahan tidak bisa dibuat: {$d}");
-    }
-    return $d;
-}
 
 /* validasi berkas gambar dari $_FILES[$field] dan simpan dengan nama acak; mengembalikan nama berkas */
 function simpan_unggahan(string $field, string $jenis): string
@@ -34,10 +26,28 @@ function simpan_unggahan(string $field, string $jenis): string
         throw new GalatHttp(415, 'Hanya gambar JPG, PNG, atau WebP.');
     }
     $nama = bin2hex(random_bytes(16)) . '.' . MIME_GAMBAR[$mime];
-    if (!move_uploaded_file($f['tmp_name'], folder_unggahan($jenis) . '/' . $nama)) {
-        throw new RuntimeException('Berkas unggahan tidak bisa disimpan.');
+    $isi = fopen($f['tmp_name'], 'rb');
+    if ($isi === false) {
+        throw new RuntimeException('Berkas unggahan tidak bisa dibaca.');
     }
+    $st = pdo()->prepare('INSERT INTO berkas (jenis, nama, mime, isi) VALUES (?, ?, ?, ?)');
+    $st->bindValue(1, $jenis);
+    $st->bindValue(2, $nama);
+    $st->bindValue(3, $mime);
+    $st->bindValue(4, $isi, PDO::PARAM_LOB);
+    $st->execute();
+    fclose($isi);
     return $nama;
+}
+
+function berkas_ada(string $jenis, string $nama): bool
+{
+    return db_satu('SELECT 1 FROM berkas WHERE jenis = ? AND nama = ?', [$jenis, $nama]) !== null;
+}
+
+function hapus_berkas(string $jenis, string $nama): void
+{
+    db_semua('DELETE FROM berkas WHERE jenis = ? AND nama = ? RETURNING nama', [$jenis, basename($nama)]);
 }
 
 /* GET /api/berkas/{jenis}/{nama} — foto produk terbuka; bukti transfer hanya untuk pemilik, staff, dan admin */
@@ -49,14 +59,17 @@ function berkas_sajikan(string $jenis, string $nama): void
             throw new GalatHttp(404, 'Berkas tidak ditemukan.');
         }
     }
-    $jalur = folder_unggahan($jenis) . '/' . $nama;
-    if (!is_file($jalur)) {
+    $st = pdo()->prepare('SELECT mime, isi FROM berkas WHERE jenis = ? AND nama = ?');
+    $st->execute([$jenis, $nama]);
+    $st->bindColumn(1, $mime);
+    $st->bindColumn(2, $isi, PDO::PARAM_LOB);
+    if (!$st->fetch(PDO::FETCH_BOUND)) {
         throw new GalatHttp(404, 'Berkas tidak ditemukan.');
     }
-    $tipe = array_flip(MIME_GAMBAR)[pathinfo($nama, PATHINFO_EXTENSION)] ?? 'application/octet-stream';
-    header('Content-Type: ' . $tipe);
-    header('Content-Length: ' . filesize($jalur));
+    $data = is_resource($isi) ? stream_get_contents($isi) : (string) $isi;
+    header('Content-Type: ' . $mime);
+    header('Content-Length: ' . strlen($data));
     header('Cache-Control: ' . ($jenis === 'foto' ? 'public, max-age=86400' : 'private, max-age=3600'));
-    readfile($jalur);
+    echo $data;
     exit;
 }

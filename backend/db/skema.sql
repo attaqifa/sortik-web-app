@@ -102,3 +102,21 @@ CREATE TABLE keranjang (                             -- keranjang belanja per pe
   jumlah      INT    NOT NULL CHECK (jumlah >= 1),
   PRIMARY KEY (pengguna_id, produk_id)
 );
+
+-- Sesi login dan berkas unggahan disimpan di PostgreSQL, bukan di disk server,
+-- agar tetap ada di hosting yang disknya hilang saat restart/redeploy (mis. Render gratis).
+CREATE TABLE sesi (
+  id         TEXT PRIMARY KEY,
+  data       TEXT NOT NULL,
+  diperbarui TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX sesi_diperbarui_idx ON sesi (diperbarui);
+
+CREATE TABLE berkas (
+  jenis   TEXT  NOT NULL CHECK (jenis IN ('foto', 'bukti')),
+  nama    TEXT  NOT NULL,
+  mime    TEXT  NOT NULL,
+  isi     BYTEA NOT NULL,
+  dibuat  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (jenis, nama)
+);

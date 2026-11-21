@@ -86,6 +86,15 @@ function pesanan_daftar(): void
     kirim_json(pesanan_muat($where ? implode(' AND ', $where) : 'TRUE', $param));
 }
 
+/* GET /api/pesanan/antrean — daftar ID untuk badge dan notifikasi admin/staff. */
+function pesanan_antrean(): void
+{
+    wajib_peran('admin', 'staff');
+    batalkan_kedaluwarsa();
+    $baris = db_semua("SELECT id FROM pesanan WHERE status = 'Menunggu'");
+    kirim_json(array_map('intval', array_column($baris, 'id')));
+}
+
 /* GET /api/pesanan/{id} */
 function pesanan_detail(string $id): void
 {
@@ -272,7 +281,7 @@ function pesanan_bukti(string $id): void
     $lama = db_satu('SELECT bukti FROM pesanan WHERE id = ?', [$id])['bukti'] ?? null;
     db_semua('UPDATE pesanan SET bukti = ?, bukti_pada = now() WHERE id = ? RETURNING id', [$nama, $id]);
     if ($lama) {
-        @unlink(dirname(__DIR__, 2) . '/uploads/bukti/' . basename($lama));
+        hapus_berkas('bukti', (string) $lama);
     }
     kirim_json(pesanan_milik((int) $id, $u));
 }

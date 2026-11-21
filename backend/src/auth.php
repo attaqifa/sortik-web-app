@@ -6,11 +6,71 @@ declare(strict_types=1);
 const BATAS_GAGAL = 5;     // kegagalan berturut-turut sebelum dikunci
 const JEDA_GAGAL_DETIK = 60;
 
+const UMUR_SESI_DETIK = 12 * 3600;
+
+/* Sesi disimpan di tabel `sesi` (PostgreSQL), bukan berkas di disk, agar login tidak hilang
+   saat server di-restart atau di-redeploy. */
+final class PenyimpanSesiDb implements SessionHandlerInterface, SessionUpdateTimestampHandlerInterface
+{
+    public function open(string $path, string $name): bool
+    {
+        return true;
+    }
+
+    public function close(): bool
+    {
+        return true;
+    }
+
+    public function read(string $id): string|false
+    {
+        $b = db_satu('SELECT data FROM sesi WHERE id = ? AND diperbarui > now() - make_interval(secs => ?)',
+            [$id, UMUR_SESI_DETIK]);
+        return $b['data'] ?? '';
+    }
+
+    public function write(string $id, string $data): bool
+    {
+        if ($data === '') { // pengunjung tanpa login: jangan menyimpan baris kosong
+            return $this->destroy($id);
+        }
+        db_semua('INSERT INTO sesi (id, data, diperbarui) VALUES (?, ?, now())
+                  ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, diperbarui = now() RETURNING id', [$id, $data]);
+        return true;
+    }
+
+    public function destroy(string $id): bool
+    {
+        db_semua('DELETE FROM sesi WHERE id = ? RETURNING id', [$id]);
+        return true;
+    }
+
+    public function gc(int $maxLifetime): int|false
+    {
+        return count(db_semua('DELETE FROM sesi WHERE diperbarui < now() - make_interval(secs => ?) RETURNING id',
+            [UMUR_SESI_DETIK]));
+    }
+
+    public function validateId(string $id): bool
+    {
+        return db_satu('SELECT 1 FROM sesi WHERE id = ? AND diperbarui > now() - make_interval(secs => ?)',
+            [$id, UMUR_SESI_DETIK]) !== null;
+    }
+
+    public function updateTimestamp(string $id, string $data): bool
+    {
+        return $this->write($id, $data);
+    }
+}
+
 function mulai_sesi(): void
 {
     if (session_status() === PHP_SESSION_ACTIVE) {
         return;
     }
+    session_set_save_handler(new PenyimpanSesiDb(), true);
+    ini_set('session.gc_probability', '1');
+    ini_set('session.gc_divisor', '100');
     $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
         || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'; // di balik Nginx
     session_name('sortik');

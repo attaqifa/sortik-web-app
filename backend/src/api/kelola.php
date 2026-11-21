@@ -53,7 +53,7 @@ function foto_simpanan(mixed $v): string
         return $v;
     }
     if (preg_match('#^/api/berkas/foto/([\w-]{1,64}\.(?:jpg|png|webp))$#', $v, $m)
-        && is_file(folder_unggahan('foto') . '/' . $m[1])) {
+        && berkas_ada('foto', $m[1])) {
         return $m[1];
     }
     throw new GalatHttp(400, 'Foto harus berupa tautan https:// atau hasil unggahan.');
@@ -69,7 +69,7 @@ function bersihkan_foto(array $kandidat): void
         $pakai = db_satu('SELECT 1 FROM produk_foto WHERE berkas = ? UNION ALL SELECT 1 FROM toko WHERE logo = ?
                           UNION ALL SELECT 1 FROM pengguna WHERE avatar = ?', [$b, $b, $b]);
         if ($pakai === null) {
-            @unlink(folder_unggahan('foto') . '/' . basename($b));
+            hapus_berkas('foto', $b);
         }
     }
 }

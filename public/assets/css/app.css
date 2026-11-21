@@ -319,6 +319,30 @@ textarea.salah { border-color: var(--bahaya-kuat); }
 /* notifikasi (melayang, boleh bayangan) */
 #notif { position: fixed; left: 50%; bottom: 22px; z-index: 40; max-width: calc(100% - 32px); padding: 11px 18px; font-size: var(--fs-4); font-weight: 600; color: #fff; background: var(--tinta); border-radius: var(--r-pil); box-shadow: var(--melayang); opacity: 0; pointer-events: none; transform: translate(-50%, 8px); transition: opacity .18s, transform .18s; }
 #notif.tampil { opacity: 1; transform: translate(-50%, 0); }
+.bubble-pesanan:not([hidden]) {
+  position: fixed;
+  right: 20px;
+  bottom: 22px;
+  z-index: 41;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  width: min(320px, calc(100% - 32px));
+  padding: 14px;
+  color: var(--tinta);
+  background: var(--kertas);
+  border: 1px solid var(--garis);
+  border-left: 4px solid var(--aksen);
+  border-radius: var(--r-s);
+  box-shadow: var(--melayang);
+}
+.bubble-pesanan > .ikon { width: 20px; height: 20px; margin-top: 2px; color: var(--aksen-tua); }
+.bubble-pesanan b, .bubble-pesanan a { display: block; font-size: var(--fs-4); }
+.bubble-pesanan a { width: fit-content; margin-top: 4px; color: var(--biru); text-decoration: underline; }
+.bubble-pesanan button { display: grid; place-items: center; width: 32px; height: 32px; color: var(--tinta-2); background: var(--sorot); border: 1px solid var(--garis); border-radius: var(--r-s); cursor: pointer; }
+.bubble-pesanan button:hover { background: var(--biru-muda); }
+.bubble-pesanan button .ikon { width: 16px; height: 16px; }
 
 a:focus-visible, button:focus-visible { outline: 2px solid var(--biru); outline-offset: 2px; }
 
@@ -864,8 +888,9 @@ input[type="file"]::file-selector-button:hover { background: var(--biru-hover); 
 .rowinfo .btn { margin-left: 2px; padding: 6px 10px; font-size: var(--fs-3); }
 .rowinfo .btn .ikon { width: 13px; height: 13px; }
 .grafikleg { display: flex; gap: 10px; font-size: var(--fs-3); font-weight: 500; color: var(--tinta-3); }
-.eksport { display: inline-flex; gap: 8px; }
+.eksport { display: inline-flex; flex-wrap: wrap; gap: 8px; }
 .eksport .btn { padding: 6px 12px; font-size: var(--fs-3); }
+.laporan-cetak { display: none; }
 
 /* ---------- responsif ----------
    Satu blok per titik henti, urut besar → kecil, ditaruh setelah semua gaya dasar
@@ -948,6 +973,7 @@ input[type="file"]::file-selector-button:hover { background: var(--biru-hover); 
   /* ruang bawah cukup agar konten tidak tertutup bar menu */
   main { overflow: visible; padding: 18px 14px calc(92px + env(safe-area-inset-bottom)); }
   #notif { bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .bubble-pesanan:not([hidden]) { right: 16px; bottom: calc(76px + env(safe-area-inset-bottom)); }
   .detail { grid-template-columns: 1fr; }
   .galeri { max-width: 440px; margin: 0 auto; }
 
@@ -992,10 +1018,38 @@ input[type="file"]::file-selector-button:hover { background: var(--biru-hover); 
 
 /* cetak laporan keuangan: hanya konten utama yang tampil */
 @media print {
-  .side, .eksport, .chips, #notif, .lightbox, .konfirmasi { display: none !important; }
+  @page keuangan {
+    size: A4;
+    margin: 14mm;
+    @bottom-right { content: counter(page) " / " counter(pages); color: #444c58; font: 9pt Arial, sans-serif; }
+  }
+  .side, .eksport, .chips, #notif, .lightbox, .konfirmasi, .notifikasi-pesanan { display: none !important; }
   .app { display: block; }
   main { padding: 0 !important; }
   .card { box-shadow: none; break-inside: avoid; }
+  .halaman-keuangan { page: keuangan; background: #fff; }
+  .halaman-keuangan .app { height: auto; }
+  .halaman-keuangan main { overflow: visible; background: #fff; }
+  .halaman-keuangan main > :not(.laporan-cetak) { display: none; }
+  .laporan-cetak { display: block; max-width: none; color: #17202c; font-size: 10pt; }
+  .laporan-cetak header { margin-bottom: 6mm; padding-bottom: 4mm; border-bottom: 2px solid #22426b; break-inside: avoid; }
+  .laporan-cetak header b { color: #22426b; }
+  .laporan-cetak header p, .laporan-cetak .catatan-cetak { color: #444c58; }
+  .laporan-cetak h1 { margin: 1mm 0; font-size: 23pt; }
+  .laporan-cetak h2 { margin: 5mm 0 2mm; font-size: 13pt; break-after: avoid; }
+  .laporan-cetak dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3mm; break-inside: avoid; }
+  .laporan-cetak dl div { padding: 2mm 3mm; border: 1px solid #d4dde8; }
+  .laporan-cetak dd { margin: 1mm 0 0; font-weight: 700; }
+  .laporan-cetak table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .laporan-cetak thead { display: table-header-group; }
+  .laporan-cetak tr { break-inside: avoid; }
+  .laporan-cetak th, .laporan-cetak td { padding: 1.5mm 2mm; border-bottom: 1px solid #d4dde8; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+  .laporan-cetak thead th { border-top: 1px solid #22426b; border-bottom-color: #22426b; }
+  .laporan-cetak .tanggal-cetak { width: 17%; }
+  .laporan-cetak .kategori-cetak { width: 18%; }
+  .laporan-cetak .jumlah-cetak { width: 22%; }
+  .laporan-cetak .angka { text-align: right; font-variant-numeric: tabular-nums; }
+  .laporan-cetak .catatan-cetak { margin-top: 2mm; font-size: 9pt; }
 }
 
 /* branding di pengaturan: unggah logo perusahaan */

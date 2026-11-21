@@ -104,7 +104,7 @@ Dibuat oleh `seed.sql`. Kata sandi semua akun: `Sortik#2026`.
 | Peran | Email |
 |---|---|
 | Admin | `admin@sortik.id` |
-| Staff | `staff@sortik.id` |
+| Staffsayagaboleh   | `staff@sortik.id` |
 | Pembeli | `budi@sortik.id`, `sari@sortik.id` |
 
 > Ganti kata sandi dan hapus akun contoh sebelum dipakai di server sungguhan.

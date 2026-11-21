@@ -4,7 +4,8 @@ declare(strict_types=1);
 /* Router untuk server bawaan PHP (hanya pengembangan).
    Jalankan dari akar repo:  php -S 127.0.0.1:8080 -t public backend/dev-router.php
    Hanya folder public/ yang disajikan; backend/, .env, docs/, dan .git/ tidak terjangkau.
-   Di VPS, tugas ini dipegang Nginx, bukan berkas ini. */
+   Berkas ini juga dipakai Dockerfile untuk deploy di Render (variabel DB_* diisi di dashboard Render).
+   Di VPS, tugas ini bisa dipegang Nginx. */
 
 /* muat .env di akar repo ke environment (DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS) */
 $env = dirname(__DIR__) . '/.env';

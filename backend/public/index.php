@@ -52,6 +52,7 @@ $rute = [
     ['POST', '#^/keranjang$#',                  'keranjang_tambah'],
     ['PUT',  '#^/keranjang/(\d+)$#',            'keranjang_atur'],
     ['GET',  '#^/pesanan$#',                    'pesanan_daftar'],
+    ['GET',  '#^/pesanan/antrean$#',             'pesanan_antrean'],
     ['POST', '#^/pesanan$#',                    'pesanan_buat'],
     ['GET',  '#^/pesanan/(\d+)$#',              'pesanan_detail'],
     ['POST', '#^/pesanan/(\d+)/bayar$#',        'pesanan_bayar'],

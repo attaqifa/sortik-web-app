@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+docs
+tests
+backend/tests
+backend/uploads
+graphify-out
+node_modules
+*.md

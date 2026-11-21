@@ -7,11 +7,7 @@ const pengeluaran = () => db.keuangan.pengeluaran || [];
 const totalKeluar = () => pengeluaran().reduce((n, x) => n + (+x.jumlah || 0), 0);
 const kategoriKeluar = () => [...new Set(pengeluaran().map((x) => x.kategori).filter(Boolean))];
 
-/* tanggal hari ini lokal (toISOString memakai UTC — beda zona bisa meleset) */
-const hariIni = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
+const hariIni = () => tanggalLokal(new Date());
 
 /* nama barang pesanan: item pertama, plus "+N lainnya" bila lebih dari satu */
 const ringkasItem = (o) => {
@@ -31,17 +27,22 @@ function gambarStats() {
 }
 
 /* ---------- grafik batang 6 bulan terakhir ---------- */
-function gambarGrafik() {
+function ringkasanBulanan() {
   const kini = new Date();
-  const dataBulan = [...Array(6)].map((_, i) => {
+  return Array.from({ length: 6 }, (_, i) => {
     const d = new Date(kini.getFullYear(), kini.getMonth() - 5 + i, 1);
-    const kunci = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const kunci = tanggalLokal(d).slice(0, 7);
     return {
       label: bln[d.getMonth()],
+      tahun: d.getFullYear(),
       p: db.pesanan.filter((o) => o.lunas && tanggalBayar(o).startsWith(kunci)).reduce((n, o) => n + nilaiPesanan(o), 0),
       k: pengeluaran().filter((x) => String(x.tanggal).startsWith(kunci)).reduce((n, x) => n + (+x.jumlah || 0), 0)
     };
   });
+}
+
+function gambarGrafik() {
+  const dataBulan = ringkasanBulanan();
   const maks = Math.max(1, ...dataBulan.map((b) => Math.max(b.p, b.k)));
   isi("grafik", dataBulan.map((b) => `<div class="kolom">
     <div class="batang" title="${b.label}: pendapatan ${rp(b.p)} · pengeluaran ${rp(b.k)}">
@@ -60,12 +61,12 @@ function gambarChips() {
   }, saringKat);
 }
 
-function gambarKas() {
+function arusKas() {
   /* gabungkan uang masuk (pesanan lunas) & keluar (pengeluaran), urut dari terbaru */
-  const acara = [
+  return [
     ...db.pesanan.filter((o) => o.lunas).map((o) => ({
       tanggal: tanggalBayar(o), masuk: true, kategori: "Pendapatan",
-      keterangan: `Pesanan ${kodePesanan(o)} — ${ringkasItem(o)}`,
+      keterangan: `Pesanan ${kodePesanan(o)} - ${ringkasItem(o)}`,
       jumlah: nilaiPesanan(o)
     })),
     ...pengeluaran().map((x) => ({
@@ -73,7 +74,10 @@ function gambarKas() {
       kategori: x.kategori || "Lain-lain", keterangan: x.keterangan, jumlah: +x.jumlah || 0
     }))
   ].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+}
 
+function gambarKas() {
+  const acara = arusKas();
   /* chip hanya menyaring pengeluaran (kategori miliknya); pendapatan tampil saat "Semua" */
   const tampil = saringKat ? acara.filter((a) => !a.masuk && a.kategori === saringKat) : acara;
   const baris = tampil.slice(0, 30).map((a) => `<div class="row">
@@ -142,12 +146,13 @@ if (db.akun.role === "admin") {
   });
 }
 
-/* ---------- ekspor: unduh CSV & cetak (khusus admin) ---------- */
-if (db.akun.role === "admin") {
-  isi("eksport", `
-    <button class="btn" type="button" id="unduhCsv"><span class="ikon" data-lucide="download"></span>Unduh CSV</button>
-    <button class="btn" type="button" id="cetak"><span class="ikon" data-lucide="printer"></span>Cetak</button>`);
+/* ---------- ekspor ---------- */
+const adminKeuangan = db.akun.role === "admin";
+isi("eksport", `
+  ${adminKeuangan ? '<button class="btn" type="button" id="unduhCsv"><span class="ikon" data-lucide="download"></span>Unduh CSV</button>' : ""}
+  <button class="btn" type="button" id="cetak"><span class="ikon" data-lucide="printer"></span>Cetak PDF</button>`);
 
+if (adminKeuangan) {
   el("unduhCsv").onclick = () => {
     /* tabel: uang masuk (pesanan lunas) + uang keluar (pengeluaran), lalu ringkasan */
     const tabel = [["Tanggal", "Jenis", "Kategori", "Keterangan", "Jumlah (Rp)"]];
@@ -170,9 +175,48 @@ if (db.akun.role === "admin") {
     URL.revokeObjectURL(tautan.href);
     notif("Laporan keuangan diunduh.");
   };
-
-  el("cetak").onclick = () => window.print();
 }
+
+function siapkanLaporanCetak() {
+  const pendapatan = totalPendapatan();
+  const keluar = totalKeluar();
+  const bulanan = ringkasanBulanan().map((b) => `
+    <tr><th scope="row">${b.label} ${b.tahun}</th><td class="angka">${rp(b.p)}</td>
+      <td class="angka">${rp(b.k)}</td><td class="angka">${rp(b.p - b.k)}</td></tr>`).join("");
+  const transaksi = arusKas().map((a) => `
+    <tr><td>${tglID(a.tanggal)}</td><td>${esc(a.keterangan)}</td><td>${esc(a.kategori)}</td>
+      <td class="angka">${a.masuk ? "+" : "−"} ${rp(a.jumlah)}</td></tr>`).join("");
+
+  el("laporan-cetak").innerHTML = `
+    <header>
+      <b>${esc(db.toko.nama || "SORTIK")}</b>
+      <h1>Laporan Keuangan</h1>
+      <p>Seluruh periode · Dicetak ${tglID(hariIni())}</p>
+    </header>
+    <h2>Ringkasan</h2>
+    <dl>
+      <div><dt>Pendapatan</dt><dd>${rp(pendapatan)}</dd></div>
+      <div><dt>Piutang</dt><dd>${rp(totalPiutang())}</dd></div>
+      <div><dt>Pengeluaran</dt><dd>${rp(keluar)}</dd></div>
+      <div><dt>Laba bersih</dt><dd>${rp(pendapatan - keluar)}</dd></div>
+    </dl>
+    <h2>Arus Kas 6 Bulan Terakhir</h2>
+    <table>
+      <thead><tr><th scope="col">Bulan</th><th scope="col" class="angka">Pendapatan</th>
+        <th scope="col" class="angka">Pengeluaran</th><th scope="col" class="angka">Laba bersih</th></tr></thead>
+      <tbody>${bulanan}</tbody>
+    </table>
+    <p class="catatan-cetak">Tanggal pesanan digunakan jika tanggal pembayaran tidak tercatat.</p>
+    <h2>Rincian Arus Kas</h2>
+    <table class="transaksi-cetak">
+      <colgroup><col class="tanggal-cetak"><col><col class="kategori-cetak"><col class="jumlah-cetak"></colgroup>
+      <thead><tr><th scope="col">Tanggal</th><th scope="col">Keterangan</th>
+        <th scope="col">Kategori</th><th scope="col" class="angka">Jumlah</th></tr></thead>
+      <tbody>${transaksi || '<tr><td colspan="4">Belum ada transaksi arus kas.</td></tr>'}</tbody>
+    </table>`;
+}
+window.addEventListener("beforeprint", siapkanLaporanCetak);
+el("cetak").onclick = () => window.print();
 
 function segarkan() {
   gambarStats();

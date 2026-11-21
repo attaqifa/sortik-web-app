@@ -8,10 +8,11 @@ function pdo(): PDO
     static $pdo = null;
     if ($pdo === null) {
         $dsn = sprintf(
-            'pgsql:host=%s;port=%s;dbname=%s',
+            'pgsql:host=%s;port=%s;dbname=%s;sslmode=%s',
             getenv('DB_HOST') ?: 'localhost',
             getenv('DB_PORT') ?: '5432',
-            getenv('DB_NAME') ?: 'sortik_dev'
+            getenv('DB_NAME') ?: 'sortik_dev',
+            getenv('DB_SSLMODE') ?: 'prefer' // hosting (Supabase) wajib: DB_SSLMODE=require
         );
         $pdo = new PDO($dsn, getenv('DB_USER') ?: 'sortik', getenv('DB_PASS') ?: '', [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

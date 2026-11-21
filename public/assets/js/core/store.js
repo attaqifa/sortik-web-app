@@ -72,6 +72,8 @@ const inisial = (nama) => String(nama || "?").split(" ").map((w) => w[0]).join("
 const avatarHTML = (u) => (u.avatar ? `<img src="${urlGambar(u.avatar)}" alt="">` : esc(inisial(u.nama)));
 const pesananku = () => db.pesanan.filter((o) => o.pembeliId === db.akun.id);
 const nTunggu = () => db.pesanan.filter((o) => o.status === "Menunggu").length;
+const badgeAntrean = '<b class="badge" id="jmlAntrean"></b>';
+let antreanPesanan = null;
 
 /* menu sidebar per peran, dikelompokkan menurut fungsinya */
 const MENU = {
@@ -93,7 +95,7 @@ const MENU = {
       ["package", "Kelola Barang", "produk.html", "", "Barang"]
     ]],
     ["Penjualan", [
-      ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"],
+      ["clipboard-check", "Kelola Pesanan", "pesanan.html", badgeAntrean, "Pesanan"],
       ["wallet", "Keuangan", "keuangan.html", "", "Keuangan"]
     ]]
   ],
@@ -104,7 +106,7 @@ const MENU = {
       ["package", "Kelola Barang", "produk.html", "", "Barang"]
     ]],
     ["Penjualan", [
-      ["clipboard-check", "Kelola Pesanan", "pesanan.html", `<b class="badge">${nTunggu() || ""}</b>`, "Pesanan"],
+      ["clipboard-check", "Kelola Pesanan", "pesanan.html", badgeAntrean, "Pesanan"],
       ["wallet", "Keuangan", "keuangan.html", "", "Keuangan"]
     ]],
     ["Administrasi", [
@@ -158,6 +160,65 @@ ${cariCepat}
   const jmlKeranjang = el("jmlKeranjang");
   if (jmlKeranjang) jmlKeranjang.textContent = (db.keranjang && nKeranjang()) || "";
   if (jmlPesan) jmlPesan.textContent = pesananku().filter(aktif).length || "";
+  gambarBadgeAntrean();
+}
+
+function gambarBadgeAntrean() {
+  const badge = el("jmlAntrean");
+  if (badge) badge.textContent = (antreanPesanan?.size ?? nTunggu()) || "";
+}
+
+function pantauPesananMasuk() {
+  antreanPesanan = new Set(db.pesanan.filter((o) => o.status === "Menunggu").map((o) => o.id));
+  const belumDibuka = new Set();
+  const wadah = document.createElement("div");
+  wadah.className = "notifikasi-pesanan";
+  wadah.innerHTML = `
+    <div class="sr-only" role="status"></div>
+    <aside class="bubble-pesanan" aria-label="Notifikasi pesanan masuk" hidden>
+      <span class="ikon" data-lucide="bell-ring" aria-hidden="true"></span>
+      <div><b></b><a href="pesanan.html?status=Menunggu">Lihat antrean pesanan</a></div>
+      <button type="button" aria-label="Tutup notifikasi pesanan"><span class="ikon" data-lucide="x"></span></button>
+    </aside>`;
+  document.body.append(wadah);
+  gambarIkon();
+
+  const bubble = wadah.querySelector("aside");
+  const judul = bubble.querySelector("b");
+  const pengumuman = wadah.querySelector('[role="status"]');
+  function gambarBubble() {
+    const teks = belumDibuka.size ? `${belumDibuka.size} pesanan baru masuk` : "";
+    if (judul.textContent !== teks) {
+      judul.textContent = teks;
+      pengumuman.textContent = teks;
+    }
+    bubble.hidden = !teks;
+  }
+  bubble.querySelector("button").onclick = () => {
+    belumDibuka.clear();
+    gambarBubble();
+    el("jmlAntrean")?.closest("a").focus();
+  };
+
+  let memeriksa = false;
+  async function periksaAntrean() {
+    if (document.hidden || memeriksa) return;
+    memeriksa = true;
+    try {
+      const { data, error } = await api.get("/pesanan/antrean");
+      if (error) return;
+      const terbaru = new Set(data);
+      for (const id of terbaru) if (!antreanPesanan.has(id)) belumDibuka.add(id);
+      for (const id of belumDibuka) if (!terbaru.has(id)) belumDibuka.delete(id);
+      antreanPesanan = terbaru;
+      gambarBadgeAntrean();
+      gambarBubble();
+    } finally {
+      memeriksa = false;
+    }
+  }
+  setInterval(periksaAntrean, 15_000);
+  document.addEventListener("visibilitychange", periksaAntrean);
 }
 
 /* lembar "Lainnya" di bar bawah HP: buka/tutup, Esc & ketuk di luar menutup */
@@ -182,6 +243,7 @@ async function mulaiAplikasi(mulai) {
   try {
     await muatData();
     gambarSidebar();
+    if (peran === "admin" || peran === "staff") pantauPesananMasuk();
     mulai();
   } catch (error) {
     console.error("Gagal memuat data:", error);

@@ -98,6 +98,7 @@ el("list").addEventListener("click", async (e) => {
 function perbarui(baru) {
   const i = db.pesanan.findIndex((x) => x.id === baru.id);
   if (i >= 0) db.pesanan[i] = baru;
+  if (baru.status !== "Menunggu") antreanPesanan?.delete(baru.id);
   gambarSidebar();
 }
 
