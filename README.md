@@ -186,5 +186,3 @@ Susunan yang disarankan di server Linux:
 | Halaman tidak ditemukan | Jalankan server dengan `-t public`, bukan `-t .`. |
 | "Data gagal dimuat" | Periksa `.env` dan pastikan PostgreSQL berjalan; lihat log di terminal server. |
 | Tidak bisa masuk | Pastikan `seed.sql` sudah dijalankan; tunggu 60 detik bila terkena pembatas. |
-
-By: Tim Rak
