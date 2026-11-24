@@ -50,7 +50,6 @@ const urlGambar = (value) => {
   return /^(https?:\/\/|\/api\/berkas\/|data:image\/(png|jpeg|webp);base64,)/i.test(url) ? esc(url) : "";
 };
 
-/* fitur yang tahapnya belum dikerjakan (lihat peta jalan B3–B5) */
 /* masukkan ke keranjang (di server). Pengunjung diarahkan masuk dulu. Mengembalikan true bila berhasil. */
 async function masukKeranjang(id, n = 1) {
   const r = await keranjangTambah(id, n);

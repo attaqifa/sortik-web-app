@@ -158,10 +158,46 @@ function akhiri_sesi(): void
     session_destroy();
 }
 
+/* IP asli pengunjung. Di balik reverse proxy (Render, Nginx) REMOTE_ADDR adalah IP proxy,
+   jadi semua pengunjung tampak satu IP. PROXY_TEPERCAYA = jumlah proxy di depan aplikasi
+   (0 = tanpa proxy, nilai bawaan). Setiap proxy menambahkan IP pengirimnya di UJUNG KANAN
+   X-Forwarded-For, sehingga entri ke-N dari kanan adalah yang dicatat proxy terluar kita;
+   entri di kirinya bisa dipalsukan klien dan diabaikan. */
+function ip_klien(): string
+{
+    $remote = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    $hop = (int) (getenv('PROXY_TEPERCAYA') ?: 0);
+    if ($hop < 1) {
+        return $remote;
+    }
+    $daftar = array_values(array_filter(array_map('trim', explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''))),
+        fn($v) => $v !== ''));
+    $ip = $daftar[count($daftar) - $hop] ?? null;
+    return $ip !== null && filter_var($ip, FILTER_VALIDATE_IP) ? $ip : $remote;
+}
+
+/* pembatas laju umum di tabel login_gagal: paling banyak $maks kejadian per jendela $detik.
+   Melempar 429 bila terlewati. */
+function batasi_laju(string $kunci, int $maks, int $detik, string $pesan): void
+{
+    $r = db_satu("INSERT INTO login_gagal (kunci, jumlah, sampai) VALUES (?, 1, now() + make_interval(secs => ?))
+                  ON CONFLICT (kunci) DO UPDATE SET
+                    jumlah = CASE WHEN login_gagal.sampai IS NULL OR login_gagal.sampai <= now()
+                                  THEN 1 ELSE login_gagal.jumlah + 1 END,
+                    sampai = CASE WHEN login_gagal.sampai IS NULL OR login_gagal.sampai <= now()
+                                  THEN now() + make_interval(secs => ?) ELSE login_gagal.sampai END
+                  RETURNING jumlah, GREATEST(0, CEIL(EXTRACT(EPOCH FROM (sampai - now()))))::int AS detik",
+        [$kunci, $detik, $detik]);
+    if ((int) $r['jumlah'] > $maks) {
+        $menit = max(1, (int) ceil($r['detik'] / 60));
+        throw new GalatHttp(429, str_replace('{menit}', (string) $menit, $pesan));
+    }
+}
+
 /* ---------- pembatas percobaan: kunci = email + IP, disimpan di tabel login_gagal ---------- */
 function kunci_gagal(string $email): string
 {
-    return strtolower($email) . '|' . ($_SERVER['REMOTE_ADDR'] ?? '');
+    return strtolower($email) . '|' . ip_klien();
 }
 
 function sisa_jeda(string $kunci): int
@@ -249,6 +285,9 @@ function daftar(): void
     if (strlen($sandi) < 8 || strlen($sandi) > 200) {
         throw new GalatHttp(400, 'Kata sandi minimal 8 karakter.');
     }
+    /* cegah satu orang membuat banyak akun untuk menimbun stok lewat pesanan belum dibayar */
+    batasi_laju('daftar|' . ip_klien(), max(1, (int) (getenv('BATAS_DAFTAR_PER_JAM') ?: 10)), 3600,
+        'Terlalu banyak pendaftaran dari jaringan ini — coba lagi dalam {menit} menit.');
     if (strlen($nama) > 200) { // byte, bukan huruf: cukup untuk membatasi, tanpa ekstensi mbstring
         throw new GalatHttp(400, 'Nama terlalu panjang.');
     }

@@ -1,7 +1,9 @@
 /* Uji balapan stok: N pembeli checkout serentak untuk produk berstok kecil.
-   Jalankan:  node backend/tests/balapan-stok.cjs http://127.0.0.1:8081
-   Akun uji (@sortik.test) dibersihkan lewat skrip bersih-uji. */
-const B = process.argv[2] || "http://127.0.0.1:8081";
+   Jalankan:  node backend/tests/balapan-stok.cjs http://127.0.0.1:8080
+   Akun uji (@sortik.test) tidak dihapus otomatis; bersihkan manual dari database.
+   Tes ini mendaftarkan N akun dari satu IP: bila diulang dalam satu jam, naikkan
+   BATAS_DAFTAR_PER_JAM di .env (atau hapus baris login_gagal berkunci 'daftar|…'). */
+const B = process.argv[2] || "http://127.0.0.1:8080";
 const H = { "Content-Type": "application/json", Origin: B };
 const PRODUK = 9, N = 8;
 async function req(m, u, b, c) {

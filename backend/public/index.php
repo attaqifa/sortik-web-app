@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-/* Router API SORTIK. Semua jalur diawali /api (lihat docker/apache.conf). */
+/* Router API SORTIK. Semua jalur diawali /api (lihat bagian Deployment di README). */
 
 require __DIR__ . '/../src/http.php';
 require __DIR__ . '/../src/db.php';

@@ -26,6 +26,10 @@ kelola({
     ["deskripsi", "Deskripsi", "area"]
   ],
 
+  /* kirim stok saat form dibuka: server hanya menerapkan selisihnya, jadi
+     pesanan yang masuk selama form terbuka tidak tertimpa */
+  siapkan: (data, lama) => (lama ? { ...data, stokLama: lama.stok } : data),
+
   cari: (p) => `${p.nama} ${kat(p)} ${p.rak}`,
   urut: (a, b) => a.nama.localeCompare(b.nama),
   baris: (p) => `<div class="thumb">${p.diskon ? `<span class="ptanda">−${p.diskon}%</span>` : ""}${fotoHTML(p)}</div>

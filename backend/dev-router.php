@@ -4,8 +4,8 @@ declare(strict_types=1);
 /* Router untuk server bawaan PHP (hanya pengembangan).
    Jalankan dari akar repo:  php -S 127.0.0.1:8080 -t public backend/dev-router.php
    Hanya folder public/ yang disajikan; backend/, .env, docs/, dan .git/ tidak terjangkau.
-   Berkas ini juga dipakai Dockerfile untuk deploy di Render (variabel DB_* diisi di dashboard Render).
-   Di VPS, tugas ini bisa dipegang Nginx. */
+   Produksi tidak memakai berkas ini: Dockerfile memakai Apache (docker/sortik.conf),
+   dan di VPS tugas ini dipegang Nginx. */
 
 /* muat .env di akar repo ke environment (DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS) */
 $env = dirname(__DIR__) . '/.env';
@@ -13,7 +13,8 @@ if (is_file($env)) {
     foreach (file($env, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $baris) {
         if ($baris[0] !== '#' && str_contains($baris, '=')) {
             [$k, $v] = explode('=', $baris, 2);
-            putenv(trim($k) . '=' . trim($v));
+            $v = trim(trim($v), '"\'');
+            putenv(trim($k) . '=' . $v);
         }
     }
 }

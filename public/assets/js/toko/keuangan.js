@@ -35,7 +35,7 @@ function ringkasanBulanan() {
     return {
       label: bln[d.getMonth()],
       tahun: d.getFullYear(),
-      p: db.pesanan.filter((o) => o.lunas && tanggalBayar(o).startsWith(kunci)).reduce((n, o) => n + nilaiPesanan(o), 0),
+      p: db.pesanan.filter((o) => uangMasuk(o) && tanggalBayar(o).startsWith(kunci)).reduce((n, o) => n + nilaiPesanan(o), 0),
       k: pengeluaran().filter((x) => String(x.tanggal).startsWith(kunci)).reduce((n, x) => n + (+x.jumlah || 0), 0)
     };
   });
@@ -64,7 +64,7 @@ function gambarChips() {
 function arusKas() {
   /* gabungkan uang masuk (pesanan lunas) & keluar (pengeluaran), urut dari terbaru */
   return [
-    ...db.pesanan.filter((o) => o.lunas).map((o) => ({
+    ...db.pesanan.filter(uangMasuk).map((o) => ({
       tanggal: tanggalBayar(o), masuk: true, kategori: "Pendapatan",
       keterangan: `Pesanan ${kodePesanan(o)} - ${ringkasItem(o)}`,
       jumlah: nilaiPesanan(o)
@@ -156,7 +156,7 @@ if (adminKeuangan) {
   el("unduhCsv").onclick = () => {
     /* tabel: uang masuk (pesanan lunas) + uang keluar (pengeluaran), lalu ringkasan */
     const tabel = [["Tanggal", "Jenis", "Kategori", "Keterangan", "Jumlah (Rp)"]];
-    db.pesanan.filter((o) => o.lunas).forEach((o) =>
+    db.pesanan.filter(uangMasuk).forEach((o) =>
       tabel.push([tanggalBayar(o), "Masuk", "Pendapatan", `Pesanan ${kodePesanan(o)} — ${ringkasItem(o)}`, nilaiPesanan(o)]));
     pengeluaran().forEach((x) =>
       tabel.push([x.tanggal, "Keluar", x.kategori || "Lain-lain", x.keterangan, +x.jumlah || 0]));

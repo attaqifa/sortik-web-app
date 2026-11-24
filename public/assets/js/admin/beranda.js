@@ -3,7 +3,7 @@
 el("nama").textContent = db.akun.nama.split(" ")[0];
 el("hariIni").textContent = labelHariIni();
 
-const lunas = db.pesanan.filter((o) => o.lunas);
+const lunas = db.pesanan.filter(uangMasuk);
 const berjalan = db.pesanan.filter((o) => !batal(o));
 const belum = db.pesanan.filter((o) => !o.lunas && !batal(o));
 const nilaiSemua = berjalan.reduce((n, o) => n + nilaiPesanan(o), 0);

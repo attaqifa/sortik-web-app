@@ -33,5 +33,7 @@ const tanggalBayar = (o) => (o.dibayarPada ? tanggalLokal(new Date(o.dibayarPada
 const jmlTerjual = (id) => produkById(id).terjual || 0;
 
 /* ---------- keuangan ---------- */
-const totalPendapatan = () => db.pesanan.filter((o) => o.lunas).reduce((n, o) => n + o.total, 0);
+/* uang masuk = pesanan lunas yang tidak dibatalkan (lunas lalu dibatalkan toko = uang dikembalikan) */
+const uangMasuk = (o) => o.lunas && !batal(o);
+const totalPendapatan = () => db.pesanan.filter(uangMasuk).reduce((n, o) => n + o.total, 0);
 const totalPiutang = () => db.pesanan.filter((o) => !o.lunas && !batal(o)).reduce((n, o) => n + o.total, 0);

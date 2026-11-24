@@ -9,6 +9,7 @@ const CARA_ANTAR_AMBIL = ['ambil', 'antar'];
 const CARA_BAYAR = ['Transfer ke admin', 'Bayar di kasir'];
 const ALUR_STATUS = ['Menunggu', 'Diproses', 'Siap', 'Selesai'];
 const HARI_TAHAN = 2; // pesanan Menunggu yang belum dibayar dibatalkan setelah sekian hari
+const MAKS_PESANAN_TERBUKA = 3; // pesanan Menunggu belum dibayar per pembeli, agar stok tidak ditimbun
 
 function waktu_iso(?string $v): ?string
 {
@@ -120,6 +121,15 @@ function pesanan_buat(): void
     }
 
     $id = transaksi(function () use ($u, $cara, $bayar, $alamat): int {
+        /* kunci baris pembeli: checkout serentak dari akun yang sama antre di sini,
+           jadi batas pesanan terbuka tidak bisa dilewati dengan request paralel */
+        db_satu('SELECT id FROM pengguna WHERE id = ? FOR NO KEY UPDATE', [$u['id']]);
+        $terbuka = (int) db_satu("SELECT count(*) AS n FROM pesanan
+                                  WHERE pembeli_id = ? AND status = 'Menunggu' AND NOT lunas", [$u['id']])['n'];
+        if ($terbuka >= MAKS_PESANAN_TERBUKA) {
+            throw new GalatHttp(409, 'Anda masih punya ' . $terbuka . ' pesanan yang belum dibayar. '
+                . 'Selesaikan pembayaran atau batalkan salah satunya dulu.');
+        }
         /* kunci keranjang dulu: checkout ganda dari pembeli yang sama menemukan keranjang kosong */
         $isi = db_semua('SELECT produk_id, jumlah FROM keranjang WHERE pengguna_id = ? ORDER BY produk_id FOR UPDATE', [$u['id']]);
         if (!$isi) {
@@ -181,7 +191,7 @@ function pesanan_batalkan_inti(int $id, string $alasan): void
 function pesanan_batal(string $id): void
 {
     $u = wajib_login();
-    $in = $_SERVER['CONTENT_TYPE'] ?? '' ? baca_json() : [];
+    $in = ($_SERVER['CONTENT_TYPE'] ?? '') !== '' ? baca_json() : [];
     transaksi(function () use ($id, $u, $in): void {
         $o = pesanan_kunci((int) $id);
         if ($u['role'] === 'pembeli' && (int) $o['pembeli_id'] !== (int) $u['id']) {

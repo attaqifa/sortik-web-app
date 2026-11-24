@@ -41,7 +41,7 @@ menyimpan data apa pun, sehingga akun dan pesanan yang sama dapat dibuka dari pe
 
 **Admin**
 - Semua fitur staff
-- Keuangan: pendapatan, piutang, pengeluaran, laba bersih, grafik 6 bulan, ekspor CSV
+- Keuangan: pendapatan, piutang, pengeluaran, laba bersih, grafik 6 bulan, ekspor CSV dan PDF
 - Kelola pengguna dan peran
 - Pengaturan toko: info, ongkos kirim, rekening, logo
 
@@ -104,7 +104,7 @@ Dibuat oleh `seed.sql`. Kata sandi semua akun: `Sortik#2026`.
 | Peran | Email |
 |---|---|
 | Admin | `admin@sortik.id` |
-| Staffsayagaboleh   | `staff@sortik.id` |
+| Staff | `staff@sortik.id` |
 | Pembeli | `budi@sortik.id`, `sari@sortik.id` |
 
 > Ganti kata sandi dan hapus akun contoh sebelum dipakai di server sungguhan.
@@ -140,7 +140,7 @@ Checkout ──► stok dicadangkan ──► konfirmasi bayar ──► Menungg
 │   ├── db/                  skema.sql, seed.sql, migrasi/
 │   ├── cron/                Pembatalan pesanan kedaluwarsa
 │   ├── tests/               Tes balapan stok
-│   └── uploads/             Foto dan bukti transfer (tidak ikut git)
+│   └── uploads/             Kosong; unggahan disimpan di tabel berkas
 └── .env.example
 ```
 
@@ -148,9 +148,11 @@ Checkout ──► stok dicadangkan ──► konfirmasi bayar ──► Menungg
 
 - Kata sandi di-hash dengan Argon2id; sesi memakai cookie `HttpOnly` dan `SameSite=Lax` (`Secure` di HTTPS).
 - Percobaan masuk dibatasi: 5 kali salah menahan percobaan berikutnya selama 60 detik per email dan IP.
+- Pendaftaran dibatasi per IP per jam, dan tiap pembeli maksimal 3 pesanan belum dibayar sekaligus,
+  agar stok tidak bisa ditimbun lewat pesanan yang tidak pernah dibayar.
 - Peran diperiksa di server pada setiap endpoint; permintaan pengubah data wajib JSON dan diperiksa `Origin`.
 - Prepared statement untuk semua query, `esc()` untuk teks pengguna, dan Content-Security-Policy tanpa skrip inline.
-- Unggahan divalidasi dari isi berkas (JPG, PNG, WebP, maks. 2 MB) dan disimpan di luar folder web.
+- Unggahan divalidasi dari isi berkas (JPG, PNG, WebP, maks. 2 MB) dan disimpan di tabel `berkas` PostgreSQL.
   Bukti transfer hanya dapat dibuka pemiliknya, staff, dan admin.
 - Hanya `public/` yang disajikan; `backend/`, `.env`, dan `.git/` berada di luarnya.
 
@@ -166,11 +168,15 @@ node backend/tests/balapan-stok.cjs http://127.0.0.1:8080
 
 ## Deployment
 
-Susunan yang disarankan di server Linux:
+**Docker (Render):** `Dockerfile` memakai Apache + mod_php (`docker/sortik.conf`), bukan `php -S`.
+Isi variabel `DB_*` dan `DB_SSLMODE=require` di dashboard, serta `PROXY_TEPERCAYA` (jumlah proxy di depan
+aplikasi) agar pembatas login dan pendaftaran membaca IP asli pengunjung, bukan IP proxy.
+
+**VPS** — susunan yang disarankan di server Linux:
 
 - Nginx menyajikan `public/` dan meneruskan `/api/` ke `backend/public/index.php` lewat PHP-FPM.
 - `.env` berada di luar folder web dengan hak akses terbatas; gunakan user database khusus, bukan `postgres`.
-- `backend/uploads/` dapat ditulis oleh user PHP-FPM dan berada di luar folder web.
+- Unggahan dan sesi disimpan di PostgreSQL, jadi server tidak perlu folder tulis untuk berkas.
 - Aktifkan HTTPS.
 - Jadwalkan pembatalan pesanan kedaluwarsa:
 

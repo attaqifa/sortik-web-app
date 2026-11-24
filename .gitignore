@@ -30,5 +30,5 @@ nohup.out
 .DS_Store
 Thumbs.db
 node_modules/
-\backend\db\migrasi\2026-11-21-sesi-berkas.sql
 backend/db/migrasi/2026-11-21-sesi-berkas.sql
+output/pdf/Dokumentasi Belajar Sortik - Panduan Visual.pdf

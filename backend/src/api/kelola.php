@@ -138,15 +138,27 @@ function produk_ubah(string $id): void
 {
     wajib_peran('staff', 'admin');
     $id = (int) $id;
-    $d = produk_baca_input(baca_json());
+    $in = baca_json();
+    $d = produk_baca_input($in);
+    /* stokLama = stok saat form dibuka. Bila dikirim, yang diterapkan hanya selisihnya,
+       agar checkout yang terjadi selama form terbuka tidak tertimpa angka lama. */
+    $stokLama = array_key_exists('stokLama', $in) ? angka_rentang($in, 'stokLama', 'Stok lama', 0, 1000000) : null;
     $lama = array_column(db_semua('SELECT berkas FROM produk_foto WHERE produk_id = ?', [$id]), 'berkas');
-    transaksi(function () use ($id, $d): void {
-        $n = db_satu('UPDATE produk SET nama = ?, kategori_id = ?, harga = ?, diskon = ?, stok = ?, rak_kode = ?, deskripsi = ?
-                      WHERE id = ? RETURNING id',
-            [$d['nama'], $d['kategori'], $d['harga'], $d['diskon'], $d['stok'], $d['rak'], $d['deskripsi'], $id]);
-        if ($n === null) {
+    transaksi(function () use ($id, $d, $stokLama): void {
+        $kini = db_satu('SELECT stok FROM produk WHERE id = ? FOR UPDATE', [$id]);
+        if ($kini === null) {
             throw new GalatHttp(404, 'Barang tidak ditemukan.');
         }
+        $stok = $stokLama === null ? $d['stok'] : (int) $kini['stok'] + ($d['stok'] - $stokLama);
+        if ($stok < 0) {
+            throw new GalatHttp(409, "Stok sudah berubah sejak form dibuka (sekarang {$kini['stok']}). Muat ulang lalu coba lagi.");
+        }
+        if ($stok > 1000000) {
+            throw new GalatHttp(400, 'Stok harus bilangan bulat 0–1000000.');
+        }
+        db_semua('UPDATE produk SET nama = ?, kategori_id = ?, harga = ?, diskon = ?, stok = ?, rak_kode = ?, deskripsi = ?
+                  WHERE id = ? RETURNING id',
+            [$d['nama'], $d['kategori'], $d['harga'], $d['diskon'], $stok, $d['rak'], $d['deskripsi'], $id]);
         produk_tulis_foto($id, $d['foto']);
     });
     bersihkan_foto($lama);
@@ -212,7 +224,6 @@ function kategori_buat(): void
 function kategori_ubah(string $id): void
 {
     wajib_peran('staff', 'admin');
-    $id = rawurldecode($id);
     [$nama, $ikon] = kategori_baca_input(baca_json());
     if (db_satu('UPDATE kategori SET nama = ?, lucide = ? WHERE id = ? RETURNING id', [$nama, $ikon, $id]) === null) {
         throw new GalatHttp(404, 'Kategori tidak ditemukan.');
@@ -223,7 +234,6 @@ function kategori_ubah(string $id): void
 function kategori_hapus(string $id): void
 {
     wajib_peran('staff', 'admin');
-    $id = rawurldecode($id);
     if (db_satu('SELECT 1 FROM produk WHERE kategori_id = ?', [$id]) !== null) {
         throw new GalatHttp(409, 'Kategori masih dipakai barang — pindahkan dulu barangnya ke kategori lain.');
     }

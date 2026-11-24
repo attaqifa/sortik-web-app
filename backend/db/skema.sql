@@ -1,5 +1,4 @@
--- Skema PostgreSQL SORTIK (sesuai docs/rancangan-backend.md bagian 3).
--- Dimuat otomatis oleh kontainer db saat volume masih kosong.
+-- Skema PostgreSQL SORTIK. Jalankan: psql -d sortik_dev -f backend/db/skema.sql (lihat README).
 -- Perubahan setelah ini ditulis sebagai berkas bertanggal di backend/db/migrasi/.
 
 CREATE TABLE pengguna (
