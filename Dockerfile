@@ -15,7 +15,10 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
 # Render memberi nomor port lewat variabel PORT; Apache membacanya sebagai ${PORT}
 ENV PORT=10000
 COPY docker/sortik.conf /etc/apache2/sites-available/sortik.conf
-RUN a2enmod rewrite \
+# mod_php hanya boleh berjalan dengan mpm_prefork. Matikan MPM lain yang mungkin ikut aktif,
+# kalau tidak Apache gagal start dengan "AH00534: More than one MPM loaded".
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* \
+    && a2enmod mpm_prefork rewrite \
     && a2dissite 000-default \
     && a2ensite sortik \
     && echo 'Listen ${PORT}' > /etc/apache2/ports.conf
@@ -28,3 +31,6 @@ COPY public ./public
 RUN chown -R root:root /app && chmod -R a+rX,go-w /app
 
 EXPOSE 10000
+
+# Jaga-jaga saat start: pastikan hanya mpm_prefork yang aktif, lalu jalankan Apache seperti biasa.
+CMD ["sh", "-c", "rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.*; exec apache2-foreground"]
